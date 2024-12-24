@@ -1,0 +1,36 @@
+# node docker compose file template
+
+version: '3.8'
+services:
+  node:
+    image: hyperledger/besu:latest
+    container_name: node-NODE_INDEX
+    volumes:
+      - ./data:/data
+      - ../genesis.json:/genesis.json
+    ports:
+      - "P2P_PORT:P2P_PORT" # Replace with actual port
+      - "RPC_HTTP_PORT:RPC_HTTP_PORT" # Replace with actual port
+      - "RPC_WS_PORT:RPC_WS_PORT" # Replace with actual port
+    command:
+      - --data-path=/data
+      - --genesis-file=/genesis.json
+      - --bootnodes=ENODE_URL # Replace with bootnode's enode URL
+      - --p2p-port=P2P_PORT # Replace with actual port
+      - --p2p-host=P2P_HOST
+      - --rpc-http-enabled
+      - --rpc-ws-enabled
+      - --rpc-http-port=RPC_HTTP_PORT
+      - --rpc-http-host=HTTP_HOST
+      - --rpc-ws-host=WS_HOST
+      - --rpc-ws-port=RPC_WS_PORT
+      - --rpc-http-api=ETH,NET,QBFT
+      - --host-allowlist="*"
+      - --rpc-http-cors-origins="all" 
+    networks:
+      besu-network:
+        ipv4_address: NODE_IP
+
+networks:
+  besu-network:
+    external: true

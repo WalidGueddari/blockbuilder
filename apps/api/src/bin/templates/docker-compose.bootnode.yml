@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  bootnode:
+    image: hyperledger/besu:latest
+    container_name: bootnode
+    volumes:
+      - ./data:/data
+      - ../genesis.json:/genesis.json
+    ports:
+      - "P2P_PORT:P2P_PORT" 
+      - "RPC_HTTP_PORT:RPC_HTTP_PORT"   
+      - "RPC_WS_PORT:RPC_WS_PORT"   
+    command:
+      # General settings
+      - --data-path=/data
+      - --genesis-file=/genesis.json
+      - --profile=ENTERPRISE
+      
+      # P2P settings
+      - --p2p-port=P2P_PORT
+      - --p2p-host=P2P_HOST
+
+      # RPC HTTP settings
+      - --rpc-http-enabled
+      - --rpc-http-api=ETH,NET,QBFT
+      - --rpc-http-port=RPC_HTTP_PORT
+      - --rpc-http-host=HTTP_HOST
+      - --rpc-http-cors-origins="all"
+
+      # RPC WebSocket settings
+      - --rpc-ws-enabled
+      - --rpc-ws-host=WS_HOST
+      - --rpc-ws-port=RPC_WS_PORT
+
+      # Host allowlist
+      - --host-allowlist="*"
+      
+    networks:
+      besu-network:
+        ipv4_address: NODE_IP
+
+networks:
+  besu-network:
+    external: true
