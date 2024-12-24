@@ -1,17 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
-  "globalDotEnv": [".env"],
-  "pipeline": {
+  "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "dotEnv": [".env.production"]
+      "outputs": ["dist/**", "!dist/cache/**"]
     },
     "build:api": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "dotEnv": [".env.production"]
+      "outputs": ["dist/**", "!dist/cache/**"]
     },
     "lint": {},
     "format": {},
@@ -19,21 +15,18 @@
       "cache": false
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true,
-      "dotEnv": [".env.development"]
+      "persistent": true
     },
     "db:push": {
-      "cache": false,
-      "dotEnv": [".env.development"]
+      "cache": false
     },
     "db:reset": {
-      "cache": false,
-      "dotEnv": [".env.development"]
+      "cache": false
     },
     "db:studio": {
-      "cache": false,
-      "dotEnv": [".env.development"]
+      "cache": false
     }
   }
 }
