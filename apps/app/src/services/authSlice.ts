@@ -27,7 +27,7 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/admin/login`, {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`, {
       email,
       password,
     });
