@@ -85,7 +85,7 @@ export default function SignUpForm() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-purple-500 text-white hover:bg-purple-600"
+                  className="w-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:from-purple-600 hover:to-cyan-600"
                   disabled={loading}
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign Up'}

@@ -27,7 +27,7 @@ export function LoginForm() {
 
     // Check if the login was successful
     if (login.fulfilled.match(resultAction)) {
-      router.push('/'); // Redirect to the home page
+      router.push('/dashboard'); // Redirect to the home page
     } else {
       // Handle login failure (e.g., display an error message)
       console.error('Login failed');
@@ -95,7 +95,7 @@ export function LoginForm() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 "
                   disabled={loading}
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}

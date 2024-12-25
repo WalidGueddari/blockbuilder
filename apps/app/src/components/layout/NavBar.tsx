@@ -1,149 +1,127 @@
 'use client';
 
-// Import useAppDispatch
 import { ModeToggle } from '@/components/layout/theme-toggle';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { logout } from '@/services/authSlice';
 import { useAppDispatch } from '@/services/hooks';
-import { ArrowLeftRight, Images, LayoutDashboard, LogOut, Menu, Users, X } from 'lucide-react';
-// Import X icon for closing
+import { Globe, LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
-import { Separator } from '../ui/separator';
+const routes = [
+  {
+    href: '/dashboard',
+    label: 'Overview',
+    icon: LayoutDashboard,
+  },
+  {
+    href: '/dashboard/networks',
+    label: 'Networks',
+    icon: Globe,
+  },
+  {
+    href: '/dashboard/profile',
+    label: 'Profile',
+    icon: User,
+  },
+];
 
 export function Navbar() {
-  const [isActive, setIsActive] = useState(false); // State for mobile menu
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
   const dispatch = useAppDispatch();
   const router = useRouter();
-
-  const toggleMenu = () => {
-    setIsActive(!isActive);
-  };
 
   const handleLogout = () => {
     dispatch(logout());
     router.push('/login'); // Redirect to login page after logout
   };
-
   return (
-    <nav className="border">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative flex h-16 items-center justify-between">
-          {/* Left section */}
-          <div className="flex items-center">
-            <div className="flex flex-shrink-0 items-center space-x-2">
-              <span className="text-xl font-bold uppercase">Admin Panel</span>
+    <>
+      {/* Mobile Navigation */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" className="fixed left-4 top-4 z-50 md:hidden">
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 border-gray-800 bg-black/80 p-0 backdrop-blur-xl">
+          <div className="flex h-full flex-col">
+            <div className="border-b border-gray-800 p-4">
+              <span className="text-lg font-semibold text-white">BlockChain Builder</span>
+            </div>
+            <nav className="flex flex-1 flex-col gap-2 p-4">
+              {routes.map((route) => (
+                <Link
+                  key={route.href}
+                  href={route.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-300 transition-colors hover:text-white',
+                    pathname === route.href && 'bg-blue-500/20 text-white',
+                  )}
+                >
+                  <route.icon className="h-5 w-5" />
+                  {route.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="border-t border-gray-800 p-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => {}}
+                  variant="ghost"
+                  className="flex-1 text-gray-300 hover:text-white"
+                >
+                  <LogOut className="mr-2 h-5 w-5" />
+                  Logout
+                </Button>
+                <ModeToggle />
+              </div>
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
 
-          {/* Hamburger Icon */}
-          <div className="absolute inset-y-0 right-0 flex items-center space-x-2 sm:hidden">
-            <ModeToggle />
-            <Button
-              onClick={toggleMenu}
-              variant="secondary"
-              className="inline-flex items-center justify-center p-2"
-              aria-controls="mobile-menu"
-              aria-expanded={isActive}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
+      {/* Desktop Sidebar */}
+      <div className="fixed bottom-0 left-0 top-0 z-50 hidden w-64 border-r border-gray-800 bg-black/80 backdrop-blur-xl md:flex">
+        <div className="flex w-full flex-col">
+          <div className="border-b border-gray-800 p-4">
+            <span className="text-lg font-semibold text-white">BlockChain Builder</span>
           </div>
-
-          {/* Right section */}
-          <div className="hidden sm:ml-6 sm:block">
-            <div className="flex space-x-4">
-              <a href="/" className="hover:bg-secondary rounded-md px-3 py-2 text-sm font-medium">
-                Dashboard
-              </a>
-              <a
-                href="/users"
-                className="hover:bg-secondary rounded-md px-3 py-2 text-sm font-medium"
+          <nav className="flex flex-1 flex-col gap-2 p-4">
+            {routes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-300 transition-colors hover:text-white',
+                  pathname === route.href && 'bg-blue-500/20 text-white',
+                )}
               >
-                Users
-              </a>
-              <a
-                href="/transactions"
-                className="hover:bg-secondary rounded-md px-3 py-2 text-sm font-medium"
-              >
-                Transactions
-              </a>
-              <a
-                href="/nfts"
-                className="hover:bg-secondary rounded-md px-3 py-2 text-sm font-medium"
-              >
-                NFTs
-              </a>
+                <route.icon className="h-5 w-5" />
+                {route.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="border-t border-gray-800 p-4">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={handleLogout}
-                variant="secondary"
-                className="rounded-md px-3 py-2 text-sm font-medium"
+                variant="ghost"
+                className="flex-1 text-gray-300 hover:text-white"
               >
-                <LogOut />
+                <LogOut className="mr-2 h-5 w-5" />
+                Logout
               </Button>
-              <ModeToggle />
             </div>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      <div
-        id="mobile-menu"
-        className={`min-w-screen fixed inset-0 z-40 transform transition-transform ${
-          isActive ? 'translate-x-0' : 'translate-x-full'
-        } sm:hidden`}
-      >
-        <div className="bg-background relative flex h-full flex-col p-4">
-          {/* Close Button */}
-          <Button onClick={toggleMenu} variant="ghost" className="absolute right-4 top-4">
-            <X className="h-6 w-6" />
-          </Button>
-          {/* Menu Links */}
-          <div className="mt-16 flex-grow space-y-4">
-            <a
-              href="/"
-              className="hover:bg-secondary flex items-center rounded-md px-3 py-2 text-lg font-medium"
-            >
-              <LayoutDashboard className="mr-2" />
-              Dashboard
-            </a>
-            <a
-              href="/users"
-              className="hover:bg-secondary flex items-center rounded-md px-3 py-2 text-lg font-medium"
-            >
-              <Users className="mr-2" />
-              Users
-            </a>
-            <a
-              href="/transactions"
-              className="hover:bg-secondary flex items-center rounded-md px-3 py-2 text-lg font-medium"
-            >
-              <ArrowLeftRight className="mr-2" />
-              Transactions
-            </a>
-            <a
-              href="/nfts"
-              className="hover:bg-secondary flex items-center rounded-md px-3 py-2 text-lg font-medium"
-            >
-              <Images className="mr-2" />
-              NFTs
-            </a>
-          </div>
-          {/* Bottom section: Separator and Logout Button */}
-          <div className="mt-auto flex flex-col space-y-4">
-            <Separator />
-            <Button
-              onClick={handleLogout}
-              className="text-md flex items-center rounded-md px-3 py-2"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="ml-2">Logout</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </nav>
+    </>
   );
 }
