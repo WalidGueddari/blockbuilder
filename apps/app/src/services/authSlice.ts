@@ -35,6 +35,17 @@ export const login = createAsyncThunk(
   },
 );
 
+export const register = createAsyncThunk(
+  'auth/register',
+  async ({ email, password }: { email: string; password: string }) => {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/register`, {
+      email,
+      password,
+    });
+    return response.data;
+  },
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
