@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import axios from 'axios';
 import { Globe, Server } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -43,25 +44,40 @@ export default function NetworksPage() {
     consensus: 'QBFT',
   });
 
-  const handleCreateNetwork = () => {
+  const handleCreateNetwork = async () => {
     if (newNetwork.nodeCount < 1 || newNetwork.nodeCount > 4) {
       alert('Node count must be between 1 and 4.');
       return;
     }
 
-    const network: Network = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newNetwork.name,
-      description: newNetwork.description,
-      nodeCount: newNetwork.nodeCount,
-      consensus: newNetwork.consensus as 'QBFT' | 'IBFT',
-      status: 'active',
-      createdAt: new Date(),
-    };
-    setNetworks([...networks, network]);
-    setNewNetwork({ name: '', description: '', nodeCount: 1, consensus: 'QBFT' });
-  };
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/node/run-script`, {
+        nodesNumber: newNetwork.nodeCount,
+      });
 
+      if (response.data.success) {
+        const network: Network = {
+          id: Math.random().toString(36).substr(2, 9), // Generate a local unique ID
+          name: newNetwork.name,
+          description: newNetwork.description,
+          nodeCount: newNetwork.nodeCount,
+          consensus: newNetwork.consensus as 'QBFT' | 'IBFT',
+          status: 'active',
+          createdAt: new Date(),
+        };
+
+        setNetworks([...networks, network]);
+        setNewNetwork({ name: '', description: '', nodeCount: 1, consensus: 'QBFT' });
+
+        console.log('Network created successfully:', response.data.output);
+      } else {
+        alert('Failed to create network: ' + response.data.error);
+      }
+    } catch (error) {
+      console.error('Error creating network:', error);
+      alert('An error occurred while creating the network.');
+    }
+  };
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -105,11 +121,11 @@ export default function NetworksPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nodeCount" className="text-gray-300">
+                <Label htmlFor="nodesNumber" className="text-gray-300">
                   Number of Nodes
                 </Label>
                 <Input
-                  id="nodeCount"
+                  id="nodesNumber"
                   type="number"
                   min={1}
                   max={4}
