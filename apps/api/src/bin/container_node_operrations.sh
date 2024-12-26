@@ -10,7 +10,7 @@ generate_docker_compose_bootnode() {
     local TEMPLATE_FILE
     local OUTPUT_FILE
 
-    TEMPLATE_FILE="../$BOOTNODE_TEMPLATE_FILE"
+    TEMPLATE_FILE="$BOOTNODE_TEMPLATE_FILE"
 
     if [ ! -f "$TEMPLATE_FILE" ]; then
         echo "Template file '$TEMPLATE_FILE' not found."
@@ -56,7 +56,7 @@ generate_docker_compose_node() {
     local TEMPLATE_FILE
     local OUTPUT_FILE
 
-    TEMPLATE_FILE="../../$NODE_TEMPLATE_FILE"
+    TEMPLATE_FILE="$NODE_TEMPLATE_FILE"
 
     if [ ! -f "$TEMPLATE_FILE" ]; then
         echo "Template file '$TEMPLATE_FILE' not found."

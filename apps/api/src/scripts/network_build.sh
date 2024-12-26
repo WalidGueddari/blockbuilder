@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#! CHANGE THESE BEFORE RUNNING
+ROOT_DIR=/home/khalil/saas-monorepo
+SRC_DIR=$ROOT_DIR/apps/api/src
+
 # Define color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -10,12 +14,11 @@ CYAN='\033[0;36m'
 WHITE='\033[0;37m'
 RESET='\033[0m' # Reset color to default
 
-
 # Load environment variables
-if [ -f .env.development ]; then
-  export $(grep -v '^#' .env.development | xargs)
+if [ -f $ROOT_DIR/.env.development ]; then
+  export $(grep -v '^#' $ROOT_DIR/.env.development | xargs)
 else
-  echo ".env file not found. Please create one in the project root directory."
+  echo ".env.development file not found. Please create one in the project root directory."
   exit 1
 fi
 
@@ -26,13 +29,11 @@ if [ -z "$BASE_DIR" ]; then
 fi
 
 echo "Current working directory: $(pwd)"
-cd ./apps/api/src
-echo "Current working directory after cd: $(pwd)"
 
 # Source function modules
-source "./bin/container_node_operrations.sh"
-source "./bin/config_operations.sh"
-source "./bin/key_operations.sh"
+source "$SRC_DIR/bin/container_node_operrations.sh"
+source "$SRC_DIR/bin/config_operations.sh"
+source "$SRC_DIR/bin/key_operations.sh"
 
 # Orchestrate
 
