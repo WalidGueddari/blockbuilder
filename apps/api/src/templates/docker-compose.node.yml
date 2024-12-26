@@ -1,6 +1,4 @@
 # node docker compose file template
-
-version: '3.8'
 services:
   node:
     image: hyperledger/besu:latest
