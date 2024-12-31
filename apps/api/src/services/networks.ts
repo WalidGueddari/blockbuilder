@@ -25,6 +25,18 @@ export class NetworksService {
         userId: checkUser.id,
       },
     });
+
+    // logic to create nodes based on nodeCount
+    const nodes = Array.from({ length: payload.nodeCount }, (_, index) => ({
+      networkId: createNetwork.id,
+      name: `Node-${index + 1}`,
+      status: 'active',
+    }));
+
+    await this.prisma.node.createMany({
+      data: nodes,
+    });
+
     return createNetwork;
   }
 

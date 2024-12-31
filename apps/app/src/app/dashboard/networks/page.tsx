@@ -19,24 +19,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
+import { selectAuthState } from '@/services/authSlice';
+import { useAppDispatch } from '@/services/hooks';
+import {
+  createNetwork,
+  fetchNetworks,
+  selectNetworkLoading,
+  selectNetworks,
+} from '@/services/networkSlice';
 import { Globe, Server } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-
-type Network = {
-  id: string;
-  name: string;
-  description: string;
-  nodeCount: number;
-  consensus: 'QBFT' | 'IBFT';
-  status: 'active' | 'inactive';
-  createdAt: Date;
-};
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function NetworksPage() {
   const router = useRouter();
-  const [networks, setNetworks] = useState<Network[]>([]);
+  const dispatch = useAppDispatch();
+  const networks = useSelector(selectNetworks);
+  const loading = useSelector(selectNetworkLoading);
+  const { user } = useSelector(selectAuthState);
+
   const [newNetwork, setNewNetwork] = useState({
     name: '',
     description: '',
@@ -44,40 +46,43 @@ export default function NetworksPage() {
     consensus: 'QBFT',
   });
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const loadNetworks = async () => {
+      if (user?.id) {
+        try {
+          await dispatch(fetchNetworks(user.id)).unwrap();
+        } catch (error) {
+          console.error('Failed to fetch networks:', error);
+        }
+      }
+    };
+
+    loadNetworks();
+  }, [dispatch, user?.id]);
+
   const handleCreateNetwork = async () => {
-    if (newNetwork.nodeCount < 1 || newNetwork.nodeCount > 4) {
-      alert('Node count must be between 1 and 4.');
+    const userId = user?.id;
+    if (!userId) {
+      console.error('User ID is not available');
       return;
     }
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/node/run-script`, {
-        nodesNumber: newNetwork.nodeCount,
-      });
-
-      if (response.data.success) {
-        const network: Network = {
-          id: Math.random().toString(36).substr(2, 9), // Generate a local unique ID
-          name: newNetwork.name,
-          description: newNetwork.description,
-          nodeCount: newNetwork.nodeCount,
-          consensus: newNetwork.consensus as 'QBFT' | 'IBFT',
-          status: 'active',
-          createdAt: new Date(),
-        };
-
-        setNetworks([...networks, network]);
-        setNewNetwork({ name: '', description: '', nodeCount: 1, consensus: 'QBFT' });
-
-        console.log('Network created successfully:', response.data.output);
-      } else {
-        alert('Failed to create network: ' + response.data.error);
-      }
+      await dispatch(
+        createNetwork({
+          ...newNetwork,
+          userId,
+        }),
+      ).unwrap();
+      console.log('Network created successfully');
+      setDialogOpen(false);
     } catch (error) {
-      console.error('Error creating network:', error);
-      alert('An error occurred while creating the network.');
+      console.error('Failed to create network:', error);
     }
   };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -87,7 +92,7 @@ export default function NetworksPage() {
           </h1>
           <p className="mt-2 text-gray-400">Create and manage your network infrastructure</p>
         </div>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-blue-500 text-white hover:bg-blue-600">Create Network</Button>
           </DialogTrigger>
@@ -156,8 +161,9 @@ export default function NetworksPage() {
               <Button
                 onClick={handleCreateNetwork}
                 className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                disabled={loading}
               >
-                Create Network
+                {loading ? 'Creating Network...' : 'Create Network'}
               </Button>
             </div>
           </DialogContent>
@@ -165,7 +171,13 @@ export default function NetworksPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {networks.length === 0 ? (
+        {loading ? (
+          <Card className="col-span-full border-dashed border-gray-800 bg-black/40 backdrop-blur-xl">
+            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="mb-4 text-gray-400">Loading networks...</div>
+            </CardContent>
+          </Card>
+        ) : networks.length === 0 ? (
           <Card className="col-span-full border-dashed border-gray-800 bg-black/40 backdrop-blur-xl">
             <CardContent className="flex flex-col items-center justify-center py-8 text-center">
               <Globe className="mb-4 h-12 w-12 text-gray-500" />
@@ -199,7 +211,7 @@ export default function NetworksPage() {
                 </div>
                 <p className="text-sm text-gray-400">Consensus: {network.consensus}</p>
                 <div className="text-xs text-gray-500">
-                  Created {network.createdAt.toLocaleDateString()}
+                  Created {new Date(network.createdAt).toLocaleDateString()}
                 </div>
               </CardContent>
             </Card>
