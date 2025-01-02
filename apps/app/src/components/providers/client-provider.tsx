@@ -2,7 +2,7 @@
 
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/context/AuthContext';
-import store from '@/services/store';
+import { store } from '@/services/store';
 import { Provider } from 'react-redux';
 
 const ClientProvider = ({ children }: { children: React.ReactNode }) => {

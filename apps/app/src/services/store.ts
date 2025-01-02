@@ -1,12 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import rootReducer from './rootReducer';
+import authReducer from './authSlice';
+import networkReducer from './networkSlice';
+import nodeReducer from './nodeSlice';
 
-const store = configureStore({
-  reducer: rootReducer,
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    network: networkReducer,
+    node: nodeReducer,
+  },
 });
 
-export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
-
-export default store;
+export type AppDispatch = typeof store.dispatch;

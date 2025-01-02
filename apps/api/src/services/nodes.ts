@@ -50,4 +50,10 @@ export class NodesService {
       where: { networkId },
     });
   }
+
+  async getNodeById(nodeId: string) {
+    return await this.prisma.node.findUnique({
+      where: { id: nodeId },
+    });
+  }
 }
