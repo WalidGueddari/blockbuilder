@@ -21,7 +21,7 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
       try {
         const { nodesNumber } = request.body;
         const { stdout, stderr } = await execAsync(
-          `echo ${nodesNumber} | /home/viconee/BlockChain_Builder/apps/api/src/scripts/network_build.sh`,
+          `echo ${nodesNumber} | /home/khalil/saas-monorepo/apps/api/src/scripts/network_build.sh`,
           {
             shell: '/bin/bash',
           },

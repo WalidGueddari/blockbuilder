@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #! CHANGE THESE BEFORE RUNNING
-ROOT_DIR=/home/viconee/BlockChain_Builder
+ROOT_DIR=/home/khalil/saas-monorepo
 SRC_DIR=$ROOT_DIR/apps/api/src
 
 # Define color codes
