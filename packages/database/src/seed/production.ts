@@ -1,1 +1,1 @@
-export default function seedProd(){}
+export default function seedProd() {}

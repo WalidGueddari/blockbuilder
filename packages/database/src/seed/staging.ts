@@ -1,1 +1,1 @@
-export default function seedStaging(){}
+export default function seedStaging() {}

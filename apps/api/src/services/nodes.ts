@@ -1,59 +1,90 @@
 import { PrismaClient } from '@saas-monorepo/database';
+import { exec } from 'child_process';
+import { kill } from 'process';
+import { promisify } from 'util';
 
 import { AbstractServiceOptions } from '../types/services.js';
-import { NetworksService } from './networks.js';
 
-// Import the NetworksService
+const execAsync = promisify(exec);
 
 export class NodesService {
   prisma: PrismaClient;
-  networksService: NetworksService;
 
   constructor(options: AbstractServiceOptions) {
     this.prisma = options.prisma;
-    this.networksService = new NetworksService(options);
   }
 
-  async createNode(networkId: string, name: string) {
-    return await this.prisma.node.create({
-      data: {
-        name,
-        networkId,
-        status: 'active', // Default status when created
-      },
-    });
+  async buildNetwork(nodesNumber: number) {
+    const NETWORK_SCRIPT_DIR = process.env.NETWORK_SCRIPT_DIR;
+    if (!NETWORK_SCRIPT_DIR) {
+      throw new Error('NETWORK_SCRIPT_DIR is not defined');
+    }
+
+    // Define your scripts and parameters
+    // const scripts = [
+    //   { script: 'network_build.sh', params: `${nodesNumber}` },
+    // ];
+
+    // const results: Array<{ script: string; success: boolean; output?: string; error?: string }> = [];
+
+    // for (const { script, params } of scripts) {
+    //   try {
+    //     const command = `${NETWORK_SCRIPT_DIR}/${script} ${params}`;
+    //     console.log(`Executing: ${command}`);
+
+    //     const { stdout, stderr } = await execAsync(command, {
+    //       shell: '/bin/bash',
+    //     });
+
+    //     console.log(`Output for ${script}:`, stdout);
+    //     results.push({ script, success: true, output: stdout });
+    //   } catch (error: any) {
+    //     console.error(`Error executing ${script}:`, error);
+    //     results.push({
+    //       script,
+    //       success: false,
+    //       error: `Unexpected error: ${error.message}\nFull error: ${error}`,
+    //     });
+    //   }
+    // }
+
+    // return results;
+
+    try {
+      const { stdout, stderr } = await execAsync(
+        `echo ${nodesNumber} | ${NETWORK_SCRIPT_DIR}/network_build.sh`,
+        {
+          shell: '/bin/bash',
+        },
+      );
+      console.log('stdout:', stdout);
+      console.log('stderr:', stderr);
+      return { success: true, output: stdout };
+    } catch (error: any) {
+      console.error('Full error:', error);
+      return {
+        success: false,
+        error: `Unexpected error: ${error.message}\nFull error: ${error}`,
+      };
+    }
   }
 
-  async deleteNode(nodeId: string) {
-    const node = await this.prisma.node.findUniqueOrThrow({
-      where: { id: nodeId },
-    });
+  async killNetwork() {
+    try {
+      const NETWORK_SCRIPT_DIR = process.env.NETWORK_SCRIPT_DIR;
 
-    // Delete the node
-    await this.prisma.node.delete({
-      where: { id: nodeId },
-    });
+      const { stdout, stderr } = await execAsync(`${NETWORK_SCRIPT_DIR}/kill.sh`, {
+        shell: '/bin/bash',
+      });
 
-    // Use instance method instead of static
-    await this.networksService.decrementNodeCount(node.networkId);
-  }
-
-  async stopNode(nodeId: string) {
-    return await this.prisma.node.update({
-      where: { id: nodeId },
-      data: { status: 'stopped' },
-    });
-  }
-
-  async getNetworkNodes(networkId: string) {
-    return await this.prisma.node.findMany({
-      where: { networkId },
-    });
-  }
-
-  async getNodeById(nodeId: string) {
-    return await this.prisma.node.findUnique({
-      where: { id: nodeId },
-    });
+      console.log(`Output:`, stdout);
+      console.error(`Error output for:`, stderr);
+    } catch (error: any) {
+      console.error('Full error:', error);
+      return {
+        success: false,
+        error: `Unexpected error: ${error.message}\nFull error: ${error}`,
+      };
+    }
   }
 }

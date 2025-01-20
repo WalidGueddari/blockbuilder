@@ -31,9 +31,9 @@ fi
 echo "Current working directory: $(pwd)"
 
 # Source function modules
-source "$SRC_DIR/bin/container_node_operrations.sh"
-source "$SRC_DIR/bin/config_operations.sh"
-source "$SRC_DIR/bin/key_operations.sh"
+source "$SRC_DIR/trash/container_node_operrations.sh"
+source "$SRC_DIR/trash/config_operations.sh"
+source "$SRC_DIR/trash/key_operations.sh"
 
 # Orchestrate
 

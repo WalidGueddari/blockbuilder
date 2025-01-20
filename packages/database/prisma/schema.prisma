@@ -8,32 +8,46 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String   @db.Text()
-  create_at  DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-  network    Network[] 
+  id         String    @id @default(cuid())
+  email      String    @unique
+  password   String    @db.Text()
+  create_at  DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  network    Network[]
 
   @@index([email])
   @@map("users")
 }
 
 model Network {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   name        String
   description String
-  nodeCount   Int      @default(0) // Default to 0
-  consensus   String   // e.g., 'QBFT' or 'IBFT'
-  userId      String   // Foreign key to User
-  user        User     @relation(fields: [userId], references: [id])
-  nodes       Node[]   // Relation to Node
+  nodeCount   Int
+  consensus   String
+  status      Status @default(PENDING)
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+  nodes       Node[]
+
+  create_at  DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
 }
- 
+
 model Node {
-  id        String   @id @default(cuid())
-  networkId String   // Foreign key to Network
+  id        String  @id @default(cuid())
+  networkId String
   name      String
-  status    String   // e.g., 'active', 'stopped'
-  network   Network  @relation(fields: [networkId], references: [id])
+  status    Status  @default(ACTIVE)
+  network   Network @relation(fields: [networkId], references: [id])
+
+  create_at  DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+}
+
+enum Status {
+  PENDING    
+  ACTIVE
+  FAILED
+  INACTIVE
 }

@@ -15,9 +15,9 @@ if [ -z "$BASE_DIR" ]; then
 fi
 
 # Source function modules
-source "./bin/node_operations.sh"
-source "./bin/config_operations.sh"
-source "./bin/key_operations.sh"
+source "./trash/node_operations.sh"
+source "./trash/config_operations.sh"
+source "./trash/key_operations.sh"
 
 # Orchestrate
 create_structure

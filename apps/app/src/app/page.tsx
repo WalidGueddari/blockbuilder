@@ -4,9 +4,7 @@ export default function Home() {
   return (
     <div>
       <ProtectedRoute>
-        <div>
-          Hello World
-        </div>
+        <div>Hello World</div>
       </ProtectedRoute>
     </div>
   );

@@ -1,6 +1,5 @@
-import jwt from 'jsonwebtoken';
-
 import { Prisma, PrismaClient } from '@saas-monorepo/database';
+import jwt from 'jsonwebtoken';
 
 import { AbstractServiceOptions } from '../types/services.js';
 
@@ -13,12 +12,12 @@ export class AuthorizationService {
   async verifyAccessToken(token: string) {
     let payload = null;
     try {
-      payload = jwt.verify(token, process.env['ACCESS_TOKEN_SECRET'] as string)  as {
+      payload = jwt.verify(token, process.env['ACCESS_TOKEN_SECRET'] as string) as {
         id: string;
         email: string;
       };
     } catch (err) {
-     throw err
+      throw err;
     }
 
     try {
@@ -26,7 +25,7 @@ export class AuthorizationService {
         where: { id: payload.id },
       });
     } catch (err: any) {
-      throw err
+      throw err;
     }
   }
 }

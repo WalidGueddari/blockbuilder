@@ -15,6 +15,19 @@ export class UsersService {
         },
       });
     } catch (err: any) {
-      throw err
-  }}
+      throw err;
+    }
+  }
+
+  async getUserById(id: string) {
+    try {
+      return await this.prisma.user.findUnique({
+        where: {
+          id: id,
+        },
+      });
+    } catch (err: any) {
+      throw err;
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /* eslint-env node */
-require('@rushstack/eslint-patch/modern-module-resolution')
+require('@rushstack/eslint-patch/modern-module-resolution');
 
 module.exports = {
   root: true,
@@ -8,16 +8,16 @@ module.exports = {
     'eslint:recommended',
     '@vue/eslint-config-typescript',
     '@vue/eslint-config-prettier/skip-formatting',
-    'plugin:tailwindcss/recommended'
+    'plugin:tailwindcss/recommended',
   ],
   plugins: ['tailwindcss'],
   rules: {
-    'tailwindcss/no-custom-classname': 'off'
+    'tailwindcss/no-custom-classname': 'off',
   },
   parserOptions: {
-    ecmaVersion: 'latest'
+    ecmaVersion: 'latest',
   },
   env: {
-    node: true
-  }
-}
+    node: true,
+  },
+};
