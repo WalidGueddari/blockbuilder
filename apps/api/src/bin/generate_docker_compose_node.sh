@@ -1,14 +1,14 @@
 
 generate_docker_compose_node() {
-     local NODE_INDEX=$1
-    local P2P_PORT=$2
-    local P2P_HOST=$3
-    local RPC_HTTP_PORT=$4
-    local HTTP_HOST=$5
-    local RPC_WS_PORT=$6
-    local WS_HOST=$7
-    local NODE_IP=$8
-    local ENODE_URL=$9
+    #  local NODE_INDEX=$1
+    # local P2P_PORT=$2
+    # local P2P_HOST=$3
+    # local RPC_HTTP_PORT=$4
+    # local HTTP_HOST=$5
+    # local RPC_WS_PORT=$6
+    # local WS_HOST=$7
+    # local NODE_IP=$8
+    # local ENODE_URL=$9
     local TEMPLATE_FILE
     local OUTPUT_FILE
 
@@ -33,13 +33,14 @@ generate_docker_compose_node() {
         sed "s/RPC_WS_PORT/$RPC_WS_PORT/g" |
         sed "s/WS_HOST/$WS_HOST/g" |
         sed "s/NODE_IP/$NODE_IP/g" |
+        sed "s/NET_ID/$NET_ID/g" |
         sed "s|ENODE_URL|$ENODE_URL|g")
 
     # Ensure Node directory exists
-    NODE_DIR="Node-$NODE_INDEX"
+    NODE_DIR="$BASE_DIR/$NET_ID/Node-$NODE_INDEX"
 
     # Save to Node's directory
-    OUTPUT_FILE="../$NODE_DIR/docker-compose.yml"
+    OUTPUT_FILE="$NODE_DIR/docker-compose.yml"
     echo "$DOCKER_COMPOSE_CONTENT" >"$OUTPUT_FILE"
 
     echo "Docker Compose file generated for Node-$NODE_INDEX at '$OUTPUT_FILE'."

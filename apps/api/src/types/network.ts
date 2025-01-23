@@ -1,7 +1,7 @@
-export type CreateNetworkPayload = {
+import { Status } from '../constants.js';
+
+export type InitNetworkPayload = {
   name: string;
-  description: string;
-  nodeCount: number;
-  consensus: string;
   userId: string;
+  nodeCount: number;
 };

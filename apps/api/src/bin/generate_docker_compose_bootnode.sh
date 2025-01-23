@@ -1,13 +1,13 @@
 
 generate_docker_compose_bootnode() {
-    local NODE_INDEX=$1
-    local P2P_PORT=$2
-    local P2P_HOST=$3
-    local RPC_HTTP_PORT=$4
-    local HTTP_HOST=$5
-    local RPC_WS_PORT=$6
-    local WS_HOST=$7
-    local NODE_IP=$8
+    # local NODE_INDEX=$1
+    # local P2P_PORT=$2
+    # local P2P_HOST=$3
+    # local RPC_HTTP_PORT=$4
+    # local HTTP_HOST=$5
+    # local RPC_WS_PORT=$6
+    # local WS_HOST=$7
+    # local NODE_IP=$8
     local TEMPLATE_FILE
     local OUTPUT_FILE
 
@@ -31,10 +31,11 @@ generate_docker_compose_bootnode() {
         sed "s/HTTP_HOST/$HTTP_HOST/g" |
         sed "s/RPC_WS_PORT/$RPC_WS_PORT/g" |
         sed "s/WS_HOST/$WS_HOST/g" |
+        sed "s/NET_ID/$NET_ID/g" |
         sed "s/NODE_IP/$NODE_IP/g")
 
     # Ensure Node directory exists
-    NODE_DIR="Node-$NODE_INDEX"
+    NODE_DIR="$BASE_DIR/$NET_ID/Node-$NODE_INDEX"
     mkdir -p "$NODE_DIR"
 
     # Save to Node's directory

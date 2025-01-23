@@ -1,14 +1,15 @@
 # Function to distribute keys to nodes
 distribute_keys() {
   echo "Distributing keys to node directories..."
+  echo "NUM_NODES is set to: $NUM_NODES" # Log NUM_NODES value
 
   # Get all subdirectories in networkFiles/keys
-  KEYS_DIR="$NETWORK_FILES_DIR/keys"
+  KEYS_DIR="$BASE_DIR/$NET_ID/networkFiles/keys"
   NODE_INDEX=1
 
   for ADDRESS_DIR in "$KEYS_DIR"/*; do
     if [ -d "$ADDRESS_DIR" ] && [ $NODE_INDEX -le $NUM_NODES ]; then
-      NODE_DIR="Node-$NODE_INDEX/data"
+      NODE_DIR="$BASE_DIR/$NET_ID/Node-$NODE_INDEX/data"
 
       # Copy key and key.pub to the respective Node directory
       cp "$ADDRESS_DIR/key" "$NODE_DIR/"
@@ -26,9 +27,9 @@ distribute_keys() {
 
   echo "Keys distribution completed."
 
-  # Delete the networkFiles directory
-  if [ -d "$NETWORK_FILES_DIR" ]; then
-    rm -rf "$NETWORK_FILES_DIR"
+  Delete the networkFiles directory
+  if [ -d "$BASE_DIR/$NET_ID/networkFiles" ]; then
+    rm -rf "$BASE_DIR/$NET_ID/networkFiles"
     echo "networkFiles directory deleted."
   fi
 }

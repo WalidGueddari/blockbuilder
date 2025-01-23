@@ -44,7 +44,7 @@ generate_docker_compose_bootnode() {
 }
 
 generate_docker_compose_node() {
-     local NODE_INDEX=$1
+    local NODE_INDEX=$1
     local P2P_PORT=$2
     local P2P_HOST=$3
     local RPC_HTTP_PORT=$4
@@ -149,7 +149,7 @@ start_node() {
     HTTP_HOST=$NODE_HTTP_HOST
     RPC_WS_PORT=$NODE_RPC_WS_PORT
     WS_HOST=$NODE_WS_HOST
-    BASE_NODE_IP="192.168.1."  # Base IP to increment
+    BASE_NODE_IP="192.168.1." # Base IP to increment
 
     ENODE_URL=$(get_enode_url)
 
@@ -163,7 +163,7 @@ start_node() {
         NODE_DIR="Node-$i"
 
         # Calculate the IP for the current node
-        NODE_IP="${BASE_NODE_IP}$((100 + i - 1))"  # Increment the last octet for each node
+        NODE_IP="${BASE_NODE_IP}$((100 + i - 1))" # Increment the last octet for each node
 
         echo "Debug: Node-$i"
         echo "NODE_INDEX=$i, P2P_PORT=$P2P_PORT, RPC_HTTP_PORT=$RPC_HTTP_PORT, RPC_WS_PORT=$RPC_WS_PORT, NODE_IP=$NODE_IP, ENODE_URL=$ENODE_URL"

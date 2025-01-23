@@ -26,9 +26,9 @@ services:
       - --host-allowlist="*"
       - --rpc-http-cors-origins="all" 
     networks:
-      besu-network:
+      NET_ID:
         ipv4_address: NODE_IP
 
 networks:
-  besu-network:
+  NET_ID:
     external: true

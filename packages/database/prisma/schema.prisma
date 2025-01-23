@@ -20,18 +20,17 @@ model User {
 }
 
 model Network {
-  id          String @id @default(cuid())
-  name        String
-  description String
-  nodeCount   Int
-  consensus   String
-  status      Status @default(PENDING)
-  userId      String
-  user        User   @relation(fields: [userId], references: [id])
-  nodes       Node[]
+  id     String @id @default(cuid())
+  name   String
+  type   String @default("QBFT")
+  status Status @default(PENDING)
+  nodeCount Int
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  nodes  Node[]
 
-  create_at  DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
+  create_at  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 model Node {
@@ -41,12 +40,12 @@ model Node {
   status    Status  @default(ACTIVE)
   network   Network @relation(fields: [networkId], references: [id])
 
-  create_at  DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
+  create_at  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 enum Status {
-  PENDING    
+  PENDING
   ACTIVE
   FAILED
   INACTIVE

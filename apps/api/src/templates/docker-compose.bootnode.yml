@@ -35,9 +35,9 @@ services:
       - --host-allowlist="*"
       
     networks:
-      besu-network:
+      NET_ID:
         ipv4_address: NODE_IP
 
 networks:
-  besu-network:
+  NET_ID:
     external: true

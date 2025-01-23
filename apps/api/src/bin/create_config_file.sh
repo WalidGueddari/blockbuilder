@@ -21,11 +21,18 @@ EOF
 }
 
 create_config_file() {
+
+  if [ ! -d "$BASE_DIR" ]; then
+    echo "Container directory '$BASE_DIR' created."
+  else
+    echo "Base directory '$BASE_DIR' already exists."
+  fi
+
   if [ -z "$NUM_NODES" ]; then
     echo "NUM_NODES is not set. Please provide the number of nodes."
     exit 1
   fi
-  
+
   if [ ! -f "$QBFT_TEMPLATE_FILE" ]; then
     echo "Template file '$QBFT_TEMPLATE_FILE' not found."
     exit 1
@@ -51,9 +58,9 @@ create_config_file() {
     sed "s/PLACEHOLDER_NODE_COUNT/$NUM_NODES/")
 
   # Write to the output file
-  echo "$CONFIG_CONTENT" >"$OUTPUT_FILE"
+  echo "$CONFIG_CONTENT" >"$BASE_DIR/$NET_ID/qbftConfigFile.json"
 
-  echo "qbftConfigFile.json created at '$OUTPUT_FILE'."
+  echo "qbftConfigFile.json created at '$BASE_DIR/$NET_ID/qbftConfigFile.json'."
 }
 
 create_config_file

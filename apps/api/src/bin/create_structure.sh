@@ -9,6 +9,11 @@ create_structure() {
     exit 1
   fi
 
+  if [ -z "$NET_ID" ]; then
+    echo "NET_ID is not set. Please provide the network id."
+    exit 1
+  fi
+
   if [ ! -d "$BASE_DIR" ]; then
     mkdir -p "$BASE_DIR"
     echo "Base directory '$BASE_DIR' created."
@@ -23,7 +28,7 @@ create_structure() {
 
   for ((i = 1; i <= NUM_NODES; i++)); do
     NODE="Node-$i"
-    NODE_DIR="$BASE_DIR/$NODE/data"
+    NODE_DIR="$BASE_DIR/$NET_ID/$NODE/data"
 
     if [ ! -d "$NODE_DIR" ]; then
       mkdir -p "$NODE_DIR"

@@ -9,6 +9,7 @@ create_structure() {
     echo "Base directory '$BASE_DIR' already exists."
   fi
 
+  read -p "What would you like to name the network " NET_NAME
   read -p "How many nodes do you want to create? " NUM_NODES
 
   if ! [[ "$NUM_NODES" =~ ^[0-9]+$ ]] || [ "$NUM_NODES" -le 0 ]; then
@@ -18,7 +19,7 @@ create_structure() {
 
   for ((i = 1; i <= NUM_NODES; i++)); do
     NODE="Node-$i"
-    NODE_DIR="$BASE_DIR/$NODE/data"
+    NODE_DIR="$BASE_DIR/$NET_NAME/$NODE/data"
 
     if [ ! -d "$NODE_DIR" ]; then
       mkdir -p "$NODE_DIR"
