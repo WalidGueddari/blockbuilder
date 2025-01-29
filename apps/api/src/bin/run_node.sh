@@ -1,8 +1,8 @@
-start_bootnode() {
+run_node() {
     NODE_DIR="$BASE_DIR/$NET_ID/Node-$NODE_INDEX"
     NETWORK_SUBNET=$SUBNET
 
-    echo "Starting Node-$i using Docker Compose..."
+    echo "Starting Node-$NODE_INDEX using Docker Compose..."
     cd "$NODE_DIR" || exit 1
 
     if ! docker network inspect $NET_ID >/dev/null 2>&1; then
@@ -12,7 +12,7 @@ start_bootnode() {
 
     docker-compose up -d
 
-    echo "Node-$i started. Logs are available in Docker."
+    echo "Node-$NODE_INDEX started. Logs are available in Docker."
 }
 
-start_bootnode
+run_node

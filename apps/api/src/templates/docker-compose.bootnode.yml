@@ -1,7 +1,7 @@
 services:
   bootnode:
     image: hyperledger/besu:latest
-    container_name: bootnode
+    container_name: node-1
     volumes:
       - ./data:/data
       - ../genesis.json:/genesis.json

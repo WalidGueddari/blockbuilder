@@ -27,7 +27,7 @@ export function LoginForm() {
 
     // Check if the login was successful
     if (login.fulfilled.match(resultAction)) {
-      router.push('/dashboard'); // Redirect to the home page
+      router.push('/'); // Redirect to the home page
     } else {
       // Handle login failure (e.g., display an error message)
       console.error('Login failed');

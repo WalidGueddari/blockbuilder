@@ -20,25 +20,35 @@ model User {
 }
 
 model Network {
-  id     String @id @default(cuid())
-  name   String
-  type   String @default("QBFT")
-  status Status @default(PENDING)
+  id        String @id @default(cuid())
+  name      String
+  type      String @default("QBFT")
+  status    Status @default(PENDING)
   nodeCount Int
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-  nodes  Node[]
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  nodes     Node[]
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 }
 
 model Node {
-  id        String  @id @default(cuid())
-  networkId String
-  name      String
-  status    Status  @default(ACTIVE)
-  network   Network @relation(fields: [networkId], references: [id])
+  id          String  @id @default(cuid())
+  networkId   String
+  name        String
+  status      Status  @default(ACTIVE)
+  network     Network @relation(fields: [networkId], references: [id])
+  p2pPort     Int
+  rpcHttpPort Int
+  rpcWsPort   Int
+  p2pHost     String
+  rpcHttpHost String
+  rpcWsHost   String
+  wsHost      String
+  nodeIp      String
+  enodeUrl    String
+  isBootnode  Boolean @default(false)
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt

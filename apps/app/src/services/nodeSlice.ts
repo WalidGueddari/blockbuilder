@@ -1,46 +1,46 @@
+// nodeSlice.ts
+import { InitNetwork } from '@/types/network';
+import { Node, NodesResponse } from '@/types/node';
 import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 import { RootState } from './store';
 
-// Define types
-export interface Node {
-  id: string;
-  name: string;
-  status: 'active' | 'stopped';
-  networkId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface NodeState {
   loading: boolean;
   error: string | null;
+  networks: InitNetwork[];
   nodes: Node[];
-  currentNode: Node | null;
 }
 
 const initialState: NodeState = {
   loading: false,
   error: null,
+  networks: [],
   nodes: [],
-  currentNode: null,
 };
 
-// Async Thunks
-export const fetchNetworkNodes = createAsyncThunk(
-  'node/fetchNetworkNodes',
-  async (networkId: string, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/node/network/${networkId}/nodes`,
-      );
+export const fetchNodesByNetworkId = createAsyncThunk<
+  NodesResponse,
+  string, // Argument is the network ID
+  { rejectValue: string }
+>('node/fetchNodesByNetworkId', async (networkId, { rejectWithValue }) => {
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/node/nodes-by-network/${networkId}`,
+    );
+    if (response.data.success) {
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data || error.message);
+    } else {
+      return rejectWithValue('No nodes found for the specified network');
     }
-  },
-);
+  } catch (error: any) {
+    if (error.response && error.response.data && error.response.data.message) {
+      return rejectWithValue(error.response.data.message);
+    }
+    return rejectWithValue('Failed to fetch nodes');
+  }
+});
 
 // Node Slice
 const nodeSlice = createSlice({
@@ -53,27 +53,28 @@ const nodeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Network Nodes
-      .addCase(fetchNetworkNodes.pending, (state) => {
+      .addCase(fetchNodesByNetworkId.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchNetworkNodes.fulfilled, (state, action) => {
-        state.nodes = action.payload;
+      .addCase(fetchNodesByNetworkId.fulfilled, (state, action: PayloadAction<NodesResponse>) => {
+        state.nodes = action.payload.nodes; // Ensure this is the structure of your payload
         state.loading = false;
-        state.error = null;
       })
-      .addCase(fetchNetworkNodes.rejected, (state, action) => {
+      .addCase(fetchNodesByNetworkId.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to fetch nodes';
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch nodes';
       });
   },
 });
 
-// Actions
 export const { clearNodeError } = nodeSlice.actions;
 
-// Selectors
-export const selectNodes = (state: RootState) => state.node.nodes;
+export const selectNodes = (state: RootState): Node[] => {
+  console.log('Full state:', state); // Log the entire state
+  console.log('Nodes state:', state.node.nodes); // Log the nodes array
+  return state.node.nodes;
+};
+
 export const selectNodeLoading = (state: RootState) => state.node.loading;
 export const selectNodeError = (state: RootState) => state.node.error;
 

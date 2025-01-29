@@ -1,60 +1,6 @@
 export const networkSchema = {
-  //schema for creating a network
-  createNetwork: {
+  getNetworksByUserId: {
     tags: ['Network'],
-    body: {
-      type: 'object',
-      properties: {
-        name: { type: 'string' },
-        description: { type: 'string' },
-        nodeCount: { type: 'number' },
-        consensus: { type: 'string' },
-        userId: { type: 'string' },
-      },
-      required: ['name', 'nodeCount', 'consensus', 'userId'],
-    },
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean' },
-          network: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              description: { type: 'string' },
-              nodeCount: { type: 'number' },
-              consensus: { type: 'string' },
-              userId: { type: 'string' },
-            },
-          },
-        },
-      },
-      500: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean' },
-          error: { type: 'string' },
-        },
-      },
-    },
-  },
-  // schema for deleting a network
-  deleteNetwork: {
-    tags: ['Networks'],
-    params: {
-      type: 'object',
-      properties: {
-        networkId: { type: 'string' },
-      },
-      required: ['networkId'],
-    },
-  },
-
-  // schema for getting user networks
-  getUserNetworks: {
-    tags: ['Networks'],
     params: {
       type: 'object',
       properties: {
@@ -62,27 +8,55 @@ export const networkSchema = {
       },
       required: ['userId'],
     },
-  },
-
-  // schema for stopping a network
-  stopNetwork: {
-    tags: ['Networks'],
-    params: {
+    querystring: {
       type: 'object',
       properties: {
-        networkId: { type: 'string' },
+        page: { type: 'string', default: '1' },
+        limit: { type: 'string', default: '10' },
       },
-      required: ['networkId'],
     },
-  },
-  decrementNodeCount: {
-    tags: ['Networks'],
-    params: {
-      type: 'object',
-      properties: {
-        networkId: { type: 'string' },
-      },
-      required: ['networkId'],
-    },
+    // response: {
+    //   200: {
+    //     type: 'object',
+    //     properties: {
+    //       success: { type: 'boolean' },
+    //       data: {
+    //         type: 'array',
+    //         items: {
+    //           // Define the structure of your network items here
+    //           type: 'object',
+    //           properties: {
+    //             id: { type: 'string' },
+    //             name: { type: 'string' },
+    //             create_at: { type: 'string', format: 'date-time' },
+    //             // Add other relevant fields
+    //           },
+    //           required: ['id', 'name', 'create_at'], // Adjust as needed
+    //         },
+    //       },
+    //       pagination: {
+    //         type: 'object',
+    //         properties: {
+    //           page: { type: 'number' },
+    //           limit: { type: 'number' },
+    //           pages: { type: 'number' },
+    //           total: { type: 'number' },
+    //           next: { type: ['number', 'null'] },
+    //           prev: { type: ['number', 'null'] },
+    //         },
+    //         required: ['page', 'limit', 'pages', 'total', 'next', 'prev'],
+    //       },
+    //     },
+    //     required: ['success', 'data', 'pagination'],
+    //   },
+    //   500: {
+    //     type: 'object',
+    //     properties: {
+    //       success: { type: 'boolean' },
+    //       error: { type: 'string' },
+    //     },
+    //     required: ['success', 'error'],
+    //   },
+    // },
   },
 };
