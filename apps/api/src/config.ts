@@ -31,7 +31,7 @@ export const config = {
   /**
    * Application Settings
    */
-  nodeEnv: requiredVar('NODE_ENV'),
+  //nodeEnv: requiredVar('NODE_ENV'),
   serverPort: requiredIntVar('SERVER_PORT'),
   serverHost: requiredVar('SERVER_HOST'),
 
