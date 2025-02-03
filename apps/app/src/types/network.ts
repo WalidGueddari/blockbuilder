@@ -1,7 +1,6 @@
 // types/network.ts
 export interface NetworkDetailsProps {
   networkId: string;
-  Lnodes: string[]; // Array of container IDs or node identifiers
 }
 
 export interface ContainerProps {
