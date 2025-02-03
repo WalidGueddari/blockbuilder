@@ -1,6 +1,7 @@
 export type NodePayload = {
   networkId: string;
   name: string;
+  container: string;
   p2pPort: number;
   rpcHttpPort: number;
   rpcWsPort: number;
@@ -16,6 +17,7 @@ export type NodePayload = {
 export type CreateNodePayload = {
   networkId: string;
   name: string;
+  container: string;
   p2pPort: number;
   rpcHttpPort: number;
   rpcWsPort: number;

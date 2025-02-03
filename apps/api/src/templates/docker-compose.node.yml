@@ -2,7 +2,7 @@
 services:
   node:
     image: hyperledger/besu:latest
-    container_name: node-NODE_INDEX
+    container_name: NET_ID-NODE_INDEX
     volumes:
       - ./data:/data
       - ../genesis.json:/genesis.json

@@ -8,16 +8,15 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import {
-  AudioWaveform,
+  Activity,
+  Blocks,
   BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
+  Code,
+  Database,
+  GitBranch,
   Settings2,
-  SquareTerminal,
+  Shield,
+  Wallet,
 } from 'lucide-react';
 import type * as React from 'react';
 
@@ -26,66 +25,104 @@ import { NavProjects } from './nav-project';
 import { NavUser } from './nav-user';
 import { TeamSwitcher } from './team-switcher';
 
-// This is sample data.
+// This is sample data for a blockchain builder application.
 const data = {
   user: {
-    name: 'test',
-    email: 'test@example.com',
+    name: 'Alice Nakamoto',
+    email: 'alice@blockbuilder.com',
     avatar: '',
   },
   teams: [
     {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
+      name: 'Team 1',
+      logo: Wallet,
       plan: 'Enterprise',
     },
     {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      name: 'Team 2',
+      logo: GitBranch,
+      plan: 'Enterprise',
     },
     {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
+      name: 'Custom Chain',
+      logo: Blocks,
+      plan: 'Development',
     },
   ],
   navMain: [
     {
-      title: 'Playground',
+      title: 'Dashboard',
       url: '#',
-      icon: SquareTerminal,
+      icon: Activity,
       isActive: true,
       items: [
         {
-          title: 'History',
+          title: 'Overview',
           url: '#',
         },
         {
-          title: 'Starred',
+          title: 'Analytics',
           url: '#',
         },
         {
-          title: 'Settings',
+          title: 'Performance',
           url: '#',
         },
       ],
     },
     {
-      title: 'Models',
+      title: 'Nodes',
       url: '#',
-      icon: Bot,
+      icon: Database,
       items: [
         {
-          title: 'Genesis',
+          title: 'Manage Nodes',
           url: '#',
         },
         {
-          title: 'Explorer',
+          title: 'Node Health',
           url: '#',
         },
         {
-          title: 'Quantum',
+          title: 'Scaling',
+          url: '#',
+        },
+      ],
+    },
+    {
+      title: 'Smart Contracts',
+      url: '#',
+      icon: Code,
+      items: [
+        {
+          title: 'Deploy',
+          url: '#',
+        },
+        {
+          title: 'Interact',
+          url: '#',
+        },
+        {
+          title: 'Audit',
+          url: '#',
+        },
+      ],
+    },
+    {
+      title: 'Security',
+      url: '#',
+      icon: Shield,
+      items: [
+        {
+          title: 'Permissions',
+          url: '#',
+        },
+        {
+          title: 'Encryption',
+          url: '#',
+        },
+        {
+          title: 'Monitoring',
           url: '#',
         },
       ],
@@ -96,19 +133,15 @@ const data = {
       icon: BookOpen,
       items: [
         {
-          title: 'Introduction',
+          title: 'Getting Started',
           url: '#',
         },
         {
-          title: 'Get Started',
+          title: 'API Reference',
           url: '#',
         },
         {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
+          title: 'Best Practices',
           url: '#',
         },
       ],
@@ -123,15 +156,11 @@ const data = {
           url: '#',
         },
         {
-          title: 'Team',
+          title: 'Network Config',
           url: '#',
         },
         {
-          title: 'Billing',
-          url: '#',
-        },
-        {
-          title: 'Limits',
+          title: 'Integrations',
           url: '#',
         },
       ],
@@ -139,19 +168,9 @@ const data = {
   ],
   projects: [
     {
-      name: 'Design Engineering',
+      name: 'Team 1',
       url: '#',
-      icon: Frame,
-    },
-    {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: PieChart,
-    },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: Map,
+      icon: Wallet,
     },
   ],
 };
@@ -164,7 +183,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

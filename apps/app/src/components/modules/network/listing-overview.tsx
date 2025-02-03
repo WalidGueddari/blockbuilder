@@ -55,7 +55,7 @@ export default function CreateNetworkPage() {
   return (
     <div className="container mx-auto h-full space-y-12 px-4 py-8">
       {/* Top Section */}
-      <Card className="mx-auto w-full max-w-2xl">
+      <Card className="mx-auto w-full max-w-2xl border-0">
         <CardHeader className="text-center">
           <CardTitle className="text-primary text-3xl font-bold">Create a Network</CardTitle>
           <CardDescription>
@@ -105,11 +105,12 @@ export default function CreateNetworkPage() {
               <CardContent>
                 <p className="text-muted-foreground flex items-center text-sm">
                   <Clock className="mr-2 h-4 w-4" /> Last activity:{' '}
-                  {new Date(network.createdAt).toLocaleDateString()}
+                  {/* {new Date(network.createdAt).toLocaleDateString()} */}
+                  Today at 10:00 AM
                 </p>
               </CardContent>
               <CardFooter>
-                <Link href={`/networks/${network.id}`}>
+                <Link href={`/network/${network.id}`}>
                   <Button variant="outline" className="w-full">
                     View Details
                   </Button>

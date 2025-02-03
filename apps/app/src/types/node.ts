@@ -2,6 +2,7 @@ export interface Node {
   id: string;
   networkId: string;
   name: string;
+  container: string;
   status: string;
   p2pPort: number;
   rpcHttpPort: number;

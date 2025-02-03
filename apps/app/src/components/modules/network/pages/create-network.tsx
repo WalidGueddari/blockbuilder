@@ -129,7 +129,7 @@ export default function CreateNetworkDialog() {
                 <FormItem>
                   <FormLabel className="font-semibold">Network Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter network name" {...field} />
+                    <Input autoComplete="off" placeholder="Enter network name" {...field} />
                   </FormControl>
                   {/* <FormDescription>Choose a unique, descriptive name for your network.</FormDescription> */}
                   <FormMessage />

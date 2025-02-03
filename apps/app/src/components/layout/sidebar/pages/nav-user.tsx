@@ -20,7 +20,7 @@ import { logout } from '@/services/authSlice';
 import { useAppDispatch } from '@/services/hooks';
 import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export function NavUser({
   user,
@@ -32,6 +32,20 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = sessionStorage.getItem('user');
+    if (user) {
+      try {
+        const parsedUser = JSON.parse(user);
+        setUserId(parsedUser.id);
+      } catch (e) {
+        console.error('Failed to parse user from sessionStorage:', e);
+      }
+    }
+  }, []);
 
   const dispatch = useAppDispatch();
   const router = useRouter();

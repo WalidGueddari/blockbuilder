@@ -1,6 +1,7 @@
 // containerService.ts
 import { PrismaClient } from '@saas-monorepo/database';
 import { exec } from 'child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import { promisify } from 'util';
@@ -109,22 +110,26 @@ export class ContainerService {
     }
   }
 
-  async getNodesLogs(nodeCount: number) {
-    const { networkBinDir } = config;
-    const outputs = [];
-    for (let i = 1; i <= nodeCount; i++) {
-      const command = `NODE_INDEX=${i} ${networkBinDir}/get_node_logs.sh`;
-      console.log('Command to execute:', command);
-      try {
-        const { stdout } = await execAsync(command, { shell: '/bin/bash' });
-        console.log(`Output for runNode (NODE_INDEX=${i}):`, stdout);
-        outputs.push(stdout);
-      } catch (error) {
-        console.error(`Error executing start_bootnode.sh (NODE_INDEX = ${i}):`, error);
-        throw error;
-      }
-    }
-    return outputs;
+  getLogs(container: string): ChildProcessWithoutNullStreams {
+    const command = 'docker';
+    const args = ['logs', '-f', `${container}`];
+    console.log('Command to execute:', command, args.join(' '));
+
+    const child = spawn(command, args, { shell: true });
+
+    child.stdout.on('data', (data) => {
+      console.log(`stdout [${container}]: ${data}`);
+    });
+
+    child.stderr.on('data', (data) => {
+      console.error(`stderr [${container}]: ${data}`);
+    });
+
+    child.on('close', (code) => {
+      console.log(`Child process for ${container} exited with code ${code}`);
+    });
+
+    return child;
   }
 
   /**
@@ -197,6 +202,7 @@ export class ContainerService {
     await this.nodeService.saveNodes({
       networkId,
       name: `Node-${bootnodeIndex}`,
+      container: `${networkId}-${bootnodeIndex}`,
       p2pPort: bootnodeP2pPort,
       rpcHttpPort: bootnodeRpcHttpPort,
       rpcWsPort: bootnodeRpcWsPort,
@@ -213,6 +219,7 @@ export class ContainerService {
     const bootnodePayload: NodePayload = {
       networkId,
       name: `Node-${bootnodeIndex}`,
+      container: `${networkId}-${bootnodeIndex}`,
       p2pPort: bootnodeP2pPort,
       rpcHttpPort: bootnodeRpcHttpPort,
       rpcWsPort: bootnodeRpcWsPort,
@@ -283,6 +290,7 @@ export class ContainerService {
       await this.nodeService.saveNodes({
         networkId,
         name: `Node-${i}`,
+        container: `${networkId}-${i}`,
         p2pPort: currentP2PPort,
         rpcHttpPort: currentHttpPort,
         rpcWsPort: currentWsPort,
@@ -299,6 +307,7 @@ export class ContainerService {
       const nodePayload: NodePayload = {
         networkId,
         name: `Node-${i}`,
+        container: `${networkId}-${i}`,
         p2pPort: currentP2PPort,
         rpcHttpPort: currentHttpPort,
         rpcWsPort: currentWsPort,

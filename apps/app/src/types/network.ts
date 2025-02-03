@@ -1,6 +1,13 @@
 // types/network.ts
 export interface NetworkDetailsProps {
   networkId: string;
+  Lnodes: string[]; // Array of container IDs or node identifiers
+}
+
+export interface ContainerProps {
+  networkId: string;
+  container: string;
+  logs: string[]; // Array of log messages
 }
 
 export type InitNetworkPayload = {

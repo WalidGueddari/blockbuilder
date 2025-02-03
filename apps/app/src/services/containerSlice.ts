@@ -16,6 +16,7 @@ const initialState: NodeState = {
   loading: false,
   error: null,
   networks: [],
+  nodes: [],
 };
 
 // Async Thunks

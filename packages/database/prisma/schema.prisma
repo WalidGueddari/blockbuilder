@@ -37,6 +37,7 @@ model Node {
   id          String  @id @default(cuid())
   networkId   String
   name        String
+  container   String
   status      Status  @default(ACTIVE)
   network     Network @relation(fields: [networkId], references: [id])
   p2pPort     Int

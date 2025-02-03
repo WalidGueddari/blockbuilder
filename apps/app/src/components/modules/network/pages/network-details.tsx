@@ -11,7 +11,7 @@ import type { NetworkDetailsProps } from '@/types/network';
 import type React from 'react';
 import { useEffect } from 'react';
 
-const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
+const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId, Lnodes }) => {
   const dispatch = useAppDispatch();
   const nodes = useAppSelector(selectNodes);
   const loading = useAppSelector(selectNodeLoading);
