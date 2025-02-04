@@ -47,7 +47,7 @@ export class ContainerService {
         const command = `NUM_NODES=${nodesNumber} NET_ID=${networId} ${networkBinDir}/${script} ${params}`;
         console.log(`Executing: ${command}`);
 
-        const { stdout } = await execAsync(command, { shell: '/bin/sh' });
+        const { stdout } = await execAsync(command, { shell: '/bin/bash' });
         console.log(`Output for ${script}:`, stdout);
 
         results.push({ script, success: true, output: stdout });
@@ -95,7 +95,7 @@ export class ContainerService {
         const command = `NET_ID=${networId} NODE_INDEX=${i} ${networkBinDir}/run_node.sh`;
         console.log('Command to execute:', command);
         try {
-          const { stdout } = await execAsync(command, { shell: '/bin/sh' });
+          const { stdout } = await execAsync(command, { shell: '/bin/bash' });
           console.log(`Output for runNode (NODE_INDEX=${i}):`, stdout);
           outputs.push(stdout);
         } catch (error) {
@@ -193,7 +193,7 @@ export class ContainerService {
     ].join(' ');
 
     console.log('Command to execute (bootnode):', command);
-    const { stdout } = await execAsync(command, { shell: '/bin/sh' });
+    const { stdout } = await execAsync(command, { shell: '/bin/bash' });
     console.log('Output for generate_docker_compose_bootnode.sh:', stdout);
 
     const enodeUrl = await this.createEnodeUrl(networkId, bootnodeIndex);
@@ -281,7 +281,7 @@ export class ContainerService {
 
       console.log(`Command to execute (node index = ${i}):`, command);
 
-      const { stdout } = await execAsync(command, { shell: '/bin/sh' });
+      const { stdout } = await execAsync(command, { shell: '/bin/bash' });
       console.log(`Output for generate_docker_compose_node.sh (NODE_INDEX=${i}):`, stdout);
 
       const enodeUrl = await this.createEnodeUrl(networkId, i);

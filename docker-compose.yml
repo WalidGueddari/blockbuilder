@@ -1,21 +1,21 @@
 services:
   api:
     container_name: api
-    image: khalilbchir99/peakchaintest:api
+    image: khalilbchir99/blockchainbuilder_staging:api
     restart: always
     ports:
       - "8000:8000"
     environment:
       SERVER_PORT: "8000"
-      SERVER_HOST: localhost
-      DATABASE_URL: "postgresql://postgres:jHDoohPu@localhost:5432/blockchain_builder?schema=public"
+      SERVER_HOST: 0.0.0.0
+      DATABASE_URL: "postgresql://postgres:p@sserBCBS@blockchain-builder-staging.postgres.database.azure.com:5432/postgres"
       ACCESS_TOKEN_SECRET: kljqsdghlkjq
-      ACCESS_TOKEN_TTL: "1d"
-      BASE_DIR: "/home/khalil/saas-monorepo/apps/api/src/.containers"
-      QBFT_TEMPLATE_FILE: "/home/khalil/saas-monorepo/apps/api/src/templates/qbftConfigTemplate.json"
-      BOOTNODE_TEMPLATE_FILE: "/home/khalil/saas-monorepo/apps/api/src/templates/docker-compose.bootnode.yml"
-      NODE_TEMPLATE_FILE: "/home/khalil/saas-monorepo/apps/api/src/templates/docker-compose.node.yml"
-      NETWORK_BIN_DIR: "/home/khalil/saas-monorepo/apps/api/src/bin"
+      ACCESS_TOKEN_TTL: 86400
+      BASE_DIR: "/server/apps/api/src/.containers"
+      QBFT_TEMPLATE_FILE: "/server/apps/api/src/templates/qbftConfigTemplate.json"
+      BOOTNODE_TEMPLATE_FILE: "/server/apps/api/src/templates/docker-compose.bootnode.yml"
+      NODE_TEMPLATE_FILE: "/server/apps/api/src/templates/docker-compose.node.yml"
+      NETWORK_BIN_DIR: "/server/apps/api/src/bin"
       SUBNET: "192.168.1.0/24"
       BOOTNODE_DIR: "Node-1"
       BOOTNODE_CONTAINER_NAME: bootnode
