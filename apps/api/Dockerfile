@@ -67,6 +67,14 @@ WORKDIR /server
  
 RUN apk add openssl
 RUN apk add bash
+RUN curl -L https://dl.hyperledger.org/besu/releases/download/25.1.0/besu-23.1.2.tar.gz -o /tmp/besu.tar.gz \
+    && tar -xzf /tmp/besu.tar.gz -C /opt \
+    && rm /tmp/besu.tar.gz
+
+# 3) Make Besu available in PATH
+ENV BESU_HOME=/opt/besu-25.1.0
+ENV PATH="$BESU_HOME/bin:${PATH}"
+
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
