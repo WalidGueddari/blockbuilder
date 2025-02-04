@@ -1,7 +1,8 @@
 import { PrismaClient } from '@saas-monorepo/database';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 
+import { config } from '../config.js';
 import {
   AuthCheckPayload,
   AuthCheckResult,
@@ -22,6 +23,12 @@ export class AuthenticationService {
   }
 
   async login(payload: LoginPayload) {
+    const { accessTokenSecret, accessTokenTtl } = config;
+
+    const secret = accessTokenSecret as Secret;
+    const expiresIn = Number(accessTokenTtl);
+    const signOptions: SignOptions = { expiresIn };
+
     let user = null;
     try {
       user = await this.prisma.user.findUniqueOrThrow({
@@ -44,9 +51,7 @@ export class AuthenticationService {
       id: user.id,
       email: user.email,
     };
-    const accessToken = jwt.sign(tokenPayload, process.env['ACCESS_TOKEN_SECRET'] as string, {
-      expiresIn: process.env['ACCESS_TOKEN_TTL'] as string,
-    });
+    const accessToken = jwt.sign(tokenPayload, secret, signOptions);
     return {
       accessToken,
       user,
