@@ -67,7 +67,8 @@ WORKDIR /server
  
 RUN apk add openssl
 RUN apk add bash
-RUN curl -L https://dl.hyperledger.org/besu/releases/download/25.1.0/besu-23.1.2.tar.gz -o /tmp/besu.tar.gz \
+RUN apk add curl
+RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25.1.0.tar.gz -o /tmp/besu.tar.gz \
     && tar -xzf /tmp/besu.tar.gz -C /opt \
     && rm /tmp/besu.tar.gz
 
