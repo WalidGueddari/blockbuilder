@@ -45,7 +45,7 @@ export class AuthenticationService {
       email: user.email,
     };
     const accessToken = jwt.sign(tokenPayload, process.env['ACCESS_TOKEN_SECRET'] as string, {
-      expiresIn: process.env['ACCESS_TOKEN_TTL'],
+      expiresIn: process.env['ACCESS_TOKEN_TTL'] as string,
     });
     return {
       accessToken,
