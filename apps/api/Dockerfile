@@ -68,6 +68,14 @@ WORKDIR /server
 RUN apk add openssl
 RUN apk add bash
 RUN apk add curl
+
+RUN curl -fSL https://download.oracle.com/java/23/latest/jdk-23_linux-aarch64_bin.tar.gz -o /tmp/jdk.tgz \
+    && tar -xzf /tmp/jdk.tgz -C /opt/ \
+    && rm /tmp/jdk.tgz
+
+ENV JAVA_HOME=/opt/jdk-23
+ENV PATH="$JAVA_HOME/bin:${PATH}"
+
 RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25.1.0.tar.gz -o /tmp/besu.tar.gz \
     && tar -xzf /tmp/besu.tar.gz -C /opt \
     && rm /tmp/besu.tar.gz
