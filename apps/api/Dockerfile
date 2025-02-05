@@ -65,9 +65,7 @@ FROM base AS runner
  
 WORKDIR /server
  
-RUN apk add openssl
-RUN apk add bash
-RUN apk add curl
+RUN apk add --no-cache openssl bash curl python3 py3-pip
 
 RUN curl -fSL https://download.oracle.com/java/23/latest/jdk-23_linux-aarch64_bin.tar.gz -o /tmp/jdk.tgz \
     && tar -xzf /tmp/jdk.tgz -C /opt/ \
@@ -83,6 +81,8 @@ RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25
 # 3) Make Besu available in PATH
 ENV BESU_HOME=/opt/besu-25.1.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
+
+RUN pip3 install eth-keys eth-utils
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
