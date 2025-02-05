@@ -82,7 +82,7 @@ RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25
 ENV BESU_HOME=/opt/besu-25.1.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
 
-RUN pip3 install eth-keys eth-utils
+RUN pip3 install --break-system-packages eth-keys eth-utils
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
