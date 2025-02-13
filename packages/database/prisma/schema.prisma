@@ -8,25 +8,28 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(cuid())
-  email      String    @unique
-  password   String    @db.Text()
-  create_at  DateTime  @default(now())
-  updated_at DateTime  @default(now()) @updatedAt
+  id         String     @id @default(cuid())
+  email      String     @unique
+  password   String     @db.Text()
+  create_at  DateTime   @default(now())
+  updated_at DateTime   @default(now()) @updatedAt
   network    Network[]
+  vmServers  VmServer[]
 
   @@index([email])
   @@map("users")
 }
 
 model Network {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  type      String @default("QBFT")
-  status    Status @default(PENDING)
+  type      String   @default("QBFT")
+  status    Status   @default(PENDING)
   nodeCount Int
   userId    String
-  user      User   @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  server    VmServer @relation(fields: [serverId], references: [id])
+  serverId  String
   nodes     Node[]
 
   create_at  DateTime @default(now())
@@ -53,6 +56,26 @@ model Node {
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
+}
+
+model VmServer {
+  id               String   @id @default(cuid())
+  azureId          String // The unique identifier of the VM in Azure
+  adminUsername    String // The admin username for the VM
+  vmName           String // The name of the VM
+  location         String // Azure region where the VM is deployed
+  macAddress       String // MAC address of the VM's network interface
+  powerState       String // Current power state of the VM (e.g., "VM running")
+  privateIpAddress String // The private IP address assigned to the VM
+  publicIpAddress  String // The public IP address assigned to the VM
+  resourceGroup    String // The Azure resource group for the VM
+  sshKeyName       String // The SSH key name used to authenticate with the VM
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  network Network[]
+  user    User      @relation(fields: [userId], references: [id])
+  userId  String
 }
 
 enum Status {

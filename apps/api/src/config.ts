@@ -1,5 +1,6 @@
 // config.ts
 import * as dotenv from 'dotenv';
+import { size } from 'lodash';
 
 // Load environment variables from .env into process.env
 dotenv.config();
@@ -54,6 +55,7 @@ export const config = {
   bootnodeTemplateFile: requiredVar('BOOTNODE_TEMPLATE_FILE'),
   nodeTemplateFile: requiredVar('NODE_TEMPLATE_FILE'),
   networkBinDir: requiredVar('NETWORK_BIN_DIR'),
+  sshKeyDir: requiredVar('SSH_KEY_DIR'),
 
   /**
    * Network / Subnet
@@ -90,4 +92,15 @@ export const config = {
    */
   baseNodeIpPrefix: requiredVar('BASE_NODE_IP_PREFIX'),
   startIpSuffix: requiredIntVar('START_IP_SUFFIX'),
+
+  /**
+   * Deployement Configuration
+   */
+  subscriptionId: requiredVar('SUBSCRIPTION_ID'),
+  location: requiredVar('LOCATION'),
+  size: requiredVar('SIZE'),
+  image: requiredVar('IMAGE'),
+  osDiskSize: requiredIntVar('OS_DISK_SIZE_GB'),
+  storageType: requiredVar('STORAGE_TYPE'),
+  securityType: requiredVar('SECURITY_TYPE'),
 };

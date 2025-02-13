@@ -50,4 +50,25 @@ export const ContainerSchema = {
       required: ['networkId'],
     },
   },
+
+  createServer: {
+    tags: ['Container'],
+    body: {
+      type: 'object',
+      properties: {
+        createServerPayload: {
+          type: 'object',
+          properties: {
+            resourceGroup: { type: 'string' },
+            vmName: { type: 'string' },
+            adminUsername: { type: 'string' },
+            sshKeyName: { type: 'string' },
+            userEmail: { type: 'string', format: 'email' },
+          },
+          required: ['resourceGroup', 'vmName', 'adminUsername', 'sshKeyName', 'userEmail'],
+        },
+      },
+      required: ['createServerPayload'],
+    },
+  },
 };

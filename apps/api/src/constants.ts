@@ -4,3 +4,5 @@ export enum Status {
   PENDING = 'PENDING',
   FAILED = 'FAILED',
 }
+
+export const azureAdminUsername = 'azureuser';
