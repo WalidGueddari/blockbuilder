@@ -31,9 +31,8 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
     async (request, reply) => {
       const { id } = request.params;
-      const userId = 'cm736ni160000q4md4d00a4dl';
       try {
-        const result = await serverService.setupDockerAndNginx(id, userId);
+        const result = await serverService.setupDockerAndNginx(id);
         reply.send(result);
       } catch (error) {
         reply.status(500).send(error);
