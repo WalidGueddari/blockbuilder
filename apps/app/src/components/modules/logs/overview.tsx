@@ -13,12 +13,13 @@ import { useEffect, useRef } from 'react';
 interface LogsViewerProps {
   networkId: string;
   container: string;
+  vmId: string;
 }
 
-const LogsViewer: React.FC<LogsViewerProps> = ({ networkId, container }) => {
+const LogsViewer: React.FC<LogsViewerProps> = ({ networkId, container, vmId }) => {
   const dispatch = useAppDispatch();
   const { logs, connectionStatus, error } = useAppSelector((state) => state.logs);
-  useWebSocket({ networkId, container });
+  useWebSocket({ networkId, container, vmId });
   const logsEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

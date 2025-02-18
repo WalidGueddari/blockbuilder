@@ -13,16 +13,17 @@ import {
 interface UseWebSocketParams {
   networkId: string;
   container: string;
+  vmId: string;
 }
 
-const useWebSocket = ({ container, networkId }: UseWebSocketParams) => {
+const useWebSocket = ({ container, networkId, vmId }: UseWebSocketParams) => {
   const dispatch = useDispatch();
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!container || networkId === undefined) return;
 
-    const url = `ws://localhost:8000/api/v1/containers/ws/get_logs/${container}`;
+    const url = `ws://localhost:8000/api/v1/containers/ws/get_logs/${container}/${vmId}`;
     dispatch(connectAction());
 
     const socket = new WebSocket(url);
@@ -71,7 +72,7 @@ const useWebSocket = ({ container, networkId }: UseWebSocketParams) => {
         socketRef.current.close();
       }
     };
-  }, [container, networkId, dispatch]);
+  }, [container, networkId, vmId, dispatch]);
 
   const sendMessage = (msg: string) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {

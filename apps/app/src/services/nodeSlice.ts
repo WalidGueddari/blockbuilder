@@ -11,6 +11,7 @@ interface NodeState {
   error: string | null;
   networks: InitNetwork[];
   nodes: Node[];
+  currentServerId: string | null;
 }
 
 const initialState: NodeState = {
@@ -18,6 +19,7 @@ const initialState: NodeState = {
   error: null,
   networks: [],
   nodes: [],
+  currentServerId: null,
 };
 
 export const fetchNodesByNetworkId = createAsyncThunk<
@@ -50,6 +52,9 @@ const nodeSlice = createSlice({
     clearNodeError: (state) => {
       state.error = null;
     },
+    setCurrentServerId: (state, action: PayloadAction<string>) => {
+      state.currentServerId = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -67,15 +72,14 @@ const nodeSlice = createSlice({
   },
 });
 
-export const { clearNodeError } = nodeSlice.actions;
+export const { clearNodeError, setCurrentServerId } = nodeSlice.actions;
 
 export const selectNodes = (state: RootState): Node[] => {
-  console.log('Full state:', state); // Log the entire state
-  console.log('Nodes state:', state.node.nodes); // Log the nodes array
   return state.node.nodes;
 };
 
 export const selectNodeLoading = (state: RootState) => state.node.loading;
 export const selectNodeError = (state: RootState) => state.node.error;
+export const selectCurrentServerId = (state: RootState) => state.node.currentServerId;
 
 export default nodeSlice.reducer;

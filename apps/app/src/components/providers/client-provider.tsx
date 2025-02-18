@@ -2,22 +2,25 @@
 
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/context/AuthContext';
-import { store } from '@/services/store';
+import { persistor, store } from '@/services/store';
 import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 
 const ClientProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </AuthProvider>
+      <PersistGate loading={<div>Loading persisted state...</div>} persistor={persistor}>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
+      </PersistGate>
     </Provider>
   );
 };

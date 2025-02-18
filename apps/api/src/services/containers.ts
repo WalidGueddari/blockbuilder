@@ -5,16 +5,22 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import fs from 'fs/promises';
 import { NodeSSH } from 'node-ssh';
 import path from 'path';
+import { ClientChannel } from 'ssh2';
 import { promisify } from 'util';
 
 // 1. Import the centralized config
 import { config } from '../config.js';
 import { NodeService } from '../services/nodes.js';
-import { NodePayload } from '../types/node.js';
+import { CreateNodePayload, NodePayload } from '../types/node.js';
 import { AbstractServiceOptions } from '../types/services.js';
 import { ServerService } from './server.js';
 
 const execAsync = promisify(exec);
+
+interface RemoteLogResult {
+  stream: ClientChannel; // Adjust this if you have a more precise type
+  ssh: NodeSSH;
+}
 
 export class ContainerService {
   prisma: PrismaClient;
@@ -30,9 +36,9 @@ export class ContainerService {
   /**
    * 1. Set up the network by running bash scripts.
    */
-  async SetUpNetwork(nodesNumber: number, networId: string, VMid: string) {
+  async SetUpNetwork(nodesNumber: number, networId: string) {
     // Grab NETWORK_BIN_DIR from config
-    const { networkBinDir, sshKeyDir } = config;
+    const { networkBinDir } = config;
 
     // Define scripts and parameters
     const scripts = [
@@ -47,26 +53,11 @@ export class ContainerService {
 
     for (const { script, params } of scripts) {
       try {
-        const vm = await this.serverService.getSSHConnection(VMid);
-        if (!vm) {
-          throw new Error(`VM with ID ${VMid} not found.`);
-        }
-
-        const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
-        const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
-
-        console.log(`SSH Key Path: ${sshKeyPath}`);
-        const ssh = new NodeSSH();
-        await ssh.connect({
-          host: vm.publicIpAddress,
-          username: vm.adminUsername,
-          privateKey: privateKeyContent,
-        });
         // Export NUM_NODES and NET_ID as environment variables for the script
         const command = `NUM_NODES=${nodesNumber} NET_ID=${networId} ${networkBinDir}/${script} ${params}`;
         console.log(`Executing: ${command}`);
 
-        const { stdout } = await ssh.execCommand(command);
+        const { stdout } = await execAsync(command, { shell: '/bin/bash' });
         console.log(`Output for ${script}:`, stdout);
 
         results.push({ script, success: true, output: stdout });
@@ -89,55 +80,89 @@ export class ContainerService {
   async generateDockerComposeFile(
     bootnode: boolean,
     networkId: string,
-    VMid: string,
     enodeUrl?: string,
     nodeCount?: number,
   ): Promise<NodePayload[]> {
     if (bootnode) {
-      return this._generateBootnodeDockerComposeFile(networkId, VMid);
+      return this._generateBootnodeDockerComposeFile(networkId);
     } else {
       if (!nodeCount) {
         throw new Error('nodeCount is required when bootnode is false');
       }
-      return this._generateStandardDockerComposeFiles(networkId, enodeUrl, nodeCount, VMid);
+      return this._generateStandardDockerComposeFiles(networkId, enodeUrl, nodeCount);
+    }
+  }
+
+  async killBesuNode() {
+    try {
+      const { baseDir } = config;
+      await execAsync(`rm -rf ${baseDir}`);
+    } catch (error) {
+      console.error('Error in killBesuNode:', error);
+      throw error;
     }
   }
 
   /**
    * 3. Run multiple node containers.
    */
-  async runNode(networId: string, nodeCount: number, VMid: string) {
-    const { networkBinDir, sshKeyDir } = config;
+  async runNode(networId: string, nodeCount: number, vmId: string) {
+    const { sshKeyDir, remoteBaseDir, subnet } = config;
+
+    // Fetch the VM details from the database.
+    const vm = await this.serverService.getSSHConnection(vmId);
+    if (!vm) {
+      throw new Error(`VM with ID ${vmId} not found.`);
+    }
+
+    const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
+    const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
+
+    console.log(`SSH Key Path: ${sshKeyPath}`);
+    const ssh = new NodeSSH();
 
     try {
-      const vm = await this.serverService.getSSHConnection(VMid);
-      if (!vm) {
-        throw new Error(`VM with ID ${VMid} not found.`);
-      }
-
-      const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
-      const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
-
-      console.log(`SSH Key Path: ${sshKeyPath}`);
-      const ssh = new NodeSSH();
+      console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
       await ssh.connect({
         host: vm.publicIpAddress,
         username: vm.adminUsername,
         privateKey: privateKeyContent,
       });
+
+      const createNetwork = await ssh.execCommand(
+        `docker network create --subnet=${subnet} ${networId}`,
+        { execOptions: { pty: true } },
+      );
+      console.log('Network inspect:', createNetwork.stdout, createNetwork.stderr);
+
       const outputs = [];
       for (let i = 1; i <= nodeCount; i++) {
-        const command = `NET_ID=${networId} NODE_INDEX=${i} ${networkBinDir}/run_node.sh`;
-        console.log('Command to execute:', command);
-        try {
-          const { stdout } = await ssh.execCommand(command);
-          console.log(`Output for runNode (NODE_INDEX=${i}):`, stdout);
-          outputs.push(stdout);
-        } catch (error) {
-          console.error(`Error executing start_bootnode.sh (NODE_INDEX = ${i}):`, error);
-          throw error;
-        }
+        // Determine the node directory.
+        const nodeDir = `${remoteBaseDir}/${networId}/Node-${i}`;
+        console.log(`Node directory for Node-${i}:`, nodeDir);
+
+        // 1. Echo a starting message.
+        let result = await ssh.execCommand(`echo "Starting Node-${i} using Docker Compose..."`, {
+          execOptions: { pty: true },
+        });
+        console.log(`Node-${i} start message:`, result.stdout, result.stderr);
+
+        // 2. Run docker-compose up -d in the node directory.
+        result = await ssh.execCommand(`cd ${nodeDir} && docker-compose up -d`, {
+          execOptions: { pty: true },
+        });
+        console.log(`docker-compose output for Node-${i}:`, result.stdout, result.stderr);
+
+        // 3. Echo a completion message.
+        result = await ssh.execCommand(`echo "Node-${i} started. Logs are available in Docker."`, {
+          execOptions: { pty: true },
+        });
+        console.log(`Node-${i} completion message:`, result.stdout, result.stderr);
+
+        outputs.push(`Node-${i} started successfully.`);
       }
+
+      ssh.dispose();
       return outputs;
     } catch (error) {
       console.error('Error in runNode:', error);
@@ -165,6 +190,39 @@ export class ContainerService {
     });
 
     return child;
+  }
+
+  async getRemoteLogs(container: string, vmId: string): Promise<RemoteLogResult> {
+    // Retrieve VM details from your service/database.
+    const vm = await this.serverService.getSSHConnection(vmId);
+    if (!vm) {
+      throw new Error(`VM with ID ${vmId} not found.`);
+    }
+
+    // Read the SSH private key.
+    const sshKeyPath = path.join(config.sshKeyDir, vm.sshKeyName);
+    const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
+
+    // Establish an SSH connection.
+    const ssh = new NodeSSH();
+    console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
+    await ssh.connect({
+      host: vm.publicIpAddress,
+      username: vm.adminUsername,
+      privateKey: privateKeyContent,
+    });
+
+    // Execute the docker logs command remotely.
+    // Note: We use the underlying SSH2 connection to get a stream.
+    return new Promise((resolve, reject) => {
+      ssh.connection!.exec(`docker logs -f ${container}`, (err, stream) => {
+        if (err) {
+          ssh.dispose();
+          return reject(err);
+        }
+        resolve({ stream, ssh });
+      });
+    });
   }
 
   /**
@@ -201,10 +259,7 @@ export class ContainerService {
   /**
    * Private helper: generate Docker Compose for the bootnode.
    */
-  private async _generateBootnodeDockerComposeFile(
-    networkId: string,
-    VMid: string,
-  ): Promise<NodePayload[]> {
+  private async _generateBootnodeDockerComposeFile(networkId: string): Promise<NodePayload[]> {
     const { networkBinDir } = config;
     const {
       bootnodeIndex,
@@ -215,24 +270,7 @@ export class ContainerService {
       bootnodeRpcWsPort,
       bootnodeWsHost,
       bootnodeIp,
-      sshKeyDir,
     } = config;
-
-    const vm = await this.serverService.getSSHConnection(VMid);
-    if (!vm) {
-      throw new Error(`VM with ID ${VMid} not found.`);
-    }
-
-    const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
-    const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
-
-    console.log(`SSH Key Path: ${sshKeyPath}`);
-    const ssh = new NodeSSH();
-    await ssh.connect({
-      host: vm.publicIpAddress,
-      username: vm.adminUsername,
-      privateKey: privateKeyContent,
-    });
 
     const command = [
       `NET_ID=${networkId}`,
@@ -248,7 +286,7 @@ export class ContainerService {
     ].join(' ');
 
     console.log('Command to execute (bootnode):', command);
-    const { stdout } = await ssh.execCommand(command);
+    const { stdout } = await execAsync(command, { shell: '/bin/bash' });
     console.log('Output for generate_docker_compose_bootnode.sh:', stdout);
 
     const enodeUrl = await this.createEnodeUrl(networkId, bootnodeIndex);
@@ -281,7 +319,7 @@ export class ContainerService {
       p2pHost: bootnodeP2pHost,
       rpcHttpHost: bootnodeHttpHost,
       rpcWsHost: bootnodeWsHost,
-      wsHost: bootnodeWsHost, // or your own logic
+      wsHost: bootnodeWsHost,
       nodeIp: bootnodeIp,
       isBootnode: true,
       bootEnodeUrl: undefined,
@@ -298,7 +336,6 @@ export class ContainerService {
     networkId: string,
     bootEnodeUrl: string | undefined,
     nodeCount: number,
-    VMid: string,
   ): Promise<NodePayload[]> {
     const { networkBinDir } = config;
     const {
@@ -310,26 +347,9 @@ export class ContainerService {
       nodeWsHost,
       baseNodeIpPrefix,
       startIpSuffix,
-      sshKeyDir,
     } = config;
 
     const nodePayloads: NodePayload[] = [];
-
-    const vm = await this.serverService.getSSHConnection(VMid);
-    if (!vm) {
-      throw new Error(`VM with ID ${VMid} not found.`);
-    }
-
-    const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
-    const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
-
-    console.log(`SSH Key Path: ${sshKeyPath}`);
-    const ssh = new NodeSSH();
-    await ssh.connect({
-      host: vm.publicIpAddress,
-      username: vm.adminUsername,
-      privateKey: privateKeyContent,
-    });
 
     // Generate docker-compose for nodes from 2..nodeCount
     for (let i = 2; i <= nodeCount; i++) {
@@ -354,7 +374,7 @@ export class ContainerService {
 
       console.log(`Command to execute (node index = ${i}):`, command);
 
-      const { stdout } = await ssh.execCommand(command);
+      const { stdout } = await execAsync(command, { shell: '/bin/bash' });
       console.log(`Output for generate_docker_compose_node.sh (NODE_INDEX=${i}):`, stdout);
 
       const enodeUrl = await this.createEnodeUrl(networkId, i);

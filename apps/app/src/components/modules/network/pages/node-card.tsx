@@ -1,9 +1,12 @@
+// NodeCard.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppDispatch } from '@/services/hooks';
+import { setCurrentServerId } from '@/services/nodeSlice';
 import type { Node } from '@/types/node';
 import { Activity, Server, Wifi } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 
 interface NodeCardProps {
@@ -11,6 +14,16 @@ interface NodeCardProps {
 }
 
 const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+
+  const handleViewLogs = () => {
+    // Dispatch the serverId from the nested network object
+    dispatch(setCurrentServerId(node.network.serverId));
+    // Navigate to the logs page
+    router.push(`/network/${node.networkId}/node/${node.container}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -35,12 +48,10 @@ const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="">
-        <Link href={`/network/${node.networkId}/node/${node.container}`} passHref>
-          <Button variant="outline" className="w-full">
-            View Node Logs
-          </Button>
-        </Link>
+      <CardFooter>
+        <Button onClick={handleViewLogs} variant="outline" className="w-full">
+          View Node Logs
+        </Button>
       </CardFooter>
     </Card>
   );

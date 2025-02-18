@@ -134,16 +134,8 @@ export class ServerService {
     }
   }
 
-  async setupDockerAndNginx(VMid: string, userId: string) {
+  async setupDockerAndNginx(VMid: string) {
     const { sshKeyDir } = config;
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found.`);
-    }
 
     // Fetch the VM details from the database
     const vm = await this.getSSHConnection(VMid);
@@ -164,93 +156,90 @@ export class ServerService {
         privateKey: privateKeyContent,
       });
 
-      // Update package lists and install Docker, Docker Compose, and Nginx
-      console.log('Updating package lists and installing Docker, Docker Compose, and Nginx...');
-      const installCmd =
-        'sudo apt-get update && sudo apt-get install -y docker.io docker-compose nginx';
-      const installResult = await ssh.execCommand(installCmd);
-      console.log('Installation output:', installResult.stdout, installResult.stderr);
+      // Docker, Docker Compose, and Nginx Setup
 
-      // Enable and start the Docker service
-      console.log('Enabling and starting Docker service...');
-      const dockerCmd = 'sudo systemctl enable docker && sudo systemctl start docker';
-      const dockerResult = await ssh.execCommand(dockerCmd);
-      console.log('Docker service output:', dockerResult.stdout, dockerResult.stderr);
+      console.log('Updating package lists...');
+      let result = await ssh.execCommand('sudo apt-get update');
+      console.log('apt-get update:', result.stdout, result.stderr);
 
-      // Allow HTTP and HTTPS traffic through the firewall
-      console.log('Allowing HTTP (80) and HTTPS (443) traffic through firewall...');
-      const firewallCmd = 'sudo ufw allow 80/tcp && sudo ufw allow 443/tcp';
-      const firewallResult = await ssh.execCommand(firewallCmd);
-      console.log('Firewall configuration output:', firewallResult.stdout, firewallResult.stderr);
+      console.log('Installing Docker, Docker Compose, and Nginx...');
+      result = await ssh.execCommand('sudo apt-get install -y docker.io docker-compose nginx');
+      console.log('Installation:', result.stdout, result.stderr);
 
-      // Prepare the Nginx configuration for load balancing.
-      // In this example, Nginx will load balance between 4 endpoints.
+      console.log('Enabling Docker service...');
+      result = await ssh.execCommand('sudo systemctl enable docker');
+      console.log('Enable Docker:', result.stdout, result.stderr);
+
+      console.log('Starting Docker service...');
+      result = await ssh.execCommand('sudo systemctl start docker');
+      console.log('Start Docker:', result.stdout, result.stderr);
+
+      // Add the admin user to the Docker group
+      console.log('Adding user to the docker group...');
+      result = await ssh.execCommand(`sudo usermod -aG docker ${vm.adminUsername}`);
+      console.log('User added to docker group:', result.stdout, result.stderr);
+
+      // Temporarily adjust Docker socket permissions (optional; best used as a safeguard)
+      console.log('Adjusting permissions on Docker socket...');
+      result = await ssh.execCommand('sudo chmod 666 /var/run/docker.sock');
+      console.log('Docker socket permissions updated:', result.stdout, result.stderr);
+
+      console.log('Allowing HTTP traffic on port 80...');
+      result = await ssh.execCommand('sudo ufw allow 80/tcp');
+      console.log('UFW allow 80:', result.stdout, result.stderr);
+
+      console.log('Allowing HTTPS traffic on port 443...');
+      result = await ssh.execCommand('sudo ufw allow 443/tcp');
+      console.log('UFW allow 443:', result.stdout, result.stderr);
+
+      // Nginx Configuration
+
+      console.log('Preparing Nginx configuration for load balancing...');
       const nginxConfig = `
-upstream blockchain_nodes {
-    server 192.168.1.100:8545;
-    server 192.168.1.102:8550;
-    server 192.168.1.103:8552;
-    server 192.168.1.104:8554;
-}
-server {
-    listen 80;
-    server_name ${vm.publicIpAddress};
-    location / {
-        proxy_pass http://blockchain_nodes;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
+  upstream blockchain_nodes {
+      server 192.168.1.100:8545;
+      server 192.168.1.102:8550;
+      server 192.168.1.103:8552;
+      server 192.168.1.104:8554;
+  }
+  server {
+      listen 80;
+      server_name ${vm.publicIpAddress};
+      location / {
+          proxy_pass http://blockchain_nodes;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_cache_bypass $http_upgrade;
+      }
+  }
       `;
-
-      // Upload the Nginx configuration using sudo tee.
-      console.log('Uploading Nginx configuration...');
       // Escape newlines and quotes for safe command execution
       const escapedNginxConfig = nginxConfig
         .replace(/\$/g, '\\$')
         .replace(/\n/g, '\\n')
         .replace(/"/g, '\\"');
-      const nginxConfigCmd = `echo -e "${escapedNginxConfig}" | sudo tee /etc/nginx/conf.d/blockchain.conf`;
-      const nginxUploadResult = await ssh.execCommand(nginxConfigCmd);
-      console.log(
-        'Nginx config upload output:',
-        nginxUploadResult.stdout,
-        nginxUploadResult.stderr,
-      );
 
-      // Test the Nginx configuration and restart Nginx if the test passes.
+      console.log('Uploading Nginx configuration...');
+      result = await ssh.execCommand(
+        `echo -e "${escapedNginxConfig}" | sudo tee /etc/nginx/conf.d/blockchain.conf`,
+      );
+      console.log('Nginx config upload:', result.stdout, result.stderr);
+
       console.log('Testing Nginx configuration...');
-      const testResult = await ssh.execCommand('sudo nginx -t');
-      console.log('Nginx test output:', testResult.stdout, testResult.stderr);
+      result = await ssh.execCommand('sudo nginx -t');
+      console.log('Nginx test:', result.stdout, result.stderr);
 
       console.log('Restarting Nginx...');
-      const restartResult = await ssh.execCommand('sudo systemctl restart nginx');
-      console.log('Nginx restart output:', restartResult.stdout, restartResult.stderr);
-
-      // // Set up Certbot for HTTPS.
-      // console.log('Setting up Certbot for HTTPS...');
-      // // Install Certbot using snap
-      // const snapInstall = await ssh.execCommand('sudo snap install --classic certbot');
-      // console.log('Certbot snap install output:', snapInstall.stdout, snapInstall.stderr);
-
-      // // Configure Certbot with the Nginx plugin
-      // const certbotSetup = await ssh.execCommand(
-      //   `sudo certbot --nginx --non-interactive --agree-tos --email ${user.email} --redirect`
-      // );
-      // console.log('Certbot setup output:', certbotSetup.stdout, certbotSetup.stderr);
-
-      // // Perform a dry-run renewal to test automatic certificate renewal.
-      // const certbotRenew = await ssh.execCommand('sudo certbot renew --dry-run');
-      // console.log('Certbot renew dry-run output:', certbotRenew.stdout, certbotRenew.stderr);
+      result = await ssh.execCommand('sudo systemctl restart nginx');
+      console.log('Nginx restart:', result.stdout, result.stderr);
 
       console.log(
-        'Setup complete: Docker, Docker Compose, and Nginx have been installed and configured.',
+        'Setup complete: Docker, Docker Compose, Nginx, and additional packages have been installed and configured.',
       );
     } catch (error) {
       console.error('Error during Docker and Nginx setup via SSH:', error);
@@ -267,6 +256,51 @@ server {
       });
     } catch (error) {
       console.error('Error fetching VM details:', error);
+      throw error;
+    }
+  }
+
+  async transferDirectoryByName(VMid: string, directoryName: string) {
+    const { sshKeyDir, baseDir, remoteBaseDir } = config;
+
+    // Fetch the VM details from the database.
+    const vm = await this.getSSHConnection(VMid);
+    if (!vm) {
+      throw new Error(`VM with ID ${VMid} not found.`);
+    }
+
+    const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
+    const privateKeyContent = fs.readFileSync(sshKeyPath, 'utf8');
+
+    console.log(`SSH Key Path: ${sshKeyPath}`);
+    const ssh = new NodeSSH();
+
+    try {
+      console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
+      await ssh.connect({
+        host: vm.publicIpAddress,
+        username: vm.adminUsername,
+        privateKey: privateKeyContent,
+      });
+
+      // Construct full paths for the local and remote directories.
+      const localDir = path.join(baseDir, directoryName);
+      const remoteDir = path.join(remoteBaseDir, directoryName);
+
+      console.log(`Transferring directory from ${localDir} to ${remoteDir}...`);
+
+      // Transfer the entire directory.
+      const status = await ssh.putDirectory(localDir, remoteDir, {
+        recursive: true,
+        concurrency: 5,
+        validate: (itemPath) => true, // transfer all files
+      });
+
+      console.log(`Directory transfer status: ${status}`);
+      ssh.dispose();
+      return status;
+    } catch (error) {
+      console.error('Error transferring directory:', error);
       throw error;
     }
   }

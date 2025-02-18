@@ -28,7 +28,15 @@ export const createNetwork = createAsyncThunk<
   try {
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BASE_URL}/containers/build-network`,
-      { initNetPayload: payload }, // Wrapping payload inside initNetPayload
+      {
+        initNetPayload: payload,
+        payload: {
+          resourceGroup: payload.name, // same value as name
+          userId: payload.userId, // same userId in both objects
+          vmName: payload.name, // same value as name
+          sshKeyName: payload.name, // same value as name
+        },
+      }, // Wrapping payload inside initNetPayload
     );
     console.log(response.data.Outputs.Network);
     return response.data.Outputs.Network; // Adjust based on your API response

@@ -13,8 +13,19 @@ export const ContainerSchema = {
           },
           required: ['name', 'userId', 'nodeCount'],
         },
+        payload: {
+          type: 'object',
+          properties: {
+            resourceGroup: { type: 'string' },
+            userId: { type: 'string' },
+            vmName: { type: 'string' },
+            // adminUsername: { type: 'string' },
+            sshKeyName: { type: 'string' },
+          },
+          required: ['userId', 'resourceGroup', 'vmName', 'sshKeyName'],
+        },
       },
-      required: ['initNetPayload'],
+      required: ['initNetPayload', 'payload'],
     },
   },
 
@@ -48,27 +59,6 @@ export const ContainerSchema = {
         networkId: { type: 'string' },
       },
       required: ['networkId'],
-    },
-  },
-
-  createServer: {
-    tags: ['Container'],
-    body: {
-      type: 'object',
-      properties: {
-        createServerPayload: {
-          type: 'object',
-          properties: {
-            resourceGroup: { type: 'string' },
-            vmName: { type: 'string' },
-            adminUsername: { type: 'string' },
-            sshKeyName: { type: 'string' },
-            userEmail: { type: 'string', format: 'email' },
-          },
-          required: ['resourceGroup', 'vmName', 'adminUsername', 'sshKeyName', 'userEmail'],
-        },
-      },
-      required: ['createServerPayload'],
     },
   },
 };

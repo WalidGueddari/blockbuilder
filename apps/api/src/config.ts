@@ -103,4 +103,5 @@ export const config = {
   osDiskSize: requiredIntVar('OS_DISK_SIZE_GB'),
   storageType: requiredVar('STORAGE_TYPE'),
   securityType: requiredVar('SECURITY_TYPE'),
+  remoteBaseDir: requiredVar('REMOTE_BASE_DIR'),
 };

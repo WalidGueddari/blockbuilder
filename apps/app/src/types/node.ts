@@ -1,3 +1,15 @@
+export interface Network {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  nodeCount: number;
+  userId: string;
+  serverId: string;
+  create_at: string;
+  updated_at: string;
+}
+
 export interface Node {
   id: string;
   networkId: string;
@@ -16,6 +28,7 @@ export interface Node {
   isBootnode: boolean;
   create_at: string;
   updated_at: string;
+  network: Network;
 }
 
 export interface NodesResponse {

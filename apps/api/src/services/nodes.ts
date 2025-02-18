@@ -28,6 +28,7 @@ export class NodeService {
         where: {
           networkId,
         },
+        include: { network: true },
       });
       return nodes;
     } catch (error: any) {

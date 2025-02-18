@@ -11,9 +11,12 @@ export class NewtorkSevice {
     this.prisma = options.prisma;
   }
 
-  async initNetwork(payload: InitNetworkPayload) {
+  async initNetwork(payload: InitNetworkPayload, serverId: string) {
     return this.prisma.network.create({
-      data: payload,
+      data: {
+        ...payload,
+        serverId,
+      },
     });
   }
 
