@@ -52,5 +52,5 @@ jobs:
               cd packages/database && 
               npx prisma migrate deploy &&
               echo 'Logging into Azure...' &&
-              AZURE_USERNAME=${{ secrets.AZURE_USERNAME }} AZURE_PASSWORD=${{ secrets.AZURE_PASSWORD }} az login -u \$AZURE_USERNAME -p \$AZURE_PASSWORD
+            az login --service-principal -u ${{ secrets.TEST_AZURE_CLIENT_ID }} -p ${{ secrets.TEST_AZURE_CLIENT_SECRET }} --tenant ${{ secrets.TEST_AZURE_TENANT_ID }}
             \""
