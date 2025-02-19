@@ -38,3 +38,9 @@ yarn-error.log*
 *.pem
 
 .containers
+.ssh_keys
+.env.development
+.env.local
+.env.staging
+.env.test
+.env.production

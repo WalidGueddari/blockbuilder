@@ -60,7 +60,7 @@ FROM base AS runner
 WORKDIR /server
 
 # Install required packages using apt-get (glibc is built-in)
-RUN apt-get update && apt-get install -y openssl bash curl python3 python3-pip ca-certificates wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl openssh-client bash curl python3 python3-pip ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
 # Install Oracle JDK x64 Compressed Archive
 RUN curl -fSL https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz -o /tmp/jdk.tgz \
@@ -78,6 +78,8 @@ RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25
 # 3) Make Besu available in PATH
 ENV BESU_HOME=/opt/besu-25.1.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
+
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN pip3 install --break-system-packages eth-keys eth-utils
 

@@ -21,7 +21,8 @@
     "db:studio": "dotenv -e ../../.env.development -- prisma studio",
     "db:setup": "dotenv -e ../../.env.development -- pnpm run db:migrate:dev && pnpm run db:seed",
     "db:generate": "prisma generate && prisma format",
-    "db:reset": "dotenv -e ../../.env.development -- prisma migrate reset --force -- --environment development",
+    "db:reset:staging": "dotenv -e ../../.env.staging -- prisma migrate reset --force -- --environment staging",
+    "db:reset:dev": "dotenv -e ../../.env.development -- prisma migrate reset --force -- --environment development",
     "postinstall": "pnpm run db:generate",
     "build": "tsc",
     "dev": "tsc --watch"

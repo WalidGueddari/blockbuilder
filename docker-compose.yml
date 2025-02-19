@@ -39,8 +39,18 @@ services:
       NODE_WS_HOST: "0.0.0.0"
       BASE_NODE_IP_PREFIX: "192.168.1."
       START_IP_SUFFIX: "101"
+      SUBSCRIPTION_ID: "e2a9a223-9317-428c-8b8f-1345190155dc"
+      LOCATION: "westeurope"
+      SIZE: "Standard_B1ms"
+      IMAGE: "canonical:ubuntu-24_04-lts:server:latest"
+      OS_DISK_SIZE_GB: 30
+      STORAGE_TYPE: "Standard_LRS"
+      SECURITY_TYPE: "TrustedLaunch"
+      REMOTE_BASE_DIR: "/home/azureuser/.containers"
+      SSH_KEY_DIR: "/root/.ssh"
     volumes:
       - ./local-meta:/server/apps/api/public:rw
+      - ./.ssh_keys:/root/.ssh:rw
     user: root
     privileged: true
     networks:
