@@ -23,7 +23,7 @@ const useWebSocket = ({ container, networkId, vmId }: UseWebSocketParams) => {
   useEffect(() => {
     if (!container || networkId === undefined) return;
 
-    const url = `ws://localhost:8000/api/v1/containers/ws/get_logs/${container}/${vmId}`;
+    const url = `${process.env.NEXT_PUBLIC_BASE_WS_URL}/api/v1/containers/ws/get_logs/${container}/${vmId}`;
     dispatch(connectAction());
 
     const socket = new WebSocket(url);

@@ -43,3 +43,5 @@ yarn-error.log*
 .env.local
 .env.staging
 .env.production
+
+docker-compose.yml
