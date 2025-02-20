@@ -1,6 +1,5 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,7 +12,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,20 +20,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
-import {
-  clearNodeError,
-  createNetwork,
-  selectNodeError,
-  selectNodeLoading,
-} from '@/services/containerSlice';
-import { useAppDispatch, useAppSelector } from '@/services/hooks';
+import { useAppDispatch } from '@/services/hooks';
+import { setupNetwork, startNetwork } from '@/services/v2/blockchainSlice';
+// --- Import your thunks and any selectors you need:
+import { createServer, setupServer } from '@/services/v2/serverSlice';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Loader2, Network } from 'lucide-react';
+import { Loader2, Network } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+// Reusing your existing schema for the network name/nodeCount:
 const formSchema = z.object({
   name: z.string().nonempty({ message: 'Network name is required.' }),
   nodeCount: z
@@ -47,24 +43,28 @@ const formSchema = z.object({
 export default function CreateNetworkDialog() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
-  const loading = useAppSelector(selectNodeLoading);
-  const error = useAppSelector(selectNodeError);
   const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Retrieve the userId from sessionStorage
     const user = sessionStorage.getItem('user');
     if (user) {
       try {
         const parsedUser = JSON.parse(user);
         setUserId(parsedUser.id);
+        console.log('User ID set:', parsedUser.id); // Debug log
       } catch (e) {
         console.error('Failed to parse user from sessionStorage:', e);
       }
+    } else {
+      console.log('No user found in sessionStorage'); // Debug log
     }
   }, []);
 
+  // Set up the form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -73,42 +73,93 @@ export default function CreateNetworkDialog() {
     },
   });
 
+  // The core logic: chain your four calls in order
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log('onSubmit called with values:', values); // Debug log
+
     if (!userId) {
       console.error('User ID is not available.');
       return;
     }
 
-    const payload = {
-      name: values.name,
-      nodeCount: values.nodeCount,
-      userId: userId,
-    };
-
+    setIsLoading(true);
     try {
-      const result = await dispatch(createNetwork(payload)).unwrap();
-      form.reset();
+      console.log('Creating server...'); // Debug log
+      const createRes = await dispatch(
+        createServer({
+          userId,
+          vmName: values.name,
+          resourceGroup: values.name,
+          sshKeyName: values.name,
+        }),
+      ).unwrap();
+
+      if (!createRes?.id) {
+        throw new Error('Failed to retrieve VM ID from createServer call.');
+      }
+      console.log('Server created with ID:', createRes.id); // Debug log
+
+      console.log('Setting up network...'); // Debug log
+      const networkRes = await dispatch(
+        setupNetwork({
+          initNetPayload: {
+            name: values.name,
+            userId,
+            nodeCount: values.nodeCount,
+          },
+          vmId: createRes.id,
+        }),
+      ).unwrap();
+
+      if (!networkRes?.id) {
+        throw new Error('Failed to retrieve network ID from setupNetwork call.');
+      }
+      console.log('Network set up with ID:', networkRes.id); // Debug log
+
+      console.log('Setting up server...'); // Debug log
+      await dispatch(
+        setupServer({
+          id: createRes.id,
+          networkId: networkRes.id,
+        }),
+      ).unwrap();
+      console.log('Server setup complete'); // Debug log
+
+      console.log('Starting network...'); // Debug log
+      const startRes = await dispatch(
+        startNetwork({
+          payload: {
+            vmId: createRes.id,
+            networkId: networkRes.id,
+            nodeCount: values.nodeCount,
+          },
+        }),
+      ).unwrap();
+
+      // if (!startRes?.success) {
+      //   throw new Error("Network failed to start properly.")
+      // }
+      // console.log("Network started successfully") // Debug log
+
+      console.log('Showing toast notification...'); // Debug log
       toast({
-        title: 'Network Created',
-        description: `The network ${result.name} with ${result.nodeCount} nodes was initialized!`,
-        variant: 'default',
+        title: 'All Steps Complete',
+        description: `Network "${values.name}" is created and started.`,
       });
-      router.push(`/network/${result.id}`);
+
+      console.log('Redirecting to network details page...'); // Debug log
+      router.push(`/network/${networkRes.id}`);
     } catch (err) {
-      console.error('Failed to create network:', err);
+      console.error('Failed to complete the full setup chain:', err);
       toast({
-        title: 'Network Creation Failed',
-        description: 'Failed to initialize network. Please try again.',
+        title: 'Setup Failed',
+        description: String(err),
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   }
-
-  useEffect(() => {
-    return () => {
-      dispatch(clearNodeError());
-    };
-  }, [dispatch]);
 
   return (
     <Card className="mx-auto w-full max-w-md">
@@ -117,11 +168,13 @@ export default function CreateNetworkDialog() {
           <Network className="h-6 w-6" />
           Create New Network
         </CardTitle>
-        <CardDescription>Set up your blockchain network with custom parameters.</CardDescription>
+        <CardDescription>Set up your blockchain network and required VM resources.</CardDescription>
       </CardHeader>
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Network Name */}
             <FormField
               control={form.control}
               name="name"
@@ -131,12 +184,12 @@ export default function CreateNetworkDialog() {
                   <FormControl>
                     <Input autoComplete="off" placeholder="Enter network name" {...field} />
                   </FormControl>
-                  {/* <FormDescription>Choose a unique, descriptive name for your network.</FormDescription> */}
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Node Count */}
             <FormField
               control={form.control}
               name="nodeCount"
@@ -157,36 +210,22 @@ export default function CreateNetworkDialog() {
                       </span>
                     </div>
                   </FormControl>
-                  <FormDescription>Select the number of nodes to initialize (2-4).</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
           </form>
         </Form>
       </CardContent>
+
       <CardFooter>
         <Button
           onClick={form.handleSubmit(onSubmit)}
-          disabled={loading || !userId}
+          disabled={isLoading || !userId}
           className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
         >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Initializing...
-            </>
-          ) : (
-            'Initialize Network'
-          )}
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Initialize Network & Server
         </Button>
       </CardFooter>
     </Card>

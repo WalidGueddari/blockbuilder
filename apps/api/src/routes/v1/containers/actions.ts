@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify';
 
 import { config } from '../../../config.js';
-import { ContainerSchema } from '../../../schemas/container.js';
-import { ServerShcema } from '../../../schemas/server.js';
+import { ContainerSchema } from '../../../schemas/v1/container.js';
+import { ServerShcema } from '../../../schemas/v1/server.js';
 import { ContainerService } from '../../../services/containers.js';
 import { NewtorkSevice } from '../../../services/network.js';
 import { ServerService } from '../../../services/server.js';
@@ -17,119 +17,119 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
 
   const { bootnodeIndex } = config;
 
-  fastify.post<{
-    Body: { initNetPayload: InitNetworkPayload; payload: CreateAzureVMParams };
-  }>(
-    '/build-network',
-    {
-      schema: ContainerSchema.createNetwork,
-    },
-    async (request, reply) => {
-      try {
-        /***** Extracting payload from request body *****/
-        const { initNetPayload, payload } = request.body;
-        console.log('/***** Received initNetPayload and payload from request.body *****/');
+  // fastify.post<{
+  //   Body: { initNetPayload: InitNetworkPayload; payload: CreateAzureVMParams };
+  // }>(
+  //   '/build-network',
+  //   {
+  //     schema: ContainerSchema.createNetwork,
+  //   },
+  //   async (request, reply) => {
+  //     try {
+  //       /***** Extracting payload from request body *****/
+  //       const { initNetPayload, payload } = request.body;
+  //       console.log('/***** Received initNetPayload and payload from request.body *****/');
 
-        /***** Creating Azure VM Server *****/
-        const VM = await serverService.createAzureVMServer(payload);
-        console.log('/***** Azure VM created with id: ' + VM.id + ' *****/');
+  //       /***** Creating Azure VM Server *****/
+  //       const VM = await serverService.createAzureVMServer(payload);
+  //       console.log('/***** Azure VM created with id: ' + VM.id + ' *****/');
 
-        /***** Setting up Docker and Nginx on the VM *****/
-        const setupVm = await serverService.setupDockerAndNginx(VM.id);
-        console.log('/***** Docker and Nginx setup completed for VM id: ' + VM.id + ' *****/');
+  //       /***** Setting up Docker and Nginx on the VM *****/
+  //       const setupVm = await serverService.setupDockerAndNginx(VM.id);
+  //       console.log('/***** Docker and Nginx setup completed for VM id: ' + VM.id + ' *****/');
 
-        // const VM = { id: 'cm794olhd0001vvsvnajxaiv5' };
-        // const initNetwork = { id: 'cm794q4vp0003vvsv4hsl8fck', nodeCount: 3 };
+  //       // const VM = { id: 'cm794olhd0001vvsvnajxaiv5' };
+  //       // const initNetwork = { id: 'cm794q4vp0003vvsv4hsl8fck', nodeCount: 3 };
 
-        /***** Initializing network *****/
-        const initNetwork = await networkService.initNetwork(initNetPayload, VM.id);
-        if (!initNetwork) {
-          console.log('/***** Network initialization failed for VM id: ' + VM.id + ' *****/');
-          throw new Error('Network initialization failed');
-        }
-        console.log(
-          '/***** Network initialized with id: ' +
-            initNetwork.id +
-            ' and node count: ' +
-            initNetwork.nodeCount +
-            ' *****/',
-        );
+  //       /***** Initializing network *****/
+  //       const initNetwork = await networkService.initNetwork(initNetPayload, VM.id);
+  //       if (!initNetwork) {
+  //         console.log('/***** Network initialization failed for VM id: ' + VM.id + ' *****/');
+  //         throw new Error('Network initialization failed');
+  //       }
+  //       console.log(
+  //         '/***** Network initialized with id: ' +
+  //           initNetwork.id +
+  //           ' and node count: ' +
+  //           initNetwork.nodeCount +
+  //           ' *****/',
+  //       );
 
-        /***** Setting up container network *****/
-        await containerService.SetUpNetwork(initNetwork.nodeCount, initNetwork.id);
-        console.log(
-          '/***** Container network set up for network id: ' +
-            initNetwork.id +
-            ', node count: ' +
-            initNetwork.nodeCount +
-            ', and VM id: ' +
-            VM.id +
-            ' *****/',
-        );
+  //       /***** Setting up container network *****/
+  //       await containerService.SetUpNetwork(initNetwork.nodeCount, initNetwork.id);
+  //       console.log(
+  //         '/***** Container network set up for network id: ' +
+  //           initNetwork.id +
+  //           ', node count: ' +
+  //           initNetwork.nodeCount +
+  //           ', and VM id: ' +
+  //           VM.id +
+  //           ' *****/',
+  //       );
 
-        /***** Generating Docker Compose file for boot node *****/
-        const dockerComposeBootNode = await containerService.generateDockerComposeFile(
-          true,
-          initNetwork.id,
-        );
-        console.log(
-          '/***** Docker Compose file generated for boot node for network id: ' +
-            initNetwork.id +
-            ' *****/',
-        );
+  //       /***** Generating Docker Compose file for boot node *****/
+  //       const dockerComposeBootNode = await containerService.generateDockerComposeFile(
+  //         true,
+  //         initNetwork.id,
+  //       );
+  //       console.log(
+  //         '/***** Docker Compose file generated for boot node for network id: ' +
+  //           initNetwork.id +
+  //           ' *****/',
+  //       );
 
-        /***** Creating Enode URL for boot node *****/
-        const bootEnodeUrl = await containerService.createEnodeUrl(initNetwork.id, bootnodeIndex);
-        console.log('/***** Enode URL created for boot node: ' + bootEnodeUrl + ' *****/');
+  //       /***** Creating Enode URL for boot node *****/
+  //       const bootEnodeUrl = await containerService.createEnodeUrl(initNetwork.id, bootnodeIndex);
+  //       console.log('/***** Enode URL created for boot node: ' + bootEnodeUrl + ' *****/');
 
-        /***** Generating Docker Compose file for additional nodes *****/
-        const dockerComposeNode = await containerService.generateDockerComposeFile(
-          false,
-          initNetwork.id,
-          bootEnodeUrl,
-          initNetwork.nodeCount,
-        );
-        console.log(
-          '/***** Docker Compose file generated for nodes for network id: ' +
-            initNetwork.id +
-            ' *****/',
-        );
+  //       /***** Generating Docker Compose file for additional nodes *****/
+  //       const dockerComposeNode = await containerService.generateDockerComposeFile(
+  //         false,
+  //         initNetwork.id,
+  //         bootEnodeUrl,
+  //         initNetwork.nodeCount,
+  //       );
+  //       console.log(
+  //         '/***** Docker Compose file generated for nodes for network id: ' +
+  //           initNetwork.id +
+  //           ' *****/',
+  //       );
 
-        const transferDirectory = await serverService.transferDirectoryByName(
-          VM.id,
-          initNetwork.id,
-        );
-        console.log(
-          '/***** Directory transferred to VM with id: ' + VM.id + ' *****/',
-          transferDirectory,
-        );
+  //       const transferDirectory = await serverService.transferDirectoryByName(
+  //         VM.id,
+  //         initNetwork.id,
+  //       );
+  //       console.log(
+  //         '/***** Directory transferred to VM with id: ' + VM.id + ' *****/',
+  //         transferDirectory,
+  //       );
 
-        /***** Running network nodes *****/
-        await containerService.killBesuNode();
-        await containerService.runNode(initNetwork.id, initNetwork.nodeCount, VM.id);
-        console.log('/***** Network nodes started for network id: ' + initNetwork.id + ' *****/');
+  //       /***** Running network nodes *****/
+  //       await containerService.killBesuNode();
+  //       await containerService.runNode(initNetwork.id, initNetwork.nodeCount, VM.id);
+  //       console.log('/***** Network nodes started for network id: ' + initNetwork.id + ' *****/');
 
-        const Outputs = {
-          vm: VM,
-          setupVm,
-          Network: initNetwork,
-          EnodeURL: bootEnodeUrl,
-          transferDirectory,
-          bootNodeOutput: dockerComposeBootNode,
-          nodesOutput: dockerComposeNode,
-        };
+  //       const Outputs = {
+  //         vm: VM,
+  //         setupVm,
+  //         Network: initNetwork,
+  //         EnodeURL: bootEnodeUrl,
+  //         transferDirectory,
+  //         bootNodeOutput: dockerComposeBootNode,
+  //         nodesOutput: dockerComposeNode,
+  //       };
 
-        console.log('/***** Build network process completed successfully *****/');
-        return reply.send({ success: true, Outputs });
-      } catch (error: any) {
-        console.error('/***** Full error:', error, '*****/');
-        return reply.status(500).send({
-          success: false,
-          error: `Unexpected error: ${error.message}\nFull error: ${error}`,
-        });
-      }
-    },
-  );
+  //       console.log('/***** Build network process completed successfully *****/');
+  //       return reply.send({ success: true, Outputs });
+  //     } catch (error: any) {
+  //       console.error('/***** Full error:', error, '*****/');
+  //       return reply.status(500).send({
+  //         success: false,
+  //         error: `Unexpected error: ${error.message}\nFull error: ${error}`,
+  //       });
+  //     }
+  //   },
+  // );
 
   fastify.get<{ Params: { container: string; vmId: string } }>(
     '/ws/get_logs/:container/:vmId',

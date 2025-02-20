@@ -29,3 +29,9 @@ export type CreateNodePayload = {
   isBootnode: boolean;
   enodeUrl: string;
 };
+
+export type StartNodePayload = {
+  networkId: string;
+  nodeCount: number;
+  vmId: string;
+};

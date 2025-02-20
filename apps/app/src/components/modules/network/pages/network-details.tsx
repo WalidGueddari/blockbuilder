@@ -6,8 +6,8 @@ import {
   selectNodeError,
   selectNodeLoading,
   selectNodes,
-} from '@/services/nodeSlice';
-import type { NetworkDetailsProps } from '@/types/network';
+} from '@/services/v1/nodeSlice';
+import type { NetworkDetailsProps } from '@/types/v1/network';
 import type React from 'react';
 import { useEffect } from 'react';
 

@@ -241,6 +241,8 @@ export class ServerService {
       console.log(
         'Setup complete: Docker, Docker Compose, Nginx, and additional packages have been installed and configured.',
       );
+
+      return true;
     } catch (error) {
       console.error('Error during Docker and Nginx setup via SSH:', error);
       throw error;

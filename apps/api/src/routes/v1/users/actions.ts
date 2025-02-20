@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { getLoggedUserDataSchema } from '../../../schemas/users.js';
+import { getLoggedUserDataSchema } from '../../../schemas/v1/users.js';
 import { UsersService } from '../../../services/users.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {

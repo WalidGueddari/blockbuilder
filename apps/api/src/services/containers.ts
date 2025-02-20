@@ -11,7 +11,7 @@ import { promisify } from 'util';
 // 1. Import the centralized config
 import { config } from '../config.js';
 import { NodeService } from '../services/nodes.js';
-import { CreateNodePayload, NodePayload } from '../types/node.js';
+import { CreateNodePayload, NodePayload, StartNodePayload } from '../types/node.js';
 import { AbstractServiceOptions } from '../types/services.js';
 import { ServerService } from './server.js';
 
@@ -106,13 +106,13 @@ export class ContainerService {
   /**
    * 3. Run multiple node containers.
    */
-  async runNode(networId: string, nodeCount: number, vmId: string) {
+  async runNode(payload: StartNodePayload) {
     const { sshKeyDir, remoteBaseDir, subnet } = config;
 
     // Fetch the VM details from the database.
-    const vm = await this.serverService.getSSHConnection(vmId);
+    const vm = await this.serverService.getSSHConnection(payload.vmId);
     if (!vm) {
-      throw new Error(`VM with ID ${vmId} not found.`);
+      throw new Error(`VM with ID ${payload.vmId} not found.`);
     }
 
     const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
@@ -130,15 +130,15 @@ export class ContainerService {
       });
 
       const createNetwork = await ssh.execCommand(
-        `docker network create --subnet=${subnet} ${networId}`,
+        `docker network create --subnet=${subnet} ${payload.networkId}`,
         { execOptions: { pty: true } },
       );
       console.log('Network inspect:', createNetwork.stdout, createNetwork.stderr);
 
       const outputs = [];
-      for (let i = 1; i <= nodeCount; i++) {
+      for (let i = 1; i <= payload.nodeCount; i++) {
         // Determine the node directory.
-        const nodeDir = `${remoteBaseDir}/${networId}/Node-${i}`;
+        const nodeDir = `${remoteBaseDir}/${payload.networkId}/Node-${i}`;
         console.log(`Node directory for Node-${i}:`, nodeDir);
 
         // 1. Echo a starting message.

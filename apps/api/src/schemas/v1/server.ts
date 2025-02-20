@@ -15,14 +15,7 @@ export const ServerShcema = {
             sshEmail: { type: 'string', format: 'email' },
             sshKeyDir: { type: 'string' },
           },
-          required: [
-            'userId',
-            'resourceGroup',
-            'vmName',
-            'adminUsername',
-            'sshKeyName',
-            // 'sshEmail'
-          ],
+          required: ['userId', 'resourceGroup', 'vmName', 'sshKeyName'],
         },
       },
       required: ['payload'],
@@ -31,12 +24,13 @@ export const ServerShcema = {
 
   setupDockerAndNginx: {
     tags: ['Server'],
-    params: {
+    body: {
       type: 'object',
       properties: {
         id: { type: 'string' },
+        networkId: { type: 'string' },
       },
-      required: ['id'],
+      required: ['id', 'networkId'],
     },
   },
 };

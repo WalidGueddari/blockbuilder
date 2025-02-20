@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { Node } from '@/types/node';
+import type { Node } from '@/types/v1/node';
 import type React from 'react';
 
 interface NodeTableProps {

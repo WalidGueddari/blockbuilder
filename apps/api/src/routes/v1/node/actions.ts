@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { NodeSchema } from '../../../schemas/node.js';
+import { NodeSchema } from '../../../schemas/v1/node.js';
 import { NodeService } from '../../../services/nodes.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {

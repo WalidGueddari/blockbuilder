@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import useWebSocket from '@/hooks/useWebSocket';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
-import { clearLogs } from '@/services/logsSlice';
+import { clearLogs } from '@/services/v1/logsSlice';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';

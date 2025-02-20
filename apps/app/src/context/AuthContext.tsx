@@ -1,6 +1,6 @@
 'use client';
 
-import { selectAuth } from '@/services/authSlice';
+import { selectAuth } from '@/services/v1/authSlice';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 

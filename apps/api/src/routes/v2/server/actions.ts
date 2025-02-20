@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { ServerShcema } from '../../../schemas/server.js';
+import { ServerShcema } from '../../../schemas/v1/server.js';
 import { ServerService } from '../../../services/server.js';
 import { CreateAzureVMParams } from '../../../types/server.js';
 
@@ -24,15 +24,16 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
   );
 
-  fastify.post<{ Params: { id: string } }>(
-    '/setup/:id',
+  fastify.post<{ Body: { id: string; networkId: string } }>(
+    '/setup',
     {
       schema: ServerShcema.setupDockerAndNginx,
     },
     async (request, reply) => {
-      const { id } = request.params;
+      const { id, networkId } = request.body;
       try {
         const result = await serverService.setupDockerAndNginx(id);
+        await serverService.transferDirectoryByName(id, networkId);
         reply.send(result);
       } catch (error) {
         reply.status(500).send(error);

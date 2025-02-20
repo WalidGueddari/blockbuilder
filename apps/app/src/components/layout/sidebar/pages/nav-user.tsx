@@ -16,8 +16,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { logout } from '@/services/authSlice';
 import { useAppDispatch } from '@/services/hooks';
+import { logout } from '@/services/v1/authSlice';
 import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';

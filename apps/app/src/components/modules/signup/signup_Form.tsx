@@ -3,8 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login, register, selectAuth } from '@/services/authSlice';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
+import { login, register, selectAuth } from '@/services/v1/authSlice';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

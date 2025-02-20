@@ -3,9 +3,11 @@
 
 import { LogsViewer } from '@/components/modules/logs';
 import { useAppSelector } from '@/services/hooks';
-import { selectCurrentServerId } from '@/services/nodeSlice';
+import { selectCurrentServerId } from '@/services/v1/nodeSlice';
 import { useParams } from 'next/navigation';
 import React from 'react';
+
+// ClientPage.tsx
 
 // ClientPage.tsx
 

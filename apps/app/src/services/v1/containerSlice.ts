@@ -1,9 +1,9 @@
 // nodeSlice.ts
-import { InitNetwork, InitNetworkPayload } from '@/types/network';
+import { InitNetwork, InitNetworkPayload } from '@/types/v1/network';
 import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-import { RootState } from './store';
+import { RootState } from '../store';
 
 interface NodeState {
   nodes: any;

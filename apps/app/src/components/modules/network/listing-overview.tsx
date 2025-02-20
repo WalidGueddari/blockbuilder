@@ -19,7 +19,7 @@ import {
   selectNetworkError,
   selectNetworkLoading,
   selectNetworks,
-} from '@/services/networkSlice';
+} from '@/services/v1/networkSlice';
 import { Activity, Clock, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

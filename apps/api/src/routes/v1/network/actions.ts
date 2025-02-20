@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { networkSchema } from '../../../schemas/network.js';
+import { networkSchema } from '../../../schemas/v1/network.js';
 import { NewtorkSevice } from '../../../services/network.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {
