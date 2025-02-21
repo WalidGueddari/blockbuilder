@@ -1,3 +1,5 @@
+'use client';
+
 // NodeCard.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,17 +36,17 @@ const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <Server className="text-primary" size={16} />
-            <span className="text-sm">ID: {node.id.slice(0, 8)}...</span>
-          </div>
+            <span className="text-sm">ID: {node.id.slice(0, 4)}...</span>
+          </div> */}
           <div className="flex items-center space-x-2">
             <Wifi className="text-primary" size={16} />
             <span className="text-sm">IP: {node.nodeIp}</span>
           </div>
           <div className="flex items-center space-x-2">
             <Activity className="text-primary" size={16} />
-            <span className="text-sm">P2P Port: {node.p2pPort}</span>
+            <span className="text-sm">HTTP Port: {node.rpcHttpPort}</span>
           </div>
         </div>
       </CardContent>

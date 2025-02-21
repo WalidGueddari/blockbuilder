@@ -35,3 +35,8 @@ export interface NodesResponse {
   success: boolean;
   nodes: Node[];
 }
+
+export interface NodeResponse {
+  success: boolean;
+  node: Node;
+}

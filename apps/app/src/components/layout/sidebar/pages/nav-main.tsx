@@ -11,6 +11,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 
 export function NavMain({
@@ -24,6 +25,7 @@ export function NavMain({
     items?: {
       title: string;
       url: string;
+      disabled?: boolean;
     }[];
   }[];
 }) {
@@ -51,9 +53,23 @@ export function NavMain({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </a>
+                        {subItem.disabled ? (
+                          <span
+                            className={cn(
+                              'w-full cursor-not-allowed opacity-50',
+                              'flex items-center rounded-md p-2 text-sm outline-none transition-colors',
+                              'focus:bg-accent focus:text-accent-foreground',
+                              'hover:bg-accent hover:text-accent-foreground',
+                              'disabled:pointer-events-none disabled:opacity-50',
+                            )}
+                          >
+                            {subItem.title}
+                          </span>
+                        ) : (
+                          <a href={subItem.url} className="w-full">
+                            <span>{subItem.title}</span>
+                          </a>
+                        )}
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   ))}

@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const dispatch = useAppDispatch();
   const nodes = useAppSelector(selectNodes);
+  console.log('nodes:', nodes);
   const loading = useAppSelector(selectNodeLoading);
   const error = useAppSelector(selectNodeError);
   const [view, setView] = useState<'grid' | 'table'>('grid');
@@ -48,7 +49,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Network Overview</CardTitle>
-          <CardDescription>Network ID: {networkId}</CardDescription>
+          <CardDescription>Network: {nodes[0].network.name}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">

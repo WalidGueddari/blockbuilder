@@ -15,20 +15,40 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ChevronsUpDown, Plus } from 'lucide-react';
+import { ChevronsUpDown, Fan, Plus } from 'lucide-react';
 import * as React from 'react';
+import { useEffect, useState } from 'react';
 
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string;
-    logo: React.ElementType;
-    plan: string;
-  }[];
-}) {
+interface Team {
+  name: string;
+  logo: React.ElementType;
+}
+
+export function TeamSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+
+  // State to store the user data
+  const [user, setUser] = useState<{ name: string; email: string; avatar: string } | null>(null);
+
+  // State to store teams (defaulting to user's name)
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [activeTeam, setActiveTeam] = useState<Team | null>(null);
+
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+
+        // Initialize teams with the user's name as the default team
+        setTeams([{ name: parsedUser.name || 'Default Team', logo: Fan }]);
+        setActiveTeam({ name: parsedUser.name || 'Default Team', logo: Fan });
+      } catch (e) {
+        console.error('Failed to parse user from sessionStorage:', e);
+      }
+    }
+  }, []);
 
   return (
     <SidebarMenu>
@@ -40,11 +60,11 @@ export function TeamSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <activeTeam.logo className="size-4" />
+                <Fan className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate font-semibold">{activeTeam?.name}</span>
+                <span className="truncate text-xs">Demo Account</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -70,7 +90,7 @@ export function TeamSwitcher({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem className="gap-2 p-2" disabled>
               <div className="bg-background flex size-6 items-center justify-center rounded-md border">
                 <Plus className="size-4" />
               </div>

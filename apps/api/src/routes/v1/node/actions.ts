@@ -27,6 +27,26 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       }
     },
   );
+
+  fastify.get<{ Params: { nodeId: string } }>(
+    '/:nodeId',
+    {
+      schema: NodeSchema.getNodeById,
+    },
+    async (request, reply) => {
+      try {
+        const { nodeId } = request.params;
+        const node = await nodeService.getNodeById(nodeId);
+        return reply.send({ success: true, node });
+      } catch (error: any) {
+        console.error('Full error:', error);
+        return reply.status(500).send({
+          success: false,
+          error: `Unexpected error: ${error.message}\nFull error: ${error}`,
+        });
+      }
+    },
+  );
 };
 
 export default routes;

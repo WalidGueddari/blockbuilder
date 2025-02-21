@@ -35,6 +35,7 @@ export class AuthenticationService {
         where: { email: payload.email.toLowerCase() },
         select: {
           email: true,
+          name: true,
           id: true,
           password: true,
         },
@@ -50,6 +51,7 @@ export class AuthenticationService {
     const tokenPayload = {
       id: user.id,
       email: user.email,
+      name: user.email,
     };
     const accessToken = jwt.sign(tokenPayload, secret, signOptions);
     return {
@@ -57,6 +59,7 @@ export class AuthenticationService {
       user,
     };
   }
+
   async register(payload: RegisterPayload) {
     let user = null;
     user = await this.prisma.user.findUnique({
@@ -76,6 +79,7 @@ export class AuthenticationService {
       data: {
         email: payload.email,
         password: hashedPassword,
+        name: payload.email,
       },
     });
     return user;

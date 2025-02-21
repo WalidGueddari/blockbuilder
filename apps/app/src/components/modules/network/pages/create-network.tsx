@@ -22,16 +22,14 @@ import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAppDispatch } from '@/services/hooks';
 import { setupNetwork, startNetwork } from '@/services/v2/blockchainSlice';
-// --- Import your thunks and any selectors you need:
 import { createServer, setupServer } from '@/services/v2/serverSlice';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Network } from 'lucide-react';
+import { CheckCircle2, Loader2, Network } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-// Reusing your existing schema for the network name/nodeCount:
 const formSchema = z.object({
   name: z.string().nonempty({ message: 'Network name is required.' }),
   nodeCount: z
@@ -40,6 +38,13 @@ const formSchema = z.object({
     .max(10, { message: 'Node count cannot exceed 10.' }),
 });
 
+const steps = [
+  'Initializing server',
+  'Creating blockchain network',
+  'Setting up server',
+  'Running nodes',
+];
+
 export default function CreateNetworkDialog() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
@@ -47,24 +52,20 @@ export default function CreateNetworkDialog() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
 
   useEffect(() => {
-    // Retrieve the userId from sessionStorage
     const user = sessionStorage.getItem('user');
     if (user) {
       try {
         const parsedUser = JSON.parse(user);
         setUserId(parsedUser.id);
-        console.log('User ID set:', parsedUser.id); // Debug log
       } catch (e) {
         console.error('Failed to parse user from sessionStorage:', e);
       }
-    } else {
-      console.log('No user found in sessionStorage'); // Debug log
     }
   }, []);
 
-  // Set up the form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -73,18 +74,15 @@ export default function CreateNetworkDialog() {
     },
   });
 
-  // The core logic: chain your four calls in order
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log('onSubmit called with values:', values); // Debug log
-
     if (!userId) {
       console.error('User ID is not available.');
       return;
     }
 
     setIsLoading(true);
+    setCurrentStep(0);
     try {
-      console.log('Creating server...'); // Debug log
       const createRes = await dispatch(
         createServer({
           userId,
@@ -97,9 +95,8 @@ export default function CreateNetworkDialog() {
       if (!createRes?.id) {
         throw new Error('Failed to retrieve VM ID from createServer call.');
       }
-      console.log('Server created with ID:', createRes.id); // Debug log
 
-      console.log('Setting up network...'); // Debug log
+      setCurrentStep(1);
       const networkRes = await dispatch(
         setupNetwork({
           initNetPayload: {
@@ -114,19 +111,17 @@ export default function CreateNetworkDialog() {
       if (!networkRes?.id) {
         throw new Error('Failed to retrieve network ID from setupNetwork call.');
       }
-      console.log('Network set up with ID:', networkRes.id); // Debug log
 
-      console.log('Setting up server...'); // Debug log
+      setCurrentStep(2);
       await dispatch(
         setupServer({
           id: createRes.id,
           networkId: networkRes.id,
         }),
       ).unwrap();
-      console.log('Server setup complete'); // Debug log
 
-      console.log('Starting network...'); // Debug log
-      const startRes = await dispatch(
+      setCurrentStep(3);
+      await dispatch(
         startNetwork({
           payload: {
             vmId: createRes.id,
@@ -136,18 +131,11 @@ export default function CreateNetworkDialog() {
         }),
       ).unwrap();
 
-      // if (!startRes?.success) {
-      //   throw new Error("Network failed to start properly.")
-      // }
-      // console.log("Network started successfully") // Debug log
-
-      console.log('Showing toast notification...'); // Debug log
       toast({
         title: 'All Steps Complete',
         description: `Network "${values.name}" is created and started.`,
       });
 
-      console.log('Redirecting to network details page...'); // Debug log
       router.push(`/network/${networkRes.id}`);
     } catch (err) {
       console.error('Failed to complete the full setup chain:', err);
@@ -158,6 +146,7 @@ export default function CreateNetworkDialog() {
       });
     } finally {
       setIsLoading(false);
+      setCurrentStep(null);
     }
   }
 
@@ -168,13 +157,12 @@ export default function CreateNetworkDialog() {
           <Network className="h-6 w-6" />
           Create New Network
         </CardTitle>
-        <CardDescription>Set up your blockchain network and required VM resources.</CardDescription>
+        <CardDescription>Set up your blockchain network.</CardDescription>
       </CardHeader>
 
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Network Name */}
             <FormField
               control={form.control}
               name="name"
@@ -189,7 +177,6 @@ export default function CreateNetworkDialog() {
               )}
             />
 
-            {/* Node Count */}
             <FormField
               control={form.control}
               name="nodeCount"
@@ -216,6 +203,25 @@ export default function CreateNetworkDialog() {
             />
           </form>
         </Form>
+
+        {isLoading && (
+          <div className="mt-6 space-y-2">
+            {steps.map((step, index) => (
+              <div key={step} className="flex items-center gap-2">
+                {index < currentStep! ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                ) : index === currentStep ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                ) : (
+                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                )}
+                <span className={index <= currentStep! ? 'font-medium' : 'text-gray-500'}>
+                  {step}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
 
       <CardFooter>
@@ -224,8 +230,7 @@ export default function CreateNetworkDialog() {
           disabled={isLoading || !userId}
           className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
         >
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Initialize Network & Server
+          {isLoading ? 'Creating Network...' : 'Initialize Network'}
         </Button>
       </CardFooter>
     </Card>
