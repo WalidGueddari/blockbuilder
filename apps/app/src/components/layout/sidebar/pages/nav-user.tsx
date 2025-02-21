@@ -22,35 +22,30 @@ import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from '
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar();
+  const dispatch = useAppDispatch();
+  const router = useRouter();
 
-  const [userId, setUserId] = useState<string | null>(null);
+  // State to store the user data
+  const [user, setUser] = useState<{ name: string; email: string; avatar: string } | null>(null);
 
   useEffect(() => {
-    const user = sessionStorage.getItem('user');
-    if (user) {
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
       try {
-        const parsedUser = JSON.parse(user);
-        setUserId(parsedUser.id);
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error('Failed to parse user from sessionStorage:', e);
       }
     }
   }, []);
 
-  const dispatch = useAppDispatch();
-  const router = useRouter();
   const handleLogout = () => {
     dispatch(logout());
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('user');
     router.push('/login'); // Redirect to login page after logout
   };
 
@@ -63,13 +58,13 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
+              <Avatar className="h-8 w-8 rounded-lg bg-white">
+                <AvatarImage src={user?.avatar || '/avatars/1.svg'} alt={user?.name || 'User'} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-semibold">{user?.name || 'Loading...'}</span>
+                <span className="truncate text-xs">{user?.email || 'Loading...'}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -82,34 +77,34 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                <Avatar className="h-8 w-8 rounded-lg bg-white">
+                  <AvatarImage src={user?.avatar || '/avatars/1.svg'} alt={user?.name || 'User'} />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">{user?.name || 'Loading...'}</span>
+                  <span className="truncate text-xs">{user?.email || 'Loading...'}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <Sparkles />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <CreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <Bell />
                 Notifications
               </DropdownMenuItem>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Spinner } from '@/components/common/spinner';
 import { selectAuth } from '@/services/v1/authSlice';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -33,10 +34,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   if (localAuth === null) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4">
-        <div className="flex h-20 w-20 animate-spin items-center justify-center rounded-full border-4 border-transparent border-t-blue-600 text-4xl text-blue-600">
-          <div className="flex h-16 w-16 animate-spin items-center justify-center rounded-full border-4 border-transparent border-t-blue-600 text-2xl text-blue-600"></div>
-        </div>
+      <div className="bg-background flex h-screen items-center justify-center">
+        <Spinner />
       </div>
     );
   }

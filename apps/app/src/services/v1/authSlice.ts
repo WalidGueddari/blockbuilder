@@ -11,6 +11,7 @@ interface AuthState {
   user: {
     id: string;
     email: string;
+    name: string;
   } | null;
 }
 
@@ -72,6 +73,7 @@ const authSlice = createSlice({
         if (isClient) {
           sessionStorage.setItem('access_token', action.payload.access_token);
           sessionStorage.setItem('user', JSON.stringify(action.payload.user));
+          console.log('Saved user:', JSON.parse(sessionStorage.getItem('user')!));
         }
       })
       .addCase(login.rejected, (state, action) => {

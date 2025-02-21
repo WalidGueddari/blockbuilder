@@ -25,67 +25,43 @@ import { NavProjects } from './nav-project';
 import { NavUser } from './nav-user';
 import { TeamSwitcher } from './team-switcher';
 
-// This is sample data for a blockchain builder application.
+const networkId = '1';
+
 const data = {
-  user: {
-    name: 'Alice Nakamoto',
-    email: 'alice@blockbuilder.com',
-    avatar: '',
-  },
-  teams: [
-    {
-      name: 'Team 1',
-      logo: Wallet,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Team 2',
-      logo: GitBranch,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Custom Chain',
-      logo: Blocks,
-      plan: 'Development',
-    },
-  ],
   navMain: [
     {
       title: 'Dashboard',
-      url: '#',
+      url: '/',
       icon: Activity,
       isActive: true,
       items: [
         {
           title: 'Overview',
-          url: '#',
+          url: '/',
+          disabled: false,
         },
         {
           title: 'Analytics',
           url: '#',
-        },
-        {
-          title: 'Performance',
-          url: '#',
+          disabled: true, // Future feature
         },
       ],
     },
     {
-      title: 'Nodes',
+      title: 'Networks',
       url: '#',
       icon: Database,
+      isActive: true,
       items: [
         {
-          title: 'Manage Nodes',
-          url: '#',
+          title: 'Manage Networks',
+          url: `/network`,
+          disabled: false,
         },
         {
-          title: 'Node Health',
+          title: 'Network Health',
           url: '#',
-        },
-        {
-          title: 'Scaling',
-          url: '#',
+          disabled: true, // Future feature
         },
       ],
     },
@@ -95,54 +71,9 @@ const data = {
       icon: Code,
       items: [
         {
-          title: 'Deploy',
+          title: 'Deployed Contracts',
           url: '#',
-        },
-        {
-          title: 'Interact',
-          url: '#',
-        },
-        {
-          title: 'Audit',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Security',
-      url: '#',
-      icon: Shield,
-      items: [
-        {
-          title: 'Permissions',
-          url: '#',
-        },
-        {
-          title: 'Encryption',
-          url: '#',
-        },
-        {
-          title: 'Monitoring',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Documentation',
-      url: '#',
-      icon: BookOpen,
-      items: [
-        {
-          title: 'Getting Started',
-          url: '#',
-        },
-        {
-          title: 'API Reference',
-          url: '#',
-        },
-        {
-          title: 'Best Practices',
-          url: '#',
+          disabled: true, // Future feature
         },
       ],
     },
@@ -152,23 +83,16 @@ const data = {
       icon: Settings2,
       items: [
         {
-          title: 'General',
+          title: 'General Settings',
           url: '#',
-        },
-        {
-          title: 'Network Config',
-          url: '#',
-        },
-        {
-          title: 'Integrations',
-          url: '#',
+          disabled: true, // Future feature
         },
       ],
     },
   ],
   projects: [
     {
-      name: 'Team 1',
+      name: 'Demo Project',
       url: '#',
       icon: Wallet,
     },
@@ -179,14 +103,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

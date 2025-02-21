@@ -19,6 +19,7 @@ export const loginSchema = {
           properties: {
             email: { type: 'string' },
             id: { type: 'string' },
+            name: { type: 'string' },
           },
         },
       },

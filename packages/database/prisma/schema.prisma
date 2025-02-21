@@ -9,6 +9,7 @@ datasource db {
 
 model User {
   id         String     @id @default(cuid())
+  name       String
   email      String     @unique
   password   String     @db.Text()
   create_at  DateTime   @default(now())
@@ -17,7 +18,6 @@ model User {
   vmServers  VmServer[]
 
   @@index([email])
-  @@map("users")
 }
 
 model Network {
