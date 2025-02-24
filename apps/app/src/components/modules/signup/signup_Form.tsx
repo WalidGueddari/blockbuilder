@@ -31,9 +31,9 @@ export default function SignUpForm() {
     <div className="flex min-h-screen flex-col items-center justify-center">
       <Card className="mx-auto max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>
-            Enter your email and password below to log in to your account
+            Enter your email and password below to create an account
           </CardDescription>
         </CardHeader>
         <CardContent>
