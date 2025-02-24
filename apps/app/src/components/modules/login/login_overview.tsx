@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import { login, selectAuth } from '@/services/v1/authSlice';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -70,11 +72,16 @@ export function LoginForm() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Logging in...' : 'Log in'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign Up'}
               </Button>
               {error && <p className="text-red-500">{error}</p>}
             </div>
           </form>
+          <div className="text-center text-sm">
+            <Link href="/login" className="text-gray-400 transition-colors hover:text-gray-300">
+              Create an account? Sign up
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
