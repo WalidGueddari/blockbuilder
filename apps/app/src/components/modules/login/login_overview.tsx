@@ -78,7 +78,7 @@ export function LoginForm() {
             </div>
           </form>
           <div className="text-center text-sm">
-            <Link href="/login" className="text-gray-400 transition-colors hover:text-gray-300">
+            <Link href="/signup" className="text-gray-400 transition-colors hover:text-gray-300">
               Create an account? Sign up
             </Link>
           </div>
