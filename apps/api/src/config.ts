@@ -1,6 +1,6 @@
 // config.ts
 import * as dotenv from 'dotenv';
-import { size } from 'lodash';
+import { size, template } from 'lodash';
 
 // Load environment variables from .env into process.env
 dotenv.config();
@@ -56,6 +56,7 @@ export const config = {
   nodeTemplateFile: requiredVar('NODE_TEMPLATE_FILE'),
   networkBinDir: requiredVar('NETWORK_BIN_DIR'),
   sshKeyDir: requiredVar('SSH_KEY_DIR'),
+  templateDir: requiredVar('TEMPLATE_DIR'),
 
   /**
    * Network / Subnet
@@ -104,4 +105,14 @@ export const config = {
   storageType: requiredVar('STORAGE_TYPE'),
   securityType: requiredVar('SECURITY_TYPE'),
   remoteBaseDir: requiredVar('REMOTE_BASE_DIR'),
+
+  /**
+   * tesseract Configuration
+   */
+  tesseraBootnodeIp: requiredVar('TESSERA_BOOTNODE_IP'),
+  tesseraThirdPartyPort: requiredIntVar('TESS_THIRD_PARTY_PORT'),
+  tesseraQ2TPort: requiredIntVar('TESS_Q2T_PORT'),
+  tesseraP2PPort: requiredIntVar('TESS_P2P_PORT'),
+  tesseraHelthPort: requiredIntVar('TESS_HEALTH_PORT'),
+  tesseraStartIpSuffix: requiredIntVar('TESS_START_IP_SUFFIX'),
 };

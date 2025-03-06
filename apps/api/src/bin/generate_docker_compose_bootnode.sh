@@ -1,13 +1,5 @@
 
 generate_docker_compose_bootnode() {
-    # local NODE_INDEX=$1
-    # local P2P_PORT=$2
-    # local P2P_HOST=$3
-    # local RPC_HTTP_PORT=$4
-    # local HTTP_HOST=$5
-    # local RPC_WS_PORT=$6
-    # local WS_HOST=$7
-    # local NODE_IP=$8
     local TEMPLATE_FILE
     local OUTPUT_FILE
 
@@ -21,7 +13,7 @@ generate_docker_compose_bootnode() {
     # Read template and replace placeholders
     DOCKER_COMPOSE_CONTENT=$(<"$TEMPLATE_FILE")
 
-    echo "Debug: NODE_INDEX=$NODE_INDEX, P2P_PORT=$P2P_PORT, P2P_HOST=$P2P_HOST, RPC_HTTP_PORT=$RPC_HTTP_PORT, HTTP_HOST=$HTTP_HOST, RPC_WS_PORT=$RPC_WS_PORT, WS_HOST=$WS_HOST, IP= $NODE_IP"
+    echo "Debug: NODE_INDEX=$NODE_INDEX, P2P_PORT=$P2P_PORT, P2P_HOST=$P2P_HOST, RPC_HTTP_PORT=$RPC_HTTP_PORT, HTTP_HOST=$HTTP_HOST, RPC_WS_PORT=$RPC_WS_PORT, WS_HOST=$WS_HOST, NODE_IP=$NODE_IP, NET_ID=$NET_ID, TESS_THIRD_PARTY_PORT=$TESS_THIRD_PARTY_PORT, TESS_Q2T_PORT=$TESS_Q2T_PORT, TESS_P2P=$TESS_P2P, TESS_HEALTH_PORT=$TESS_HEALTH_PORT, TESSERA_IP=$TESSERA_IP"
 
     DOCKER_COMPOSE_CONTENT=$(echo "$DOCKER_COMPOSE_CONTENT" |
         sed "s/NODE_INDEX/$NODE_INDEX/g" |
@@ -32,7 +24,12 @@ generate_docker_compose_bootnode() {
         sed "s/RPC_WS_PORT/$RPC_WS_PORT/g" |
         sed "s/WS_HOST/$WS_HOST/g" |
         sed "s/NET_ID/$NET_ID/g" |
-        sed "s/NODE_IP/$NODE_IP/g")
+        sed "s/NODE_IP/$NODE_IP/g"|
+        sed "s/TESS_THIRD_PARTY_PORT/$TESS_THIRD_PARTY_PORT/g"|
+        sed "s/TESS_Q2T_PORT/$TESS_Q2T_PORT/g"|
+        sed "s/TESS_P2P/$TESS_P2P/g"|
+        sed "s/TESS_HEALTH_PORT/$TESS_HEALTH_PORT/g"|
+        sed "s/TESSERA_IP/$TESSERA_IP/g")
 
     # Ensure Node directory exists
     NODE_DIR="$BASE_DIR/$NET_ID/Node-$NODE_INDEX"

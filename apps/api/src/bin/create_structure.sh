@@ -29,9 +29,13 @@ create_structure() {
   for ((i = 1; i <= NUM_NODES; i++)); do
     NODE="Node-$i"
     NODE_DIR="$BASE_DIR/$NET_ID/$NODE/data"
+    TESSERA_DIR="$BASE_DIR/$NET_ID/$NODE/Tessera"
+    TESSERA_DIR_DATA="$BASE_DIR/$NET_ID/$NODE/Tessera/data"
 
     if [ ! -d "$NODE_DIR" ]; then
       mkdir -p "$NODE_DIR"
+      mkdir -p "$TESSERA_DIR"
+      mkdir -p "$TESSERA_DIR_DATA"
       echo "Directory structure for '$NODE' created."
     else
       echo "Directory '$NODE_DIR' already exists."

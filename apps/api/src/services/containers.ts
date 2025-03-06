@@ -46,6 +46,8 @@ export class ContainerService {
       { script: 'create_config_file.sh', params: '' },
       { script: 'generate_keys_genesis.sh', params: '' },
       { script: 'distribute_keys.sh', params: '' },
+      { script: 'generate_keys_tessera.sh', params: '' },
+      { script: 'distribute_tessera_config.sh', params: '' },
     ];
 
     const results: Array<{ script: string; success: boolean; output?: string; error?: string }> =
@@ -270,6 +272,11 @@ export class ContainerService {
       bootnodeRpcWsPort,
       bootnodeWsHost,
       bootnodeIp,
+      tesseraBootnodeIp,
+      tesseraP2PPort,
+      tesseraQ2TPort,
+      tesseraThirdPartyPort,
+      tesseraHelthPort,
     } = config;
 
     const command = [
@@ -282,6 +289,11 @@ export class ContainerService {
       `RPC_WS_PORT=${bootnodeRpcWsPort}`,
       `WS_HOST=${bootnodeWsHost}`,
       `NODE_IP=${bootnodeIp}`,
+      `TESSERA_IP=${tesseraBootnodeIp}`,
+      `TESS_P2P=${tesseraP2PPort}`,
+      `TESS_Q2T_PORT=${tesseraQ2TPort}`,
+      `TESS_THIRD_PARTY_PORT=${tesseraThirdPartyPort}`,
+      `TESS_HEALTH_PORT=${tesseraHelthPort}`,
       `${networkBinDir}/generate_docker_compose_bootnode.sh`,
     ].join(' ');
 
@@ -347,6 +359,11 @@ export class ContainerService {
       nodeWsHost,
       baseNodeIpPrefix,
       startIpSuffix,
+      tesseraStartIpSuffix,
+      tesseraP2PPort,
+      tesseraQ2TPort,
+      tesseraThirdPartyPort,
+      tesseraHelthPort,
     } = config;
 
     const nodePayloads: NodePayload[] = [];
@@ -354,9 +371,14 @@ export class ContainerService {
     // Generate docker-compose for nodes from 2..nodeCount
     for (let i = 2; i <= nodeCount; i++) {
       const currentIp = `${baseNodeIpPrefix}${startIpSuffix + (i - 1)}`;
+      const tesseraCurrentIp = `${baseNodeIpPrefix}${tesseraStartIpSuffix + (i - 1)}`;
       const currentP2PPort = nodeP2pPort + (i - 1);
       const currentWsPort = nodeRpcWsPort + (i - 1) * 2;
       const currentHttpPort = nodeRpcHttpPort + (i - 1) * 2;
+      const currentTessP2PPort = tesseraP2PPort + (i - 1) * 100;
+      const currentTessQ2TPort = tesseraQ2TPort + (i - 1) * 100;
+      const currentTessThirdPartyPort = tesseraThirdPartyPort + (i - 1) * 100;
+      const currentTessHealthPort = tesseraHelthPort + (i - 1) * 100;
 
       const command = [
         `NET_ID=${networkId}`,
@@ -369,6 +391,11 @@ export class ContainerService {
         `WS_HOST=${nodeWsHost}`,
         `NODE_IP=${currentIp}`,
         `ENODE_URL=${bootEnodeUrl || ''}`,
+        `TESS_P2P=${currentTessP2PPort}`,
+        `TESS_Q2T_PORT=${currentTessQ2TPort}`,
+        `TESS_THIRD_PARTY_PORT=${currentTessThirdPartyPort}`,
+        `TESS_HEALTH_PORT=${currentTessHealthPort}`,
+        `TESSERA_IP=${tesseraCurrentIp}`,
         `${networkBinDir}/generate_docker_compose_node.sh`,
       ].join(' ');
 

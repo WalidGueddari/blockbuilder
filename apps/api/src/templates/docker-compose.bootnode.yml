@@ -5,16 +5,18 @@ services:
     volumes:
       - ./data:/data
       - ../genesis.json:/genesis.json
+      - ./Tessera:/Tessera
+      - ./Tessera/data:/Tessera/data
     ports:
-      - "P2P_PORT:P2P_PORT" 
-      - "RPC_HTTP_PORT:RPC_HTTP_PORT"   
-      - "RPC_WS_PORT:RPC_WS_PORT"   
+      - "P2P_PORT:P2P_PORT"
+      - "RPC_HTTP_PORT:RPC_HTTP_PORT"
+      - "RPC_WS_PORT:RPC_WS_PORT"
     command:
       # General settings
       - --data-path=/data
       - --genesis-file=/genesis.json
       - --profile=ENTERPRISE
-      
+
       # P2P settings
       - --p2p-port=P2P_PORT
       - --p2p-host=P2P_HOST
@@ -33,10 +35,32 @@ services:
 
       # Host allowlist
       - --host-allowlist="*"
-      
+
+      # Privacy settings: point to the local Tessera instance using its Docker service name.
+      - --privacy-enabled
+      - --privacy-url=http://tessera-NODE_INDEX:TESS_THIRD_PARTY_PORT
+      - --privacy-public-key-file=/Tessera/data/nodeKey.pub
+    depends_on:
+      - tessera
     networks:
       NET_ID:
         ipv4_address: NODE_IP
+
+  tessera:
+    image: quorumengineering/tessera:latest
+    container_name: tessera-NODE_INDEX
+    volumes:
+      - ./Tessera:/Tessera
+      - ./Tessera/data:/Tessera/data
+    ports:
+      - "TESS_THIRD_PARTY_PORT:TESS_THIRD_PARTY_PORT" # ThirdParty service
+      - "TESS_Q2T_PORT:TESS_Q2T_PORT" # Q2T service
+      - "TESS_P2P:TESS_P2P" # P2P service
+      - "TESS_HEALTH_PORT:TESS_HEALTH_PORT" # Optional admin/health port
+    command: [ "-configfile", "/Tessera/tessera.conf" ]
+    networks:
+      NET_ID:
+        ipv4_address: TESSERA_IP
 
 networks:
   NET_ID:

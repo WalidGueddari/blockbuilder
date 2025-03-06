@@ -79,6 +79,14 @@ RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25
 ENV BESU_HOME=/opt/besu-25.1.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
 
+RUN curl -L https://s01.oss.sonatype.org/service/local/repositories/releases/content/net/consensys/quorum/tessera/tessera-dist/24.4.2/tessera-dist-24.4.2.tar -o /tmp/tessera.tar \
+    && mkdir -p /opt/tessera-24.4.2 \
+    && tar -xf /tmp/tessera.tar -C /opt/tessera-24.4.2 --strip-components=1 \
+    && rm /tmp/tessera.tar
+
+ENV TESSERA_HOME=/opt/tessera-24.4.2
+ENV PATH="$TESSERA_HOME/bin:${PATH}"
+
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN pip3 install --break-system-packages eth-keys eth-utils

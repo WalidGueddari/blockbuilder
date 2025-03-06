@@ -45,3 +45,6 @@ yarn-error.log*
 .env.production
 
 docker-compose.yml
+
+.ssh_keys
+local-meta
