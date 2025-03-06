@@ -61,7 +61,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       try {
         const { payload } = request.body;
 
-        // await containerService.killBesuNode();
+        await containerService.killBesuNode();
         const start = await containerService.runNode(payload);
 
         fastify.log.info(`Starting network on VM id: ${payload.vmId}`);

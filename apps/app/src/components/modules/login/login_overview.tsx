@@ -72,16 +72,16 @@ export function LoginForm() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign Up'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign In'}
               </Button>
               {error && <p className="text-red-500">{error}</p>}
             </div>
           </form>
-          <div className="text-center text-sm">
+          {/* <div className="text-center text-sm">
             <Link href="/signup" className="text-gray-400 transition-colors hover:text-gray-300">
               Create an account? Sign up
             </Link>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>
