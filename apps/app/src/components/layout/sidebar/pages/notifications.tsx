@@ -1,3 +1,4 @@
+// notifications.tsx
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,61 +11,43 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAppDispatch, useAppSelector } from '@/services/hooks';
+import { updateNotification } from '@/services/v2/notificationSlice';
 import { Bell } from 'lucide-react';
 import * as React from 'react';
 
-interface Notification {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-}
+// notifications.tsx
 
 export function NotificationPanel() {
-  const [notifications, setNotifications] = React.useState<Notification[]>([
-    {
-      id: '1',
-      title: 'New message',
-      description: 'You have a new message from Sarah',
-      time: '5 min ago',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'Project update',
-      description: 'Changes were committed to the project',
-      time: '2 hours ago',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'Reminder',
-      description: 'Meeting with the team tomorrow at 10 AM',
-      time: 'Yesterday',
-      read: true,
-    },
-    {
-      id: '4',
-      title: 'New message',
-      description: 'You have a new message from Sarah',
-      time: '5 min ago',
-      read: true,
-    },
-  ]);
+  // 1) Grab notifications from Redux:
+  const notifications = useAppSelector((state) => state.notifications.items);
+  const dispatch = useAppDispatch();
 
+  // 2) Filter out how many are "unread":
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // 3) Mark a single notification as read
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      ),
+    dispatch(
+      updateNotification({
+        id,
+        changes: { read: true },
+      }),
     );
   };
 
+  // 4) Mark all as read
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
+    notifications.forEach((notif) => {
+      if (!notif.read) {
+        dispatch(
+          updateNotification({
+            id: notif.id,
+            changes: { read: true },
+          }),
+        );
+      }
+    });
   };
 
   return (
@@ -80,6 +63,7 @@ export function NotificationPanel() {
           <span className="sr-only">Notifications</span>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
@@ -95,6 +79,7 @@ export function NotificationPanel() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
         <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
           {notifications.length > 0 ? (
             notifications.map((notification) => (
@@ -107,9 +92,15 @@ export function NotificationPanel() {
                   <span className={`font-medium ${notification.read ? '' : 'text-primary'}`}>
                     {notification.title}
                   </span>
-                  <span className="text-muted-foreground text-xs">{notification.time}</span>
+                  {notification.time && (
+                    <span className="text-muted-foreground text-xs">{notification.time}</span>
+                  )}
                 </div>
-                <span className="text-muted-foreground text-sm">{notification.description}</span>
+                {notification.description && (
+                  <span className="text-muted-foreground text-sm">{notification.description}</span>
+                )}
+
+                {/* If it's unread, show the dot */}
                 {!notification.read && <div className="bg-primary mt-1 h-2 w-2 rounded-full"></div>}
               </DropdownMenuItem>
             ))
@@ -117,6 +108,7 @@ export function NotificationPanel() {
             <div className="text-muted-foreground py-6 text-center">No notifications</div>
           )}
         </DropdownMenuGroup>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem className="justify-center">
           <Button variant="ghost" size="sm" className="w-full" disabled>

@@ -1,3 +1,4 @@
+// create-network.tsx
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,13 +23,17 @@ import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAppDispatch } from '@/services/hooks';
 import { setupNetwork, startNetwork } from '@/services/v2/blockchainSlice';
+import { addNotification, updateNotification } from '@/services/v2/notificationSlice';
 import { createServer, setupServer } from '@/services/v2/serverSlice';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Loader2, Network } from 'lucide-react';
+import { Loader2, Network } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+
+// create-network.tsx
 
 const formSchema = z.object({
   name: z.string().nonempty({ message: 'Network name is required.' }),
@@ -38,13 +43,6 @@ const formSchema = z.object({
     .max(10, { message: 'Node count cannot exceed 10.' }),
 });
 
-const steps = [
-  'Initializing server',
-  'Creating blockchain network',
-  // 'Setting up server',
-  // 'Running nodes',
-];
-
 export default function CreateNetworkDialog() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
@@ -52,7 +50,6 @@ export default function CreateNetworkDialog() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState<number | null>(null);
 
   useEffect(() => {
     const user = sessionStorage.getItem('user');
@@ -81,9 +78,22 @@ export default function CreateNetworkDialog() {
     }
 
     setIsLoading(true);
-    setCurrentStep(0);
+
+    // 1) Add a "pending" notification to Redux:
+    const notificationId = uuidv4();
+    dispatch(
+      addNotification({
+        id: notificationId,
+        title: `Creating network "${values.name}"`,
+        description: 'Starting network creation process...',
+        status: 'pending',
+        time: new Date().toLocaleTimeString(), // or ISO string
+        read: false,
+      }),
+    );
 
     try {
+      // Start the chain
       const createRes = await dispatch(
         createServer({
           userId,
@@ -97,7 +107,6 @@ export default function CreateNetworkDialog() {
         throw new Error('Failed to retrieve VM ID from createServer call.');
       }
 
-      setCurrentStep(1);
       const networkRes = await dispatch(
         setupNetwork({
           initNetPayload: {
@@ -113,18 +122,16 @@ export default function CreateNetworkDialog() {
         throw new Error('Failed to retrieve network ID from setupNetwork call.');
       }
 
-      // Redirect user immediately after network creation
+      // Redirect user immediately after the initial network creation
       toast({
         title: 'Network Setup In Progress',
         description: `Network "${values.name}" is being configured. Redirecting now...`,
       });
-
       router.push(`/network/${networkRes.id}`);
 
-      // Continue the rest of the setup process in the background
+      // 2) Continue the rest in the background
       (async () => {
         try {
-          setCurrentStep(2);
           await dispatch(
             setupServer({
               id: createRes.id,
@@ -132,7 +139,6 @@ export default function CreateNetworkDialog() {
             }),
           ).unwrap();
 
-          setCurrentStep(3);
           await dispatch(
             startNetwork({
               payload: {
@@ -143,10 +149,17 @@ export default function CreateNetworkDialog() {
             }),
           ).unwrap();
 
-          toast({
-            title: 'All Steps Complete',
-            description: `Network "${values.name}" setup is fully complete.`,
-          });
+          // 3) On success, update the original notification to 'success':
+          dispatch(
+            updateNotification({
+              id: notificationId,
+              changes: {
+                status: 'success',
+                description: `Network "${values.name}" setup is fully complete.`,
+                read: false,
+              },
+            }),
+          );
         } catch (err) {
           console.error('Failed to complete the remaining setup steps:', err);
           toast({
@@ -154,6 +167,17 @@ export default function CreateNetworkDialog() {
             description: String(err),
             variant: 'destructive',
           });
+
+          // Mark notification as error
+          dispatch(
+            updateNotification({
+              id: notificationId,
+              changes: {
+                status: 'error',
+                description: `Network "${values.name}" setup failed: ${String(err)}`,
+              },
+            }),
+          );
         }
       })();
     } catch (err) {
@@ -163,9 +187,19 @@ export default function CreateNetworkDialog() {
         description: String(err),
         variant: 'destructive',
       });
+
+      // Mark notification as error
+      dispatch(
+        updateNotification({
+          id: notificationId,
+          changes: {
+            status: 'error',
+            description: `Failed to create network "${values.name}": ${String(err)}`,
+          },
+        }),
+      );
     } finally {
       setIsLoading(false);
-      setCurrentStep(null);
     }
   }
 
@@ -182,6 +216,7 @@ export default function CreateNetworkDialog() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Network Name */}
             <FormField
               control={form.control}
               name="name"
@@ -196,6 +231,7 @@ export default function CreateNetworkDialog() {
               )}
             />
 
+            {/* Node Count */}
             <FormField
               control={form.control}
               name="nodeCount"
@@ -220,27 +256,17 @@ export default function CreateNetworkDialog() {
                 </FormItem>
               )}
             />
+
+            {/* Submit Button is in CardFooter */}
           </form>
         </Form>
 
-        {isLoading && (
-          <div className="mt-6 space-y-2">
-            {steps.map((step, index) => (
-              <div key={step} className="flex items-center gap-2">
-                {index < currentStep! ? (
-                  <CheckCircle2 className="text-primary h-5 w-5" />
-                ) : index === currentStep ? (
-                  <Loader2 className="text-foreground h-5 w-5 animate-spin" />
-                ) : (
-                  <div className="border-accent h-5 w-5 rounded-full border-2" />
-                )}
-                <span className={index <= currentStep! ? 'font-medium' : 'text-secondary'}>
-                  {step}
-                </span>
-              </div>
-            ))}
+        {/* {isLoading && (
+          <div className="mt-6 flex items-center gap-2">
+            <Loader2 className="text-foreground h-5 w-5 animate-spin" />
+            <span className="font-medium">Creating blockchain network</span>
           </div>
-        )}
+        )} */}
       </CardContent>
 
       <CardFooter>
