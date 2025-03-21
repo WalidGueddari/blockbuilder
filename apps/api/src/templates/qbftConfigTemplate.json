@@ -1,7 +1,7 @@
 {
     "genesis": {
       "config": {
-        "chainId": 1337,
+        "chainId": PLACEHOLDER_CHAIN_ID,
         "berlinBlock": 0,
         "qbft": {
           "blockperiodseconds": 2,
@@ -24,7 +24,7 @@
         "PLACEHOLDER_ADDRESS_2": {
           "privateKey": "PLACEHOLDER_KEY_2",
           "comment": "Private key for development purposes.",
-          "balance": "90000000000000000000000"
+          "balance": "0x130ee8e7179044400000"
         }
       }
     },

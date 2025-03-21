@@ -41,15 +41,18 @@ export default function CreateNetworkPage() {
       {/* Top Section */}
       <Card className="mx-auto w-full max-w-2xl border-0">
         <CardHeader className="text-center">
-          <CardTitle className="text-primary text-3xl font-bold">Create a Network</CardTitle>
+          <CardTitle className="text-foreground text-3xl font-bold">Create a Network</CardTitle>
           <CardDescription>
             Let's go ahead and build out your first blockchain network.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Link href="/create-network">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusCircle className="mr-2 h-5 w-5" /> CREATE NETWORK
+            <Button
+              size="lg"
+              className="bg-primary text-primary-foreground text-md hover:bg-primary/90 flex items-center justify-center"
+            >
+              <PlusCircle strokeWidth={3} className="mr-2 h-5 w-5" /> Create Network
             </Button>
           </Link>
         </CardContent>
@@ -58,7 +61,7 @@ export default function CreateNetworkPage() {
       <Separator className="my-8" />
 
       {/* Bottom Section: Last Active Networks */}
-      <h2 className="text-primary mb-6 flex items-center text-2xl font-semibold">
+      <h2 className="text-foreground mb-6 flex items-center text-2xl font-semibold">
         <Activity className="mr-2" /> Last Active Networks
       </h2>
       <NetworkList />

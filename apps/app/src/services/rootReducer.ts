@@ -3,9 +3,9 @@ import { combineReducers } from '@reduxjs/toolkit';
 //v1 reducers
 import authReducer from './v1/authSlice';
 import containerReducer from './v1/containerSlice';
-import logReducer from './v1/logsSlice';
 import networkReducer from './v1/networkSlice';
 import nodeReducer from './v1/nodeSlice';
+import websocketReducer from './v1/websocketSlice';
 //v2 reducers
 import blockchainReducer from './v2/blockchainSlice';
 import serverReducer from './v2/serverSlice';
@@ -16,7 +16,7 @@ const rootReducer = combineReducers({
   container: containerReducer,
   node: nodeReducer,
   network: networkReducer,
-  logs: logReducer,
+  websocket: websocketReducer,
 
   //v2 reducers
   blockchain: blockchainReducer,

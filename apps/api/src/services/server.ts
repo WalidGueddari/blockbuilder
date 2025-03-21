@@ -71,10 +71,25 @@ export class ServerService {
 
       // Deploy the Azure VM using the Azure CLI command with dynamic parameters
       console.log(`Deploying Azure VM: ${vmName}`);
+      const nsgName = vmName + 'NSG';
       const vmCreateCmd = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --location "${location}" --size "${size}" --image "${image}" --admin-username "${adminUsername}" --ssh-key-value "${sshKeyPath}.pub" --os-disk-size-gb "${osDiskSize}" --storage-sku "${storageType}" --security-type "${securityType}" --verbose`;
-      await execAsync(vmCreateCmd);
+      const vmOpenPortCmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTP --priority 1010 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80
+`;
+      try {
+        const { stdout: createStdout, stderr: createStderr } = await execAsync(vmCreateCmd);
+        console.log('VM Creation Command Logs:');
+        console.log('stdout:', createStdout);
+        console.log('stderr:', createStderr);
 
-      console.log('VM Deployment Complete!');
+        const { stdout: openPortStdout, stderr: openPortStderr } = await execAsync(vmOpenPortCmd);
+        console.log('NSG Rule Creation (Open Port) Command Logs:');
+        console.log('stdout:', openPortStdout);
+        console.log('stderr:', openPortStderr);
+      } catch (error) {
+        console.error('Error executing commands:', error);
+      }
+
+      // console.log('VM Deployment Complete!');
 
       // Retrieve VM details using Azure CLI commands
       console.log('Fetching VM details...');

@@ -51,6 +51,7 @@ create_config_file() {
 
   # Replace placeholders in the template
   CONFIG_CONTENT=$(echo "$TEMPLATE" |
+    sed "s/PLACEHOLDER_CHAIN_ID/$CHAIN_ID/" |
     sed "s/PLACEHOLDER_KEY_1/$PRIVATE_KEY_1/" |
     sed "s/PLACEHOLDER_KEY_2/$PRIVATE_KEY_2/" |
     sed "s/PLACEHOLDER_ADDRESS_1/$ADDRESS_1/" |

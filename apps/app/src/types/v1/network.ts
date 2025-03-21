@@ -19,6 +19,7 @@ export type InitNetwork = {
   id: string;
   name: string;
   userId: string;
+  status: string;
   nodeCount: number;
   createdAt: string;
 };

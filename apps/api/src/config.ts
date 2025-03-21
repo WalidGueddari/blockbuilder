@@ -1,9 +1,4 @@
 // config.ts
-import * as dotenv from 'dotenv';
-import { size, template } from 'lodash';
-
-// Load environment variables from .env into process.env
-dotenv.config();
 
 /**
  * Throws an error if the environment variable is missing.
@@ -46,6 +41,11 @@ export const config = {
    */
   accessTokenSecret: requiredVar('ACCESS_TOKEN_SECRET'),
   accessTokenTtl: requiredVar('ACCESS_TOKEN_TTL'),
+
+  /**
+   * Polling
+   */
+  pollingInterval: requiredIntVar('POLL_INTERVAL'),
 
   /**
    * Directories and Files

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Network" ADD COLUMN     "chainId" INTEGER NOT NULL DEFAULT 1337;

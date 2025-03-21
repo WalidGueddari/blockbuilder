@@ -10,6 +10,7 @@ import { promisify } from 'util';
 
 // 1. Import the centralized config
 import { config } from '../config.js';
+import { Status } from '../constants.js';
 import { NodeService } from '../services/nodes.js';
 import { CreateNodePayload, NodePayload, StartNodePayload } from '../types/node.js';
 import { AbstractServiceOptions } from '../types/services.js';
@@ -36,7 +37,7 @@ export class ContainerService {
   /**
    * 1. Set up the network by running bash scripts.
    */
-  async SetUpNetwork(nodesNumber: number, networId: string) {
+  async SetUpNetwork(nodesNumber: number, networId: string, chainId: number) {
     // Grab NETWORK_BIN_DIR from config
     const { networkBinDir } = config;
 
@@ -56,7 +57,7 @@ export class ContainerService {
     for (const { script, params } of scripts) {
       try {
         // Export NUM_NODES and NET_ID as environment variables for the script
-        const command = `NUM_NODES=${nodesNumber} NET_ID=${networId} ${networkBinDir}/${script} ${params}`;
+        const command = `NUM_NODES=${nodesNumber} NET_ID=${networId} CHAIN_ID=${chainId} ${networkBinDir}/${script} ${params}`;
         console.log(`Executing: ${command}`);
 
         const { stdout } = await execAsync(command, { shell: '/bin/bash' });
@@ -110,18 +111,18 @@ export class ContainerService {
    */
   async runNode(payload: StartNodePayload) {
     const { sshKeyDir, remoteBaseDir, subnet } = config;
+    const ssh = new NodeSSH();
 
     // Fetch the VM details from the database.
     const vm = await this.serverService.getSSHConnection(payload.vmId);
     if (!vm) {
-      throw new Error(`VM with ID ${payload.vmId} not found.`);
+      return { success: false, message: [], errors: [`VM with ID ${payload.vmId} not found.`] };
     }
 
     const sshKeyPath = path.join(sshKeyDir, vm.sshKeyName);
     const privateKeyContent = await fs.readFile(sshKeyPath, 'utf8');
 
     console.log(`SSH Key Path: ${sshKeyPath}`);
-    const ssh = new NodeSSH();
 
     try {
       console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
@@ -131,44 +132,62 @@ export class ContainerService {
         privateKey: privateKeyContent,
       });
 
+      // Create Docker network
       const createNetwork = await ssh.execCommand(
         `docker network create --subnet=${subnet} ${payload.networkId}`,
         { execOptions: { pty: true } },
       );
-      console.log('Network inspect:', createNetwork.stdout, createNetwork.stderr);
 
-      const outputs = [];
+      if (createNetwork.stderr) {
+        throw new Error(`Failed to create network: ${createNetwork.stderr}`);
+      }
+
+      console.log('Network created successfully:', createNetwork.stdout);
+
+      const outputs: string[] = [];
+      const errors: string[] = [];
+
       for (let i = 1; i <= payload.nodeCount; i++) {
-        // Determine the node directory.
         const nodeDir = `${remoteBaseDir}/${payload.networkId}/Node-${i}`;
         console.log(`Node directory for Node-${i}:`, nodeDir);
 
-        // 1. Echo a starting message.
-        let result = await ssh.execCommand(`echo "Starting Node-${i} using Docker Compose..."`, {
+        const node = await this.prisma.node.findFirst({
+          where: {
+            networkId: payload.networkId,
+            name: `Node-${i}`,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        // Start Node
+        let result = await ssh.execCommand(`cd ${nodeDir} && docker-compose up -d`, {
           execOptions: { pty: true },
         });
-        console.log(`Node-${i} start message:`, result.stdout, result.stderr);
 
-        // 2. Run docker-compose up -d in the node directory.
-        result = await ssh.execCommand(`cd ${nodeDir} && docker-compose up -d`, {
-          execOptions: { pty: true },
-        });
-        console.log(`docker-compose output for Node-${i}:`, result.stdout, result.stderr);
-
-        // 3. Echo a completion message.
-        result = await ssh.execCommand(`echo "Node-${i} started. Logs are available in Docker."`, {
-          execOptions: { pty: true },
-        });
-        console.log(`Node-${i} completion message:`, result.stdout, result.stderr);
-
-        outputs.push(`Node-${i} started successfully.`);
+        if (result.stderr) {
+          console.error(`Error starting Node-${i}:`, result.stderr);
+          errors.push(`Node-${i} failed to start: ${result.stderr}`);
+        } else {
+          console.log(`docker-compose output for Node-${i}:`, result.stdout);
+          if (node) {
+            await this.nodeService.updateNodeStatus(node.id, Status.ACTIVE);
+          }
+          outputs.push(`Node-${i} started successfully.`);
+        }
       }
 
       ssh.dispose();
-      return outputs;
-    } catch (error) {
+
+      if (errors.length > 0) {
+        return { success: false, message: outputs, errors };
+      }
+
+      return { success: true, message: outputs };
+    } catch (error: any) {
       console.error('Error in runNode:', error);
-      throw error;
+      return { success: false, message: [], errors: [error.message] };
     }
   }
 

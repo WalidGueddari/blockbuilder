@@ -27,10 +27,45 @@ model Network {
   status    Status   @default(PENDING)
   nodeCount Int
   userId    String
+  chainId   Int      @default(1337)
   user      User     @relation(fields: [userId], references: [id])
   server    VmServer @relation(fields: [serverId], references: [id])
   serverId  String
   nodes     Node[]
+  genesis   Genesis?
+  allocs    Alloc[]
+
+  create_at  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
+
+model Genesis {
+  id        String  @id @default(cuid())
+  network   Network @relation(fields: [networkId], references: [id])  // Define fields & references here
+  networkId String  @unique  // Foreign key to Network
+
+  berlinBlock    Int @default(0)
+  blockPeriod    Int @default(2)
+  epochLength    Int @default(30000)
+  requestTimeout Int @default(4)
+
+  nonce      String @default("0x0")
+  timestamp  String
+  gasLimit   String
+  difficulty String
+  mixHash    String
+  coinbase   String @default("0x0000000000000000000000000000000000000000")
+
+  create_at DateTime @default(now())
+}
+
+model Alloc {
+  id             String  @id @default(cuid())
+  public_address String
+  private_key    String
+  balance        String
+  networkId      String
+  network        Network @relation(fields: [networkId], references: [id])
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -41,7 +76,7 @@ model Node {
   networkId   String
   name        String
   container   String
-  status      Status  @default(ACTIVE)
+  status      Status  @default(PENDING)
   network     Network @relation(fields: [networkId], references: [id])
   p2pPort     Int
   rpcHttpPort Int
@@ -60,16 +95,16 @@ model Node {
 
 model VmServer {
   id               String   @id @default(cuid())
-  azureId          String // The unique identifier of the VM in Azure
-  adminUsername    String // The admin username for the VM
-  vmName           String // The name of the VM
-  location         String // Azure region where the VM is deployed
-  macAddress       String // MAC address of the VM's network interface
-  powerState       String // Current power state of the VM (e.g., "VM running")
-  privateIpAddress String // The private IP address assigned to the VM
-  publicIpAddress  String // The public IP address assigned to the VM
-  resourceGroup    String // The Azure resource group for the VM
-  sshKeyName       String // The SSH key name used to authenticate with the VM
+  azureId          String
+  adminUsername    String
+  vmName           String
+  location         String
+  macAddress       String
+  powerState       String
+  privateIpAddress String
+  publicIpAddress  String
+  resourceGroup    String
+  sshKeyName       String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

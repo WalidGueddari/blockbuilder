@@ -1,14 +1,17 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { PlusCircleIcon } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
+import Link from 'next/link';
 import type React from 'react';
 
-// Added import for React
 import { AppSidebar } from './pages/app-sidebar';
 import { DynamicBreadcrumb } from './pages/dynamic-breadcrumb';
-import { ThemeToggle } from './pages/theme-toggle';
+import { NotificationPanel } from './pages/notifications';
+import { SettingsDropdown } from './pages/settings-dropdown';
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -26,8 +29,18 @@ export default function Page({ children }: SidebarProps) {
               <Separator orientation="vertical" className="mr-2 h-4" />
               <DynamicBreadcrumb />
             </div>
-            <div className="pr-4">
-              <ThemeToggle />
+            <div className="flex items-center gap-4 pr-4">
+              {' '}
+              {/* Increased gap for better separation */}
+              <Link href="/create-network">
+                <Button size="sm" className="flex items-center justify-center gap-1">
+                  Create new Network
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2">
+                <NotificationPanel />
+                <SettingsDropdown />
+              </div>
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>

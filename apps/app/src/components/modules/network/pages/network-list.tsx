@@ -47,7 +47,7 @@ export default function NetworkList() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>{network.name}</span>
-                <Badge variant="secondary">Active</Badge>
+                <Badge variant="secondary">{network.status}</Badge>
               </CardTitle>
               <CardDescription>{'Some info about this network.'}</CardDescription>
             </CardHeader>

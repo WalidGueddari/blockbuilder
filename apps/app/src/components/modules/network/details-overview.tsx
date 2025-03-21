@@ -4,6 +4,7 @@ import { NodeCard, NodeTable } from '@/components/modules/network/pages';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useWebSocket from '@/hooks/useWebSocket';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import {
   fetchNodesByNetworkId,
@@ -11,44 +12,50 @@ import {
   selectNodeLoading,
   selectNodes,
 } from '@/services/v1/nodeSlice';
+import { clearMessages } from '@/services/v1/websocketSlice';
 import { type NetworkDetailsProps } from '@/types/v1/network';
-import { Node } from '@/types/v1/node';
 import { Activity, Server, Wifi } from 'lucide-react';
-import type React from 'react';
 import { useEffect, useState } from 'react';
 
 const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const dispatch = useAppDispatch();
   const nodes = useAppSelector(selectNodes);
-  console.log('nodes:', nodes);
   const loading = useAppSelector(selectNodeLoading);
-  const error = useAppSelector(selectNodeError);
+  const nodeError = useAppSelector(selectNodeError);
   const [view, setView] = useState<'grid' | 'table'>('grid');
 
+  // Fetch nodes once on mount or when networkId changes
   useEffect(() => {
     if (networkId) {
       dispatch(fetchNodesByNetworkId(networkId));
+      dispatch(clearMessages());
     }
-  }, [dispatch, networkId]);
+  }, [networkId, dispatch]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Activity className="animate-spin" />
       </div>
     );
-  if (error) return <div className="text-center text-red-500">Error: {error}</div>;
-  if (!nodes || nodes.length === 0)
-    return <div className="text-center text-gray-500">No nodes found.</div>;
+  }
 
-  const activeNodes = nodes.filter((node) => node.status === 'active').length;
-  console.log('activeNodes:', activeNodes);
+  if (nodeError) {
+    return <div className="text-center text-red-500">Error: {nodeError}</div>;
+  }
+
+  if (!nodes || nodes.length === 0) {
+    return <div className="text-center text-gray-500">No nodes found.</div>;
+  }
+
+  const activeNodes = nodes.filter((node) => node.status === 'ACTIVE').length;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Network Overview</CardTitle>
+          <CardDescription>Network: {nodes[0].network.name}</CardDescription>
           <CardDescription>Network: {nodes[0].network.name}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -61,15 +68,14 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Wifi className="text-green-500" size={24} />
+              <Wifi className="text-primary" size={24} />
               <div>
                 <p className="text-sm font-medium">Active Nodes</p>
-                <p className="text-2xl font-bold">{nodes.length}</p>
+                <p className="text-2xl font-bold">{activeNodes}</p>
               </div>
             </div>
-            <Badge>
-              {/* {activeNodes === nodes.length ? 'All Nodes Active' : 'Some Nodes Inactive'} */}
-              All Nodes Active
+            <Badge className="cursor-pointer">
+              {activeNodes === nodes.length ? 'All Nodes Active' : 'Activation in Progress'}
             </Badge>
           </div>
         </CardContent>
