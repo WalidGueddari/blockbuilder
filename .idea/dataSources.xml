@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:postgresql://172.30.216.125:5432/blockchain_builder</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="mobilityDapp@localhost" uuid="4c835a95-eca0-469b-a688-63363cf88a1b">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/mobilityDapp</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

@@ -1,0 +1,12 @@
+export { CtaSection } from './sections/cta-section';
+export { TestimonialsSection } from './sections/testimonials-section';
+export { PricingSection } from './sections/pricing-section';
+export { UseCasesSection } from './sections/use-cases-section';
+export { DemoSection } from './sections/demo-section';
+export { HowItWorksSection } from './sections/how-it-works-section';
+export { FeaturesSection } from './sections/features-section';
+export { TrustedBySection } from './sections/trusted-by-section';
+export { FaqSection } from './sections/faq-section';
+export { Footer } from './footer';
+export { Header } from './header';
+export { HeroSection } from './sections/hero-section';

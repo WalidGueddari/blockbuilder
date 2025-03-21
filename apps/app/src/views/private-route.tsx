@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     if (typeof window !== 'undefined') {
       const token = sessionStorage.getItem('access_token');
       if (!token) {
-        router.push('/login');
+        router.push('/home');
       }
     }
   }, [isAuthenticated, router]);
