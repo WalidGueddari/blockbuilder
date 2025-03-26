@@ -8,7 +8,7 @@ export type InitNetworkPayload = {
 // The shape of the request body for the /setup-network endpoint
 export interface SetupNetworkParams {
   initNetPayload: InitNetworkPayload;
-  // vmId: string;
+  vmId?: string;
 }
 
 // The server returns an object that presumably has an `id`, `nodeCount`, etc.

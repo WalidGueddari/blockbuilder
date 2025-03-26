@@ -62,40 +62,24 @@ export default function Chat() {
 
     setIsTyping(true);
     try {
-      // Step 1: Create server
-      const createRes = await dispatch(
-        createServer({
-          userId,
-          vmName: name,
-          resourceGroup: name,
-          sshKeyName: name,
-        }),
-      ).unwrap();
-
-      if (!createRes?.id) throw new Error('Server creation failed');
-
       // Step 2: Setup network
       const networkRes = await dispatch(
         setupNetwork({
           initNetPayload: { name, userId, nodeCount },
-          vmId: createRes.id,
+          // vmId: createRes.id,
         }),
       ).unwrap();
 
       if (!networkRes?.id) throw new Error('Network setup failed');
 
-      // Step 3: Configure server
-      await dispatch(
-        setupServer({
-          id: createRes.id,
-          networkId: networkRes.id,
-        }),
-      ).unwrap();
-
       // Step 4: Start network
       await dispatch(
         startNetwork({
-          payload: { vmId: createRes.id, networkId: networkRes.id, nodeCount },
+          payload: {
+            vmId: networkRes.serverId,
+            networkId: networkRes.id,
+            nodeCount,
+          },
         }),
       ).unwrap();
 
