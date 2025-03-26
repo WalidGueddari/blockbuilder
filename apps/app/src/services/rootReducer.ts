@@ -7,9 +7,10 @@ import networkReducer from './v1/networkSlice';
 import nodeReducer from './v1/nodeSlice';
 import websocketReducer from './v1/websocketSlice';
 //v2 reducers
-import blockchainReducer from './v2/blockchainSlice';
+// import blockchainReducer from './v2/blockchainSlice';
 import { notificationsSlice } from './v2/notificationSlice';
 import serverReducer from './v2/serverSlice';
+import blockchainReducer from './v3/blockchainSlice';
 
 const rootReducer = combineReducers({
   //v1 reducers

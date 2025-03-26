@@ -6,7 +6,7 @@ export const blockchainSchema = {
     body: {
       type: 'object',
       properties: {
-        vmId: { type: 'string' },
+        // vmId: { type: 'string' },
         initNetPayload: {
           type: 'object',
           properties: {
@@ -17,7 +17,7 @@ export const blockchainSchema = {
           required: ['name', 'userId', 'nodeCount'],
         },
       },
-      required: ['vmId', 'initNetPayload'],
+      required: ['initNetPayload'],
     },
   },
 

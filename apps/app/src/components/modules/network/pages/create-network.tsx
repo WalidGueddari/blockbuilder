@@ -1,4 +1,3 @@
-// create-network.tsx
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -22,18 +29,15 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAppDispatch } from '@/services/hooks';
-import { setupNetwork, startNetwork } from '@/services/v2/blockchainSlice';
 import { addNotification, updateNotification } from '@/services/v2/notificationSlice';
-import { createServer, setupServer } from '@/services/v2/serverSlice';
+import { setupNetwork, startNetwork } from '@/services/v3/blockchainSlice';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Network } from 'lucide-react';
+import { AlertTriangle, Loader2, Network } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-
-// create-network.tsx
 
 const formSchema = z.object({
   name: z.string().nonempty({ message: 'Network name is required.' }),
@@ -43,6 +47,20 @@ const formSchema = z.object({
     .max(10, { message: 'Node count cannot exceed 10.' }),
 });
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  return 'An unknown error occurred';
+}
+
 export default function CreateNetworkDialog() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
@@ -50,18 +68,41 @@ export default function CreateNetworkDialog() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
 
   useEffect(() => {
-    const user = sessionStorage.getItem('user');
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user);
-        setUserId(parsedUser.id);
-      } catch (e) {
-        console.error('Failed to parse user from sessionStorage:', e);
+    try {
+      const user = sessionStorage.getItem('user');
+      if (!user) {
+        toast({
+          title: 'Authentication Error',
+          description: 'You must be logged in to create a network.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      const parsedUser = JSON.parse(user);
+      if (!parsedUser?.id) {
+        toast({
+          title: 'Invalid User Data',
+          description: 'Your session appears to be corrupted. Please log in again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setUserId(parsedUser.id);
+    } catch (e) {
+      console.error('Failed to parse user from sessionStorage:', e);
+      toast({
+        title: 'Session Error',
+        description: 'There was a problem with your session. Please log in again.',
+        variant: 'destructive',
+      });
     }
-  }, []);
+  }, [toast]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,12 +112,37 @@ export default function CreateNetworkDialog() {
     },
   });
 
+  // Add form validation feedback
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (form.formState.errors.name || form.formState.errors.nodeCount) {
+        console.log('Form validation errors:', form.formState.errors);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!userId) {
-      console.error('User ID is not available.');
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to create a network.',
+        variant: 'destructive',
+      });
       return;
     }
 
+    // Store the values and show the warning dialog
+    setPendingValues(values);
+    setShowWarningDialog(true);
+  }
+
+  // Create a new function to handle the actual submission after confirmation
+  async function handleConfirmedSubmit() {
+    if (!pendingValues || !userId) return;
+
+    setShowWarningDialog(false);
     setIsLoading(true);
 
     // 1) Add a "pending" notification to Redux:
@@ -84,48 +150,37 @@ export default function CreateNetworkDialog() {
     dispatch(
       addNotification({
         id: notificationId,
-        title: `Creating network "${values.name}"`,
+        title: `Creating network "${pendingValues.name}"`,
         description: 'Starting network creation process...',
         status: 'pending',
-        time: new Date().toLocaleTimeString(), // or ISO string
+        time: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }),
         read: false,
       }),
     );
 
     try {
-      // Start the chain
-      const createRes = await dispatch(
-        createServer({
-          userId,
-          vmName: values.name,
-          resourceGroup: values.name,
-          sshKeyName: values.name,
-        }),
-      ).unwrap();
-
-      if (!createRes?.id) {
-        throw new Error('Failed to retrieve VM ID from createServer call.');
-      }
-
       const networkRes = await dispatch(
         setupNetwork({
           initNetPayload: {
-            name: values.name,
+            name: pendingValues.name,
             userId,
-            nodeCount: values.nodeCount,
+            nodeCount: pendingValues.nodeCount,
           },
-          vmId: createRes.id,
         }),
       ).unwrap();
 
       if (!networkRes?.id) {
-        throw new Error('Failed to retrieve network ID from setupNetwork call.');
+        throw new Error('Network creation failed: No network ID was returned.');
       }
 
       // Redirect user immediately after the initial network creation
       toast({
         title: 'Network Setup In Progress',
-        description: `Network "${values.name}" is being configured. Redirecting now...`,
+        description: `Network "${pendingValues.name}" is being configured. Redirecting now...`,
       });
       router.push(`/network/${networkRes.id}`);
 
@@ -133,18 +188,11 @@ export default function CreateNetworkDialog() {
       (async () => {
         try {
           await dispatch(
-            setupServer({
-              id: createRes.id,
-              networkId: networkRes.id,
-            }),
-          ).unwrap();
-
-          await dispatch(
             startNetwork({
               payload: {
-                vmId: createRes.id,
+                vmId: networkRes.serverId,
                 networkId: networkRes.id,
-                nodeCount: values.nodeCount,
+                nodeCount: pendingValues.nodeCount,
               },
             }),
           ).unwrap();
@@ -155,16 +203,18 @@ export default function CreateNetworkDialog() {
               id: notificationId,
               changes: {
                 status: 'success',
-                description: `Network "${values.name}" setup is fully complete.`,
+                description: `Network "${pendingValues.name}" setup is fully complete.`,
                 read: false,
               },
             }),
           );
         } catch (err) {
+          const errorMessage = getErrorMessage(err);
           console.error('Failed to complete the remaining setup steps:', err);
+
           toast({
             title: 'Background Setup Failed',
-            description: String(err),
+            description: errorMessage,
             variant: 'destructive',
           });
 
@@ -174,17 +224,20 @@ export default function CreateNetworkDialog() {
               id: notificationId,
               changes: {
                 status: 'error',
-                description: `Network "${values.name}" setup failed: ${String(err)}`,
+                description: `Network "${pendingValues.name}" setup failed: ${errorMessage}`,
               },
             }),
           );
         }
       })();
     } catch (err) {
+      const errorMessage = getErrorMessage(err);
+
       console.error('Failed to complete the full setup chain:', err);
+
       toast({
         title: 'Setup Failed',
-        description: String(err),
+        description: errorMessage,
         variant: 'destructive',
       });
 
@@ -194,7 +247,7 @@ export default function CreateNetworkDialog() {
           id: notificationId,
           changes: {
             status: 'error',
-            description: `Failed to create network "${values.name}": ${String(err)}`,
+            description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
           },
         }),
       );
@@ -256,20 +309,11 @@ export default function CreateNetworkDialog() {
                 </FormItem>
               )}
             />
-
-            {/* Submit Button is in CardFooter */}
           </form>
         </Form>
-
-        {/* {isLoading && (
-          <div className="mt-6 flex items-center gap-2">
-            <Loader2 className="text-foreground h-5 w-5 animate-spin" />
-            <span className="font-medium">Creating blockchain network</span>
-          </div>
-        )} */}
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex flex-col">
         <Button
           onClick={form.handleSubmit(onSubmit)}
           disabled={isLoading || !userId}
@@ -284,7 +328,59 @@ export default function CreateNetworkDialog() {
             'Initialize Network'
           )}
         </Button>
+        {!userId && (
+          <p className="text-destructive mt-2 text-sm">
+            You must be logged in to create a network.
+          </p>
+        )}
       </CardFooter>
+      {/* Warning Dialog */}
+      <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Important Notice
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Please read this information carefully before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+              <h4 className="mb-2 font-semibold text-amber-800">
+                Do not close this page or navigate away
+              </h4>
+              <p className="text-sm text-amber-700">
+                Your network is being set up in the background. Once the initial setup is complete:
+              </p>
+              <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-amber-700">
+                <li>You will be automatically redirected to the network details page</li>
+                <li>You will receive notifications about the setup progress</li>
+                <li>The complete setup process may take a few minutes to finish</li>
+              </ul>
+            </div>
+
+            <p className="text-muted-foreground text-sm">
+              Closing this page or navigating away during setup may cause issues with your network
+              configuration.
+            </p>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between sm:space-x-2">
+            <Button variant="outline" onClick={() => setShowWarningDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmedSubmit}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              I understand, proceed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
