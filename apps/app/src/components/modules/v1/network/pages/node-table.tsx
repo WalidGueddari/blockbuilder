@@ -1,3 +1,4 @@
+//node-table.tsx
 import { Badge } from '@/components/ui/badge';
 import {
   Table,

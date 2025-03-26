@@ -13,7 +13,7 @@ import {
   TestimonialsSection,
   TrustedBySection,
   UseCasesSection,
-} from '@/components/modules/home/index';
+} from '@/components/modules/v1/home/index';
 
 export default function LandingPage() {
   return (

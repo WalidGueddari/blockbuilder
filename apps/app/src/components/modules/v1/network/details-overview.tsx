@@ -1,6 +1,6 @@
 'use client';
 
-import { NodeCard, NodeTable } from '@/components/modules/network/pages';
+import { NodeCard, NodeTable } from '@/components/modules/v1/network/pages';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

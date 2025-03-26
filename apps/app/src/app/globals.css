@@ -4,54 +4,54 @@
 
 @layer base {
   :root {
-    /* Base - using your provided colors */
-    --background: 240 33% 97%;
-    --foreground: 240 17% 9%;
+    /* Base - vibrant monochromatic theme */
+    --background: 244 15% 97%;
+    --foreground: 244 25% 8%;
 
     /* Surfaces - derived from background */
-    --card: 240 33% 99%;
-    --card-foreground: 240 17% 9%;
-    --popover: 240 33% 99%;
-    --popover-foreground: 240 17% 9%;
+    --card: 244 15% 99%;
+    --card-foreground: 244 25% 8%;
+    --popover: 244 15% 99%;
+    --popover-foreground: 244 25% 8%;
 
-    /* Brand / Accent Colors - using your provided colors */
-    --primary: 244 58% 26%;
-    --primary-foreground: 244 58% 96%;
-    --primary-hover: 244 58% 21%;
-    --primary-active: 244 58% 19%;
+    /* Brand / Accent Colors - vibrant monochromatic variations */
+    --primary: 244 70% 30%;
+    --primary-foreground: 244 15% 98%;
+    --primary-hover: 244 70% 25%;
+    --primary-active: 244 70% 22%;
 
-    --secondary: 244 76% 66%;
-    --secondary-foreground: 244 76% 12%;
-    --secondary-hover: 244 76% 61%;
-    --secondary-active: 244 76% 56%;
+    --secondary: 244 50% 70%;
+    --secondary-foreground: 244 25% 10%;
+    --secondary-hover: 244 50% 65%;
+    --secondary-active: 244 50% 60%;
 
-    --accent: 244 95% 48%;
-    --accent-foreground: 244 95% 96%;
-    --accent-hover: 244 95% 43%;
-    --accent-active: 244 95% 38%;
+    --accent: 244 80% 55%;
+    --accent-foreground: 244 15% 98%;
+    --accent-hover: 244 80% 50%;
+    --accent-active: 244 80% 45%;
 
-    /* Destructive / Alerts - derived from accent */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 84% 95%;
-    --destructive-hover: 0 84% 55%;
-    --destructive-active: 0 84% 50%;
+    /* Destructive / Alerts - more vibrant but still harmonious */
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 15% 98%;
+    --destructive-hover: 0 80% 50%;
+    --destructive-active: 0 80% 45%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 142 76% 96%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 10%;
-    --info: 244 58% 60%;
-    --info-foreground: 244 58% 10%;
+    --success: 120 60% 40%;
+    --success-foreground: 120 15% 98%;
+    --warning: 36 90% 55%;
+    --warning-foreground: 36 15% 10%;
+    --info: 244 60% 65%;
+    --info-foreground: 244 25% 10%;
 
-    /* Muted / Subtle - derived from background */
-    --muted: 240 33% 87%;
-    --muted-foreground: 240 17% 40%;
+    /* Muted / Subtle - derived from background but more distinct */
+    --muted: 244 20% 85%;
+    --muted-foreground: 244 25% 35%;
 
     /* Borders / Inputs / Focus Rings - derived from background and primary */
-    --border: 240 33% 85%;
-    --input: 240 33% 90%;
-    --ring: 244 58% 60%;
-    --focus-ring: 244 58% 60% / 0.3;
+    --border: 244 20% 82%;
+    --input: 244 15% 90%;
+    --ring: 244 70% 60%;
+    --focus-ring: 244 70% 60% / 0.3;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -62,65 +62,65 @@
     --radius: 0.5rem;
 
     /* Sidebar Colors - Slightly different for visual separation */
-    --sidebar-background: 240 33% 94%;
-    --sidebar-foreground: 240 17% 9%;
-    --sidebar-primary: 244 58% 26%;
-    --sidebar-primary-foreground: 244 58% 96%;
-    --sidebar-accent: 244 95% 48%;
-    --sidebar-accent-foreground: 244 95% 96%;
-    --sidebar-border: 240 33% 85%;
-    --sidebar-ring: 244 58% 60%;
+    --sidebar-background: 244 20% 94%;
+    --sidebar-foreground: 244 25% 8%;
+    --sidebar-primary: 244 70% 30%;
+    --sidebar-primary-foreground: 244 15% 98%;
+    --sidebar-accent: 244 80% 55%;
+    --sidebar-accent-foreground: 244 15% 98%;
+    --sidebar-border: 244 20% 82%;
+    --sidebar-ring: 244 70% 60%;
   }
 
   .dark {
-    /* Base - using your provided colors */
-    --background: 240 33% 3%;
-    --foreground: 240 17% 91%;
+    /* Base - vibrant monochromatic theme */
+    --background: 244 20% 4%;
+    --foreground: 244 15% 95%;
 
     /* Surfaces - derived from background */
-    --card: 240 33% 6%;
-    --card-foreground: 240 17% 91%;
-    --popover: 240 33% 6%;
-    --popover-foreground: 240 17% 91%;
+    --card: 244 20% 7%;
+    --card-foreground: 244 15% 95%;
+    --popover: 244 20% 7%;
+    --popover-foreground: 244 15% 95%;
 
-    /* Brand / Accent Colors - using your provided colors */
-    --primary: 244 58% 74%;
-    --primary-foreground: 244 58% 15%;
-    --primary-hover: 244 58% 79%;
-    --primary-active: 244 58% 84%;
+    /* Brand / Accent Colors - vibrant monochromatic variations */
+    --primary: 244 70% 75%;
+    --primary-foreground: 244 25% 15%;
+    --primary-hover: 244 70% 80%;
+    --primary-active: 244 70% 85%;
 
-    --secondary: 244 76% 34%;
-    --secondary-foreground: 244 76% 90%;
-    --secondary-hover: 244 76% 39%;
-    --secondary-active: 244 76% 44%;
+    --secondary: 244 50% 35%;
+    --secondary-foreground: 244 15% 95%;
+    --secondary-hover: 244 50% 40%;
+    --secondary-active: 244 50% 45%;
 
-    --accent: 244 95% 52%;
-    --accent-foreground: 244 95% 96%;
-    --accent-hover: 244 95% 57%;
-    --accent-active: 244 95% 62%;
+    --accent: 244 80% 60%;
+    --accent-foreground: 244 15% 98%;
+    --accent-hover: 244 80% 65%;
+    --accent-active: 244 80% 70%;
 
-    /* Destructive / Alerts - derived from accent */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 84% 95%;
-    --destructive-hover: 0 84% 65%;
-    --destructive-active: 0 84% 70%;
+    /* Destructive / Alerts - more vibrant but still harmonious */
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 15% 98%;
+    --destructive-hover: 0 80% 65%;
+    --destructive-active: 0 80% 70%;
 
-    --success: 142 76% 45%;
-    --success-foreground: 142 76% 15%;
-    --warning: 38 92% 60%;
-    --warning-foreground: 38 92% 15%;
-    --info: 244 58% 70%;
-    --info-foreground: 244 58% 15%;
+    --success: 120 60% 45%;
+    --success-foreground: 120 25% 15%;
+    --warning: 36 90% 60%;
+    --warning-foreground: 36 25% 15%;
+    --info: 244 60% 70%;
+    --info-foreground: 244 25% 15%;
 
-    /* Muted / Subtle - derived from background */
-    --muted: 240 33% 13%;
-    --muted-foreground: 240 17% 75%;
+    /* Muted / Subtle - derived from background but more distinct */
+    --muted: 244 25% 15%;
+    --muted-foreground: 244 15% 80%;
 
     /* Borders / Inputs / Focus Rings - derived from background and primary */
-    --border: 240 33% 13%;
-    --input: 240 33% 10%;
-    --ring: 244 58% 40%;
-    --focus-ring: 244 58% 40% / 0.3;
+    --border: 244 25% 15%;
+    --input: 244 20% 12%;
+    --ring: 244 70% 50%;
+    --focus-ring: 244 70% 50% / 0.3;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -131,14 +131,14 @@
     --radius: 0.5rem;
 
     /* Sidebar Colors - Slightly different for visual separation */
-    --sidebar-background: 240 33% 5%;
-    --sidebar-foreground: 240 17% 91%;
-    --sidebar-primary: 244 58% 74%;
-    --sidebar-primary-foreground: 244 58% 15%;
-    --sidebar-accent: 244 95% 52%;
-    --sidebar-accent-foreground: 244 95% 96%;
-    --sidebar-border: 240 33% 10%;
-    --sidebar-ring: 244 58% 40%;
+    --sidebar-background: 244 25% 6%;
+    --sidebar-foreground: 244 15% 95%;
+    --sidebar-primary: 244 70% 75%;
+    --sidebar-primary-foreground: 244 25% 15%;
+    --sidebar-accent: 244 80% 60%;
+    --sidebar-accent-foreground: 244 15% 98%;
+    --sidebar-border: 244 25% 12%;
+    --sidebar-ring: 244 70% 50%;
   }
 }
 
@@ -184,7 +184,7 @@
   color: hsl(var(--primary));
 }
 
-/* Improved transitions */
+Improved transitions
 * {
   @apply transition-colors duration-200;
 }

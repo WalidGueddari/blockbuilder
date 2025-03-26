@@ -15,6 +15,8 @@ import { useEffect } from 'react';
 
 // NodeCard.tsx (using updated Redux status)
 
+// NodeCard.tsx (using updated Redux status)
+
 interface NodeCardProps {
   node: Node;
 }

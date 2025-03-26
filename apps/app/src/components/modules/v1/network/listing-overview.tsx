@@ -1,6 +1,6 @@
 'use client';
 
-import { NetworkList } from '@/components/modules/network/pages';
+import { NetworkList } from '@/components/modules/v1/network/pages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';

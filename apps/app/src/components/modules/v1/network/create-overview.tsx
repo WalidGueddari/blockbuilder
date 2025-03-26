@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateNetwork } from '@/components/modules/network/pages';
+import { CreateNetwork } from '@/components/modules/v1/network/pages';
 
 export default function Component() {
   return (

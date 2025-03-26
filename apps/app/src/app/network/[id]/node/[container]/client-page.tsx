@@ -1,11 +1,13 @@
 // ClientPage.tsx
 'use client';
 
-import { LogsViewer } from '@/components/modules/logs';
+import { LogsViewer } from '@/components/modules/v1/logs';
 import { useAppSelector } from '@/services/hooks';
 import { selectCurrentServerId } from '@/services/v1/nodeSlice';
 import { useParams } from 'next/navigation';
 import React from 'react';
+
+// ClientPage.tsx
 
 // ClientPage.tsx
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { NetworkDetailsOverview } from '@/components/modules/network';
+import { NetworkDetailsOverview } from '@/components/modules/v2/network';
 import { useParams } from 'next/navigation';
 import React from 'react';
 

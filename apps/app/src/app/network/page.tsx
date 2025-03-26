@@ -1,4 +1,4 @@
-import { NetworkList } from '@/components/modules/network/pages';
+import { NetworkList } from '@/components/modules/v1/network/pages';
 // Import NetworkList component
 import ProtectedRoute from '@/views/private-route';
 import { Activity } from 'lucide-react';

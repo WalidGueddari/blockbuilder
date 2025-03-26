@@ -1,5 +1,7 @@
 export interface Network {
   id: string;
+  publicIp: string;
+  chainId: number;
   name: string;
   type: string;
   status: string;

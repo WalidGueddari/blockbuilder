@@ -1,7 +1,7 @@
 'use client';
 
 import { SideBar } from '@/components/layout/sidebar';
-import ChatBubble from '@/components/modules/bot/chatBubble-overview';
+import ChatBubble from '@/components/modules/v1/bot/chatBubble-overview';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
