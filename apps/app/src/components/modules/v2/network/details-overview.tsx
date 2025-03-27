@@ -1,5 +1,6 @@
 'use client';
 
+import { NodeCard } from '@/components/modules/v2/network/pages';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -349,44 +350,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
             <CardContent>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {nodes.map((node) => (
-                  <Card key={node.id} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{node.name}</CardTitle>
-                        <Badge
-                          className={node.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500'}
-                        >
-                          {node.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">IP Address:</span>
-                          <span className="font-medium">{node.nodeIp}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">HTTP Port:</span>
-                          <span className="font-medium">{node.rpcHttpPort}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">WS Port:</span>
-                          <span className="font-medium">{node.rpcWsPort}</span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="mt-4 w-full"
-                        onClick={() =>
-                          (window.location.href = `/network/${node.networkId}/node/${node.container}`)
-                        }
-                      >
-                        View Logs
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <NodeCard key={node.id} node={node} />
                 ))}
               </div>
             </CardContent>

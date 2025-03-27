@@ -10,7 +10,6 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   const nodeService = new NodeService({ prisma });
 
   const POLL_INTERVAL = config.pollingInterval;
-
   fastify.get<{ Params: { container: string; vmId: string } }>(
     '/get-logs/:container/:vmId',
     { websocket: true },
