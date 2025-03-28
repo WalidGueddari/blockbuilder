@@ -1,6 +1,11 @@
 'use client';
 
-import { NodeCard } from '@/components/modules/v2/network/pages';
+import {
+  MetamaskIcon,
+  NodeCard,
+  Transactions,
+  WalletCard,
+} from '@/components/modules/v2/network/pages';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,16 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import {
@@ -33,19 +28,18 @@ import {
 } from '@/services/v1/nodeSlice';
 import { clearMessages } from '@/services/v1/websocketSlice';
 import type { NetworkDetailsProps } from '@/types/v1/network';
-import {
-  Activity,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  Globe,
-  Server,
-  Shield,
-  Wallet,
-  Wifi,
-} from 'lucide-react';
+import { Activity, ChevronRight, Globe, Server, Shield, Wifi } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      isMetaMask?: boolean;
+    };
+  }
+}
 
 const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const dispatch = useAppDispatch();
@@ -56,58 +50,6 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const [showPrivateKey, setShowPrivateKey] = useState<Record<string, boolean>>({});
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationError, setVerificationError] = useState('');
-
-  // Mock data for transactions and wallets - replace with actual data fetching
-  const [transactions, setTransactions] = useState([
-    {
-      id: '1',
-      hash: '0x1234...5678',
-      from: '0xabcd...ef01',
-      to: '0x2345...6789',
-      value: '0.5 ETH',
-      timestamp: '2023-05-15 14:30:45',
-    },
-    {
-      id: '2',
-      hash: '0x8765...4321',
-      from: '0x2345...6789',
-      to: '0xabcd...ef01',
-      value: '1.2 ETH',
-      timestamp: '2023-05-15 15:45:22',
-    },
-    {
-      id: '3',
-      hash: '0xfedc...ba98',
-      from: '0x3456...7890',
-      to: '0x4567...8901',
-      value: '0.3 ETH',
-      timestamp: '2023-05-15 16:12:08',
-    },
-  ]);
-
-  const [wallets, setWallets] = useState([
-    {
-      id: '1',
-      address: '0xabcd...ef01',
-      publicIp: '192.168.1.1',
-      privateKey: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      balance: '2.5 ETH',
-    },
-    {
-      id: '2',
-      address: '0x2345...6789',
-      publicIp: '192.168.1.2',
-      privateKey: '0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
-      balance: '1.8 ETH',
-    },
-    {
-      id: '3',
-      address: '0x3456...7890',
-      publicIp: '192.168.1.3',
-      privateKey: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-      balance: '3.2 ETH',
-    },
-  ]);
 
   // Fetch nodes once on mount or when networkId changes
   useEffect(() => {
@@ -153,8 +95,9 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
 
   const activeNodes = nodes.filter((node) => node.status === 'ACTIVE').length;
   const networkName = nodes[0]?.network?.name || 'Unknown Network';
-  const networkIp = nodes[0]?.network?.publicIp || 'Unknown IP';
-  const chainId = nodes[0]?.network?.chainId || 'Unknown Chain ID';
+  const networkIp = nodes[0]?.network?.server?.publicIpAddress || 'Unknown IP';
+  const chainId = nodes[0]?.network?.chainId?.toString() || 'Unknown Chain ID';
+  const wallets = nodes[0]?.network?.allocs || [];
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -257,33 +200,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                 </Button>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[300px] pr-4">
-                  <div className="space-y-4">
-                    {transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="hover:bg-muted/50 flex items-center justify-between rounded-lg border p-3 shadow-sm transition-all duration-200"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-                            <Activity className="text-primary h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{tx.hash}</p>
-                            <p className="text-muted-foreground text-xs">{tx.timestamp}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">{tx.value}</p>
-                          <p className="text-muted-foreground text-xs">
-                            From: {tx.from.substring(0, 6)}...
-                            {tx.from.substring(tx.from.length - 4)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                <Transactions />
               </CardContent>
             </Card>
 
@@ -295,10 +212,78 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center space-y-4 pt-4">
-                <Metamask className="h-36 w-36 text-orange-500" />
-                <Button className="w-full bg-orange-500 text-white hover:bg-orange-600">
-                  Connect MetaMask
-                </Button>
+                <MetamaskIcon className="h-36 w-36 text-orange-500" />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-orange-500 text-white hover:bg-orange-600">
+                      Connect MetaMask
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add Network to MetaMask</DialogTitle>
+                      <DialogDescription>
+                        Use these details to add {networkName} to your MetaMask wallet
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="flex justify-center pb-2">
+                        <MetamaskIcon className="h-36 w-36 text-orange-500" />
+                      </div>
+                      <div className="space-y-3 rounded-md border p-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-sm font-medium">Network Name:</div>
+                          <div className="col-span-2 font-mono text-sm">{networkName}</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-sm font-medium">RPC URL:</div>
+                          <div className="col-span-2 break-all font-mono text-sm">{`http://${networkIp}`}</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-sm font-medium">Chain ID:</div>
+                          <div className="col-span-2 font-mono text-sm">{chainId}</div>
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full bg-orange-500 text-white hover:bg-orange-600"
+                        disabled={true}
+                        onClick={() => {
+                          if (window.ethereum) {
+                            window.ethereum
+                              .request({
+                                method: 'wallet_addEthereumChain',
+                                params: [
+                                  {
+                                    chainId: `0x${Number.parseInt(chainId).toString(16)}`,
+                                    chainName: networkName,
+                                    nativeCurrency: {
+                                      name: 'Ether',
+                                      symbol: 'ETH',
+                                      decimals: 18,
+                                    },
+                                    rpcUrls: [`https://${networkIp}`],
+                                    // blockExplorerUrls: nodes[0]?.network?.blockExplorerUrl
+                                    //   ? [nodes[0].network.blockExplorerUrl]
+                                    //   : null,
+                                  },
+                                ],
+                              })
+                              .catch((error) => {
+                                console.error('Error adding network to MetaMask:', error);
+                              });
+                          } else {
+                            window.open('https://metamask.io/download.html', '_blank');
+                          }
+                        }}
+                      >
+                        Add to MetaMask
+                      </Button>
+                      <p className="text-muted-foreground text-center text-xs">
+                        Click the button above to automatically configure MetaMask for this network
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <p className="text-muted-foreground text-center text-xs">
                   Connect your wallet to view balances and send transactions on this network
                 </p>
@@ -364,30 +349,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
               <CardDescription>Transactions processed on {networkName}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Transaction Hash</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>To</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Timestamp</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell className="font-medium">{tx.hash}</TableCell>
-                        <TableCell>{tx.from}</TableCell>
-                        <TableCell>{tx.to}</TableCell>
-                        <TableCell>{tx.value}</TableCell>
-                        <TableCell>{tx.timestamp}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+              <Transactions />
             </CardContent>
           </Card>
         </TabsContent>
@@ -399,78 +361,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
               <CardDescription>Wallets associated with {networkName}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {wallets.map((wallet) => (
-                  <Card key={wallet.id} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">
-                          <Wallet className="mr-2 inline h-5 w-5" />
-                          {wallet.address}
-                        </CardTitle>
-                        <Badge>{wallet.balance}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Public IP:</span>
-                          <span className="font-medium">{wallet.publicIp}</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Private Key:</span>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  {showPrivateKey[wallet.id] ? (
-                                    <Eye className="mr-2 h-4 w-4" />
-                                  ) : (
-                                    <EyeOff className="mr-2 h-4 w-4" />
-                                  )}
-                                  {showPrivateKey[wallet.id] ? 'Hide Key' : 'View Key'}
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Security Verification</DialogTitle>
-                                  <DialogDescription>
-                                    Enter the verification code to view the private key.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                  <Input
-                                    type="text"
-                                    placeholder="Enter verification code"
-                                    value={verificationCode}
-                                    onChange={(e) => setVerificationCode(e.target.value)}
-                                  />
-                                  {verificationError && (
-                                    <p className="text-sm text-red-500">{verificationError}</p>
-                                  )}
-                                  {showPrivateKey[wallet.id] && (
-                                    <div className="bg-muted mt-4 rounded-md p-3">
-                                      <p className="break-all font-mono text-xs">
-                                        {wallet.privateKey}
-                                      </p>
-                                    </div>
-                                  )}
-                                  <Button
-                                    onClick={() => verifyAndShowPrivateKey(wallet.id)}
-                                    className="w-full"
-                                  >
-                                    Verify
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <WalletCard wallets={wallets} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -480,59 +371,3 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
 };
 
 export default NetworkDetails;
-
-export function Metamask(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" {...props}>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M23.971 35.016h2.262l.726 3.415h-3.335"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m42.158 31.771l-11.57.213l-4.355 3.032l.384-18.232l2.391-5.934l11.613-4.611L42.5 11.96l-1.708 6.746l.171 3.415l-1.11 1.638zl-2.092 8.496l-8.539-2.647l-4.568 4.141h-2.988m15.882-18.002l-8.155-2.406m9.094-2.647l1.494-.256m0 1.878l-1.404.171m-14.443 4.745l7.949-.177"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m35.647 31.891l-4.12 5.729l-.939-5.636l3.8-6.917l-2.69-3.714l-5.081-4.569L40.621 6.239M26.233 35.016l5.294 2.604"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m27.45 29.663l3.186-1.185l-2.274-1.185zm1.558-18.813h-5.037m.058 24.166h-2.262l-.726 3.415h2.583"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m5.842 31.771l11.57.213l4.355 3.032l-.384-18.232l-2.391-5.934L7.379 6.239L5.5 11.96l1.708 6.746l-.171 3.415l1.11 1.638zl2.092 8.496l8.539-2.647l4.568 4.141h2.988M8.147 23.759l8.155-2.406m-9.094-2.647l-1.495-.256m0 1.878l1.405.171m14.443 4.745l-7.949-.177"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m12.353 31.891l4.12 5.729l.939-5.636l-3.8-6.917l2.69-3.714l5.081-4.569L7.379 6.239m14.388 28.777l-5.294 2.604"
-      ></path>
-      <path
-        fill="none"
-        stroke="#f97316"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m20.55 29.663l-3.186-1.185l2.274-1.185zM18.992 10.85h5.037"
-      ></path>
-    </svg>
-  );
-}

@@ -105,6 +105,7 @@ model VmServer {
   publicIpAddress  String
   resourceGroup    String
   sshKeyName       String
+  dnsName          String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

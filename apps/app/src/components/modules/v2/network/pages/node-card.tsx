@@ -1,14 +1,13 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import useWebSocket from '@/hooks/useWebSocket';
+import { cn } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import { setCurrentServerId } from '@/services/v1/nodeSlice';
 import { clearMessages } from '@/services/v1/websocketSlice';
 import type { Node } from '@/types/v1/node';
-import { Activity, ChevronRight, Wifi } from 'lucide-react';
+import { Activity, ChevronRight, Server, Wifi } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect } from 'react';
@@ -34,33 +33,53 @@ const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
     router.push(`/network/${node.networkId}/node/${node.container}`);
   };
 
-  const statusColor = (status: string) => {
+  const getStatusColor = (status: string) => {
     const statusLower = status?.toLowerCase() || '';
-    if (statusLower === 'active') return 'bg-green-500';
-    if (statusLower === 'inactive') return 'bg-amber-500';
-    if (statusLower === 'error') return 'bg-red-500';
-    return 'bg-blue-500';
+
+    if (statusLower === 'active') return 'bg-primary text-success-foreground';
+    if (statusLower === 'inactive') return 'bg-warning text-warning-foreground';
+    if (statusLower === 'error') return 'bg-destructive text-destructive-foreground';
+    return 'bg-info text-info-foreground';
   };
 
   return (
-    <Card className="overflow-hidden border-none shadow-md transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-      <CardHeader className="from-muted/80 to-muted/30 bg-gradient-to-r pb-3">
+    <div className="border-border bg-card text-card-foreground w-full overflow-hidden rounded-xl border">
+      <div className="space-y-4 p-4">
+        {/* Node Header */}
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{node.name}</CardTitle>
-          <Badge className={`${statusColor(nodeStatus || node.status)} shadow-sm`}>
+          <div className="flex items-center space-x-2">
+            <div className="bg-accent/10 rounded-full p-2">
+              <Server className="text-accent h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Node</p>
+              <div className="flex items-center">
+                <p className="text-foreground font-medium">{node.name}</p>
+              </div>
+            </div>
+          </div>
+          <div
+            className={cn(
+              'rounded-full px-3 py-1 text-sm font-medium',
+              getStatusColor(nodeStatus || node.status),
+            )}
+          >
             {nodeStatus || node.status}
-          </Badge>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="pt-4">
+
+        {/* Divider */}
+        <div className="border-border/50 border-t" />
+
+        {/* Node Details */}
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
               <Wifi className="text-primary h-4 w-4" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">IP Address</p>
-              <p className="font-medium">{node.nodeIp}</p>
+              <p className="text-muted-foreground text-xs">HTTP Port</p>
+              <p className="font-medium">{node.rpcHttpPort}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -68,23 +87,30 @@ const NodeCard: React.FC<NodeCardProps> = ({ node }) => {
               <Activity className="text-primary h-4 w-4" />
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">HTTP Port</p>
-              <p className="font-medium">{node.rpcHttpPort}</p>
+              <p className="text-muted-foreground text-xs">Websocket Port</p>
+              <p className="font-medium">{node.rpcWsPort}</p>
             </div>
           </div>
         </div>
-      </CardContent>
-      <CardFooter className="bg-muted/20 pt-4">
-        <Button
-          onClick={handleViewLogs}
-          variant="default"
-          className="w-full transition-all duration-200 hover:shadow-md"
-        >
-          View Node Logs
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
+
+        {/* Divider */}
+        <div className="border-border/50 border-t" />
+
+        {/* Action Button */}
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground text-sm">View Details:</p>
+          <Button
+            onClick={handleViewLogs}
+            variant="outline"
+            size="sm"
+            className="bg-muted border-border hover:bg-muted/80 text-muted-foreground"
+          >
+            View Logs
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

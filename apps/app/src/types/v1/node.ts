@@ -1,3 +1,7 @@
+import { Alloc } from './allocs';
+import { Genesis } from './genesis';
+import { Server } from './server';
+
 export interface Network {
   id: string;
   publicIp: string;
@@ -10,6 +14,9 @@ export interface Network {
   serverId: string;
   create_at: string;
   updated_at: string;
+  server: Server;
+  genesis: Genesis;
+  allocs: Alloc[];
 }
 
 export interface Node {

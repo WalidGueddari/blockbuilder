@@ -4,6 +4,7 @@ import fs from 'fs';
 import { NodeSSH } from 'node-ssh';
 import path from 'path';
 import { promisify } from 'util';
+import { v4 as uuidv4 } from 'uuid';
 
 import { config } from '../config.js';
 import { azureAdminUsername } from '../constants.js';
@@ -45,6 +46,8 @@ export class ServerService {
     // Destructure the additional parameters
     const { vmName, resourceGroup, sshKeyName } = params;
 
+    const dnsLabel = 'd' + uuidv4().replace(/-/g, '').slice(0, 9);
+
     // Determine the directory for the SSH key: use provided sshKeyDir or fall back to HOME/USERPROFILE
     if (!sshKeyDir) {
       throw new Error('Cannot determine home directory for SSH key.');
@@ -72,7 +75,7 @@ export class ServerService {
       // Deploy the Azure VM using the Azure CLI command with dynamic parameters
       console.log(`Deploying Azure VM: ${vmName}`);
       const nsgName = vmName + 'NSG';
-      const vmCreateCmd = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --location "${location}" --size "${size}" --image "${image}" --admin-username "${adminUsername}" --ssh-key-value "${sshKeyPath}.pub" --os-disk-size-gb "${osDiskSize}" --storage-sku "${storageType}" --security-type "${securityType}" --verbose`;
+      const vmCreateCmd = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --location "${location}" --size "${size}" --image "${image}" --admin-username "${adminUsername}" --ssh-key-value "${sshKeyPath}.pub" --os-disk-size-gb "${osDiskSize}" --storage-sku "${storageType}" --security-type "${securityType}" --public-ip-address-dns-name "${dnsLabel}" --public-ip-sku Standard --verbose`;
       const vmOpenPortCmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTP --priority 1010 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80
 `;
       try {

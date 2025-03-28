@@ -45,7 +45,15 @@ export class NodeService {
         where: {
           networkId,
         },
-        include: { network: true },
+        include: {
+          network: {
+            include: {
+              server: true,
+              genesis: true,
+              allocs: true,
+            },
+          },
+        },
       });
       return nodes;
     } catch (error: any) {

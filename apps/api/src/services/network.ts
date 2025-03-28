@@ -41,6 +41,10 @@ export class NewtorkSevice {
   async getNetworkById(id: string) {
     return this.prisma.network.findUnique({
       where: { id },
+      select: {
+        server: true,
+        genesis: true,
+      },
     });
   }
 
