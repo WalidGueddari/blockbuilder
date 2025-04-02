@@ -49,6 +49,10 @@ create_config_file() {
   ADDRESS_1=$(generate_address "$PRIVATE_KEY_1")
   ADDRESS_2=$(generate_address "$PRIVATE_KEY_2")
 
+  echo "Generated Private Key 1: $PRIVATE_KEY_1"
+  echo "Generated Address 1: $ADDRESS_1"
+  echo "Generated Private Key 2: $PRIVATE_KEY_2"
+  echo "Generated Address 2: $ADDRESS_2"
   # Replace placeholders in the template
   CONFIG_CONTENT=$(echo "$TEMPLATE" |
     sed "s/PLACEHOLDER_CHAIN_ID/$CHAIN_ID/" |

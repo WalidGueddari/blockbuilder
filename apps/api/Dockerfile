@@ -90,6 +90,7 @@ ENV PATH="$TESSERA_HOME/bin:${PATH}"
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN pip3 install --break-system-packages eth-keys eth-utils
+RUN pip3 install --break-system-packages pycryptodome
 
 # Don't run production as root
 RUN groupadd --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs fastify

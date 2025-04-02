@@ -117,9 +117,9 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         await serverService.transferDirectoryByName(payload.vmId, payload.networkId);
         fastify.log.info('Directory transferred to VM');
 
-        console.log('Stopping any running Besu nodes...');
-        await containerService.killBesuNode();
-        fastify.log.info('Existing Besu nodes terminated');
+        // console.log('Stopping any running Besu nodes...');
+        // await containerService.killBesuNode();
+        // fastify.log.info('Existing Besu nodes terminated');
 
         console.log('Starting new node...');
         const start = await containerService.runNode(payload);
