@@ -21,19 +21,19 @@ model User {
 }
 
 model Network {
-  id        String   @id @default(cuid())
-  name      String
-  type      String   @default("QBFT")
-  status    Status   @default(PENDING)
-  nodeCount Int
-  userId    String
-  chainId   Int      @default(1337)
-  user      User     @relation(fields: [userId], references: [id])
-  server    VmServer @relation(fields: [serverId], references: [id])
-  serverId  String
-  nodes     Node[]
-  genesis   Genesis?
-  allocs    Alloc[]
+  id         String      @id @default(cuid())
+  name       String
+  type       String      @default("QBFT")
+  status     Status      @default(PENDING)
+  nodeCount  Int
+  userId     String
+  chainId    Int         @default(1337)
+  user       User        @relation(fields: [userId], references: [id])
+  server     VmServer    @relation(fields: [serverId], references: [id])
+  serverId   String
+  nodes      Node[]
+  genesis    Genesis?
+  allocs     Alloc[]
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -41,8 +41,8 @@ model Network {
 
 model Genesis {
   id        String  @id @default(cuid())
-  network   Network @relation(fields: [networkId], references: [id])  // Define fields & references here
-  networkId String  @unique  // Foreign key to Network
+  network   Network @relation(fields: [networkId], references: [id]) // Define fields & references here
+  networkId String  @unique // Foreign key to Network
 
   berlinBlock    Int @default(0)
   blockPeriod    Int @default(2)

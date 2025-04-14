@@ -24,7 +24,7 @@ services:
       - --rpc-http-host=HTTP_HOST
       - --rpc-ws-host=WS_HOST
       - --rpc-ws-port=RPC_WS_PORT
-      - --rpc-http-api=ETH,NET,QBFT
+      - --rpc-http-api=ETH,NET,WEB3,TRACE,DEBUG,ADMIN
       - --host-allowlist="*"
       - --rpc-http-cors-origins="all"
       - --privacy-enabled

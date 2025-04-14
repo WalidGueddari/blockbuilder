@@ -32,6 +32,6 @@ export type CreateNodePayload = {
 
 export type StartNodePayload = {
   networkId: string;
-  nodeCount: number;
+  nodeCount?: number;
   vmId: string;
 };

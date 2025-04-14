@@ -147,6 +147,10 @@ export class ContainerService {
       const outputs: string[] = [];
       const errors: string[] = [];
 
+      if (!payload.nodeCount) {
+        throw new Error('nodeCount is required');
+      }
+
       for (let i = 1; i <= payload.nodeCount; i++) {
         const nodeDir = `${remoteBaseDir}/${payload.networkId}/Node-${i}`;
         console.log(`Node directory for Node-${i}:`, nodeDir);

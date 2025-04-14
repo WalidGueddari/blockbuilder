@@ -23,7 +23,7 @@ services:
 
       # RPC HTTP settings
       - --rpc-http-enabled
-      - --rpc-http-api=ETH,NET,QBFT
+      - --rpc-http-api=ETH,NET,WEB3,TRACE,DEBUG,ADMIN
       - --rpc-http-port=RPC_HTTP_PORT
       - --rpc-http-host=HTTP_HOST
       - --rpc-http-cors-origins="all"

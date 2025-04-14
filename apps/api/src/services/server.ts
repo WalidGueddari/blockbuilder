@@ -76,18 +76,24 @@ export class ServerService {
       console.log(`Deploying Azure VM: ${vmName}`);
       const nsgName = vmName + 'NSG';
       const vmCreateCmd = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --location "${location}" --size "${size}" --image "${image}" --admin-username "${adminUsername}" --ssh-key-value "${sshKeyPath}.pub" --os-disk-size-gb "${osDiskSize}" --storage-sku "${storageType}" --security-type "${securityType}" --public-ip-address-dns-name "${dnsLabel}" --public-ip-sku Standard --verbose`;
-      const vmOpenPortCmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTP --priority 1010 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80
-`;
+      const vmOpenPort80Cmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTP --priority 1010 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80`;
+      const vmOpenPort443Cmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTPS --priority 1011 --direction Inbound --access Allow --protocol Tcp --destination-port-range 443`;
       try {
         const { stdout: createStdout, stderr: createStderr } = await execAsync(vmCreateCmd);
         console.log('VM Creation Command Logs:');
         console.log('stdout:', createStdout);
         console.log('stderr:', createStderr);
 
-        const { stdout: openPortStdout, stderr: openPortStderr } = await execAsync(vmOpenPortCmd);
+        const { stdout: openPort80Stdout, stderr: openPort80Stderr } =
+          await execAsync(vmOpenPort80Cmd);
         console.log('NSG Rule Creation (Open Port) Command Logs:');
-        console.log('stdout:', openPortStdout);
-        console.log('stderr:', openPortStderr);
+        console.log('stdout:', openPort80Stdout);
+        console.log('stderr:', openPort80Stderr);
+
+        const { stdout: open443Stdout, stderr: open443Stderr } = await execAsync(vmOpenPort443Cmd);
+        console.log('NSG Rule Creation (Open Port 443) Logs:');
+        console.log('stdout:', open443Stdout);
+        console.log('stderr:', open443Stderr);
       } catch (error) {
         console.error('Error executing commands:', error);
       }
@@ -123,6 +129,10 @@ export class ServerService {
         `az vm get-instance-view --resource-group "${resourceGroup}" --name "${vmName}" --query "instanceView.statuses[1].displayStatus" -o tsv`,
       );
 
+      const { stdout: fqdn } = await execAsync(
+        `az network public-ip show --resource-group "${resourceGroup}" --name "${vmName}PublicIP" --query "dnsSettings.fqdn" -o tsv`,
+      );
+
       // Build the VM information object
       const vmInfo = {
         azureId: vmId.trim(),
@@ -135,6 +145,7 @@ export class ServerService {
         publicIpAddress: publicIP.trim(),
         resourceGroup,
         sshKeyName,
+        dnsName: fqdn.trim(),
         userId: user.id,
       };
 
@@ -152,10 +163,9 @@ export class ServerService {
     }
   }
 
-  async setupDockerAndNginx(VMid: string) {
+  async setupDockerAndNginx(VMid: string, blockscout: boolean) {
     const { sshKeyDir } = config;
 
-    // Fetch the VM details from the database
     const vm = await this.getSSHConnection(VMid);
     if (!vm) {
       throw new Error(`VM with ID ${VMid} not found.`);
@@ -213,7 +223,7 @@ export class ServerService {
       // Nginx Configuration
 
       console.log('Preparing Nginx configuration for load balancing...');
-      const nginxConfig = `
+      const nginxNetworkConfig = `
   upstream blockchain_nodes {
       server 192.168.1.100:8545;
       server 192.168.1.102:8550;
@@ -222,7 +232,7 @@ export class ServerService {
   }
   server {
       listen 80;
-      server_name ${vm.publicIpAddress};
+      server_name ${vm.dnsName};
       location / {
           proxy_pass http://blockchain_nodes;
           proxy_http_version 1.1;
@@ -236,8 +246,36 @@ export class ServerService {
       }
   }
       `;
+
+      const nginxBlockscoutConfig = `
+  server {
+      listen 80;
+      server_name ${vm.dnsName};
+      location / {
+          proxy_pass http://127.0.0.1:26000;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_cache_bypass $http_upgrade;
+      }
+  }
+      `;
+
+      let selectedConfig;
+      if (blockscout) {
+        console.log('Using Blockscout configuration...');
+        selectedConfig = nginxBlockscoutConfig;
+      } else {
+        console.log('Using Network configuration...');
+        selectedConfig = nginxNetworkConfig;
+      }
+
       // Escape newlines and quotes for safe command execution
-      const escapedNginxConfig = nginxConfig
+      const escapedNginxConfig = selectedConfig
         .replace(/\$/g, '\\$')
         .replace(/\n/g, '\\n')
         .replace(/"/g, '\\"');
@@ -256,8 +294,26 @@ export class ServerService {
       result = await ssh.execCommand('sudo systemctl restart nginx');
       console.log('Nginx restart:', result.stdout, result.stderr);
 
+      console.log('Installing Certbot for SSL...');
+      result = await ssh.execCommand('sudo snap install --classic certbot');
+      console.log('Certbot installation:', result.stdout, result.stderr);
+
+      console.log('Preparing the Certbot command...');
+      result = await ssh.execCommand('sudo ln -s /snap/bin/certbot /usr/bin/certbot');
+      console.log('Certbot preparation:', result.stdout, result.stderr);
+
+      console.log('Obtaining SSL certificate...');
+      result = await ssh.execCommand(
+        `sudo certbot --nginx -d ${vm.dnsName} --non-interactive --agree-tos --email itskhvlil@outlook.com `,
+      );
+      console.log('Certbot obtain SSL:', result.stdout, result.stderr);
+
+      console.log('Testing automatic renewal...');
+      result = await ssh.execCommand('sudo certbot renew --dry-run');
+      console.log('Certbot test:', result.stdout, result.stderr);
+
       console.log(
-        'Setup complete: Docker, Docker Compose, Nginx, and additional packages have been installed and configured.',
+        'Setup complete: Docker, Docker Compose, Nginx, Certbot, and additional packages have been installed and configured.',
       );
 
       return true;

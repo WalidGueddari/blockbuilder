@@ -110,7 +110,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       try {
         fastify.log.info('Received /start-network request');
         console.log(`Setting up Docker and Nginx on VM ID: ${payload.vmId}...`);
-        await serverService.setupDockerAndNginx(payload.vmId);
+        await serverService.setupDockerAndNginx(payload.vmId, false);
         fastify.log.info('Docker and Nginx setup complete');
 
         console.log('Transferring network directory to VM...');

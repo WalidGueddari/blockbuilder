@@ -96,6 +96,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const activeNodes = nodes.filter((node) => node.status === 'ACTIVE').length;
   const networkName = nodes[0]?.network?.name || 'Unknown Network';
   const networkIp = nodes[0]?.network?.server?.publicIpAddress || 'Unknown IP';
+  const networkDns = nodes[0]?.network?.server?.dnsName || 'Unknown DNS';
   const chainId = nodes[0]?.network?.chainId?.toString() || 'Unknown Chain ID';
   const wallets = nodes[0]?.network?.allocs || [];
 
@@ -237,7 +238,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="text-sm font-medium">RPC URL:</div>
-                          <div className="col-span-2 break-all font-mono text-sm">{`http://${networkIp}`}</div>
+                          <div className="col-span-2 break-all font-mono text-sm">{`https://${networkDns}`}</div>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="text-sm font-medium">Chain ID:</div>
@@ -246,7 +247,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                       </div>
                       <Button
                         className="w-full bg-orange-500 text-white hover:bg-orange-600"
-                        disabled={true}
+                        disabled={false}
                         onClick={() => {
                           if (window.ethereum) {
                             window.ethereum
@@ -257,11 +258,11 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                                     chainId: `0x${Number.parseInt(chainId).toString(16)}`,
                                     chainName: networkName,
                                     nativeCurrency: {
-                                      name: 'Ether',
+                                      name: `${networkName} Token`,
                                       symbol: 'ETH',
                                       decimals: 18,
                                     },
-                                    rpcUrls: [`https://${networkIp}`],
+                                    rpcUrls: [`https://${networkDns}`],
                                     // blockExplorerUrls: nodes[0]?.network?.blockExplorerUrl
                                     //   ? [nodes[0].network.blockExplorerUrl]
                                     //   : null,

@@ -32,7 +32,7 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     async (request, reply) => {
       const { id, networkId } = request.body;
       try {
-        const result = await serverService.setupDockerAndNginx(id);
+        const result = await serverService.setupDockerAndNginx(id, false);
         await serverService.transferDirectoryByName(id, networkId);
         reply.send(result);
       } catch (error) {

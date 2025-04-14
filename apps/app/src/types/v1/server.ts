@@ -9,6 +9,7 @@ export interface Server {
   privateIpAddress: string;
   publicIpAddress: string;
   resourceGroup: string;
+  dnsName: string;
   sshKeyName: string;
   createdAt: string;
   updatedAt: string;
