@@ -154,19 +154,19 @@ export class BlockscoutService {
       // Set up Docker and Nginx on the created server
       await this.serverService.setupDockerAndNginx(serverInit.id, true);
 
-      if (!network.server.dnsName) {
+      if (!!network.server && !network.server.dnsName) {
         throw new Error('DNS name is missing from the Azure VM server.');
       }
 
-      // Generate configuration (e.g., a Docker Compose file) for Blockscout
-      const blockscoutConfig = await this._generateDockerComposeFile(
-        network.chainId,
-        network.server.dnsName,
-        network.id,
-      );
+      // // Generate configuration (e.g., a Docker Compose file) for Blockscout
+      // const blockscoutConfig = await this._generateDockerComposeFile(
+      //   network.chainId,
+      //   network.server.dnsName,
+      //   network.id,
+      // );
 
       // Optionally, you can log or further process blockscoutConfig
-      console.log('Blockscout configuration generated:', blockscoutConfig);
+      // console.log('Blockscout configuration generated:', blockscoutConfig);
 
       console.log('Transferring Blockscout directory to VM...');
       await this.serverService.transferDirectoryByName(serverInit.id, `blockscout-${network.id}`);

@@ -211,6 +211,10 @@ export class JobSevice {
         });
         console.log('Starting Blockscout...');
         await this.blockscoutService.runBlockscout(initNetwork.id, blockscoutServer.id);
+
+        console.log('Stopping any running Besu nodes...');
+        await this.containerService.killBesuNode();
+        console.info('Existing Besu nodes terminated');
       } catch (error: any) {
         console.error('Error running job:', error);
         await this.prisma.job.update({
