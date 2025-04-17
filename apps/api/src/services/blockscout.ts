@@ -31,7 +31,7 @@ export class BlockscoutService {
     this.serverService = new ServerService({ prisma: this.prisma });
   }
 
-  private async _generateDockerComposeFile(chainId: number, dns: string, networkId: string) {
+  async _generateDockerComposeFile(chainId: number, dns: string, networkId: string) {
     try {
       const { networkBinDir, blockScoutTemplateFile } = config;
       const command = [

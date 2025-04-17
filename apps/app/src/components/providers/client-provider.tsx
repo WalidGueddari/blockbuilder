@@ -2,7 +2,7 @@
 
 import { Spinner } from '@/components/common/spinner';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/context/AuthContext';
 import { persistor, store } from '@/services/store';
 import type React from 'react';

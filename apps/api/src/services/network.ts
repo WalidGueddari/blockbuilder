@@ -15,7 +15,7 @@ export class NewtorkSevice {
     this.prisma = options.prisma;
   }
 
-  async initNetwork(payload: InitNetworkPayload, serverId: string) {
+  async initNetwork(payload: InitNetworkPayload, serverId?: string) {
     // Generate a unique chain ID
     const chainId = await this._generateChainId();
 
@@ -29,6 +29,13 @@ export class NewtorkSevice {
     });
 
     return initNetwork;
+  }
+
+  async updateServerId(networkId: string, serverId: string) {
+    return this.prisma.network.update({
+      where: { id: networkId },
+      data: { serverId },
+    });
   }
 
   async updateStatus(networkId: string, status: Status) {
