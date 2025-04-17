@@ -60,15 +60,15 @@ FROM base AS runner
 WORKDIR /server
 
 # Install required packages using apt-get (glibc is built-in)
-RUN apt-get update && apt-get install -y openssl openssh-client bash curl python3 python3-pip ca-certificates wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openjdk-17-jdk-headless openssl openssh-client bash curl python3 python3-pip ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
 # Install Oracle JDK x64 Compressed Archive
-RUN curl -fSL https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz -o /tmp/jdk.tgz \
-    && mkdir -p /opt/jdk-23 \
-    && tar -xzf /tmp/jdk.tgz -C /opt/jdk-23 --strip-components=1 \
-    && rm /tmp/jdk.tgz
+# RUN curl -fSL https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz -o /tmp/jdk.tgz \
+#     && mkdir -p /opt/jdk-23 \
+#     && tar -xzf /tmp/jdk.tgz -C /opt/jdk-23 --strip-components=1 \
+#     && rm /tmp/jdk.tgz
 
-ENV JAVA_HOME=/opt/jdk-23
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25.1.0.tar.gz -o /tmp/besu.tar.gz \
