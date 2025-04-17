@@ -31,6 +31,11 @@ export class NodeService {
         },
         select: {
           status: true,
+          network: {
+            include: {
+              blockscoutServer: true,
+            },
+          },
         },
       });
     } catch (error: any) {
@@ -48,6 +53,7 @@ export class NodeService {
         include: {
           network: {
             include: {
+              blockscoutServer: true,
               server: true,
               genesis: true,
               allocs: true,

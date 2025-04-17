@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useWebSocket from '@/hooks/useWebSocket';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import {
   fetchNodesByNetworkId,
@@ -28,7 +29,7 @@ import {
 } from '@/services/v1/nodeSlice';
 import { clearMessages } from '@/services/v1/websocketSlice';
 import type { NetworkDetailsProps } from '@/types/v1/network';
-import { Activity, ChevronRight, Globe, Server, Shield, Wifi } from 'lucide-react';
+import { Activity, ChevronRight, Globe, Loader2, Server, Shield, Wifi } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 
@@ -47,9 +48,13 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const loading = useAppSelector(selectNodeLoading);
   const nodeError = useAppSelector(selectNodeError);
   const [activeTab, setActiveTab] = useState('overview');
-  const [showPrivateKey, setShowPrivateKey] = useState<Record<string, boolean>>({});
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationError, setVerificationError] = useState('');
+
+  const mode = 'status';
+  useWebSocket({ mode, nodeId: nodes[0].id });
+
+  useEffect(() => {
+    dispatch(clearMessages());
+  }, [dispatch]);
 
   // Fetch nodes once on mount or when networkId changes
   useEffect(() => {
@@ -58,16 +63,6 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
       dispatch(clearMessages());
     }
   }, [networkId, dispatch]);
-
-  const verifyAndShowPrivateKey = (walletId: string) => {
-    // This is a mock verification - in a real app, you would verify against a backend
-    if (verificationCode === '123456') {
-      setShowPrivateKey((prev) => ({ ...prev, [walletId]: true }));
-      setVerificationError('');
-    } else {
-      setVerificationError('Invalid verification code');
-    }
-  };
 
   if (loading) {
     return (
@@ -97,6 +92,8 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const networkName = nodes[0]?.network?.name || 'Unknown Network';
   const networkIp = nodes[0]?.network?.server?.publicIpAddress || 'Unknown IP';
   const networkDns = nodes[0]?.network?.server?.dnsName || 'Unknown DNS';
+  const blockscoutDns = nodes[0]?.network?.blockscoutServer?.dnsName;
+  const isLoadingBlockscout = blockscoutDns == null;
   const chainId = nodes[0]?.network?.chainId?.toString() || 'Unknown Chain ID';
   const wallets = nodes[0]?.network?.allocs || [];
 
@@ -108,6 +105,24 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
             <CardTitle className="text-2xl font-bold">{networkName}</CardTitle>
             <CardDescription className="text-base">Blockchain Network</CardDescription>
           </div>
+          <Button
+            onClick={() => {
+              if (blockscoutDns) {
+                // open in a new tab
+                window.open(`https://${blockscoutDns}`, '_blank');
+              }
+            }}
+            disabled={!blockscoutDns}
+          >
+            {isLoadingBlockscout ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading</span>
+              </>
+            ) : (
+              <span>Blockscout</span>
+            )}
+          </Button>
         </CardHeader>
       </Card>
 

@@ -151,6 +151,19 @@ export class JobSevice {
         console.log('Azure VM for Blockscout created successfully');
 
         /*
+         * update network: set server id to network
+         */
+        console.log('Updating network...');
+        await this.prisma.job.update({
+          where: { id: jobId },
+          data: {
+            status: 'Updating Network',
+          },
+        });
+        const network = await this.networkService.updateBsServerId(networkId, blockscoutServer.id);
+        console.log('Network updated successfully');
+
+        /*
          * step 7 setup blockscout server
          */
         await this.prisma.job.update({

@@ -21,19 +21,21 @@ model User {
 }
 
 model Network {
-  id        String   @id @default(cuid())
-  name      String
-  type      String   @default("QBFT")
-  status    Status   @default(PENDING)
-  nodeCount Int
-  userId    String
-  chainId   Int      @default(1337)
-  user      User     @relation(fields: [userId], references: [id])
-  server    VmServer? @relation(fields: [serverId], references: [id])
-  serverId  String?
-  nodes     Node[]
-  genesis   Genesis?
-  allocs    Alloc[]
+  id                 String    @id @default(cuid())
+  name               String
+  type               String    @default("QBFT")
+  status             Status    @default(PENDING)
+  nodeCount          Int
+  userId             String
+  chainId            Int       @default(1337)
+  user               User      @relation(fields: [userId], references: [id])
+  server             VmServer? @relation(fields: [serverId], references: [id])
+  serverId           String?
+  nodes              Node[]
+  genesis            Genesis?
+  allocs             Alloc[]
+  blockscoutServer   VmServer? @relation("BlockscoutServer", fields: [blockscoutServerId], references: [id])
+  blockscoutServerId String?
 
   create_at  DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -109,15 +111,16 @@ model VmServer {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  network Network[]
-  user    User      @relation(fields: [userId], references: [id])
-  userId  String
+  network            Network[]
+  blockscoutNetworks Network[] @relation("BlockscoutServer")
+  user               User      @relation(fields: [userId], references: [id])
+  userId             String
 }
 
 model Job {
   id           String   @id @default(uuid())
   userId       String
-  status       String 
+  status       String
   errorMessage String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

@@ -38,6 +38,13 @@ export class NewtorkSevice {
     });
   }
 
+  async updateBsServerId(networkId: string, blockscoutServerId: string) {
+    return this.prisma.network.update({
+      where: { id: networkId },
+      data: { blockscoutServerId },
+    });
+  }
+
   async updateStatus(networkId: string, status: Status) {
     return this.prisma.network.update({
       where: { id: networkId },

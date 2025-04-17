@@ -15,6 +15,7 @@ export interface Network {
   create_at: string;
   updated_at: string;
   server: Server;
+  blockscoutServer: Server;
   genesis: Genesis;
   allocs: Alloc[];
 }
