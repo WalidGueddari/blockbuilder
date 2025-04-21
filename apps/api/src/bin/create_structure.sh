@@ -21,6 +21,15 @@ create_structure() {
     echo "Base directory '$BASE_DIR' already exists."
   fi
 
+  # Create hardhat/contracts directory
+  HARDHAT_DIR="$BASE_DIR/hardhat/contracts"
+  if [ ! -d "$HARDHAT_DIR" ]; then
+    mkdir -p "$HARDHAT_DIR"
+    echo "Hardhat contracts directory '$HARDHAT_DIR' created."
+  else
+    echo "Hardhat contracts directory '$HARDHAT_DIR' already exists."
+  fi
+
   if ! [[ "$NUM_NODES" =~ ^[0-9]+$ ]] || [ "$NUM_NODES" -le 0 ]; then
     echo "Invalid number of nodes. Please enter a positive integer."
     exit 1
