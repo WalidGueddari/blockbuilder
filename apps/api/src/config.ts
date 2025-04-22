@@ -116,4 +116,9 @@ export const config = {
   tesseraP2PPort: requiredIntVar('TESS_P2P_PORT'),
   tesseraHelthPort: requiredIntVar('TESS_HEALTH_PORT'),
   tesseraStartIpSuffix: requiredIntVar('TESS_START_IP_SUFFIX'),
+
+  /**
+   * Hardhat Configuration
+   */
+  hardhatRegistryUser: requiredVar('DOCKER_REGISTRY_USER'),
 };
