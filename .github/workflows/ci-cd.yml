@@ -26,9 +26,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_REGISTRY_USER }}/blockchainbuilder_staging:api -f apps/api/Dockerfile .
-          docker build -t ${{ secrets.DOCKER_REGISTRY_USER }}/hardhat_staging:api -f apps/hardhat/Dockerfile .
           docker push ${{ secrets.DOCKER_REGISTRY_USER }}/blockchainbuilder_staging:api
-          docker push ${{ secrets.DOCKER_REGISTRY_USER }}/hardhat_staging:api
 
   deploy:
     runs-on: ubuntu-latest
