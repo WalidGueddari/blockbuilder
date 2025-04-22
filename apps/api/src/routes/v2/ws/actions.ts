@@ -2,12 +2,14 @@ import { FastifyPluginAsync } from 'fastify';
 
 import { config } from '../../../config.js';
 import { ContainerService } from '../../../services/containers.js';
+import { JobSevice } from '../../../services/job.js';
 import { NodeService } from '../../../services/nodes.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {
   const { prisma } = fastify;
   const containerService = new ContainerService({ prisma });
   const nodeService = new NodeService({ prisma });
+  const jobService = new JobSevice({ prisma });
 
   const POLL_INTERVAL = config.pollingInterval;
   fastify.get<{ Params: { container: string; vmId: string } }>(
@@ -93,6 +95,62 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
               JSON.stringify({
                 success: false,
                 error: `Failed to retrieve node status: ${String(err)}`,
+              }),
+            );
+          }
+        }, POLL_INTERVAL);
+
+        // Clean up when client disconnects
+        connection.socket.on('close', () => {
+          console.log('>>> WebSocket connection closed by client');
+          clearInterval(intervalId);
+        });
+
+        connection.socket.on('error', (err) => {
+          console.error('>>> WebSocket error:', err);
+          clearInterval(intervalId);
+        });
+      } catch (error) {
+        console.error('>>> Error:', error);
+        let errorMessage = 'An unknown error occurred';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        connection.socket.send(JSON.stringify({ success: false, error: errorMessage }));
+        connection.socket.close();
+      }
+    },
+  );
+
+  fastify.get<{ Params: { id: string } }>(
+    '/get-status-job/:id',
+    { websocket: true },
+    async (connection, req) => {
+      console.log('>>> get-status WebSocket route handler invoked!');
+      try {
+        const { id } = req.params;
+
+        // Poll the database every 3 seconds to retrieve node status
+        const intervalId = setInterval(async () => {
+          try {
+            const job = await jobService.getJob(id);
+
+            connection.socket.send(
+              JSON.stringify({
+                success: true,
+                data: {
+                  jobId: job.id,
+                  status: job.status,
+                  networkName: job.Network?.name,
+                },
+              }),
+            );
+          } catch (err) {
+            console.error('>>> Error fetching job status:', err);
+            connection.socket.send(
+              JSON.stringify({
+                success: false,
+                error: `Failed to retrieve job status: ${String(err)}`,
               }),
             );
           }

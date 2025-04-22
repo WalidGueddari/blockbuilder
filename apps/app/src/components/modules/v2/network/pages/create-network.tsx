@@ -145,22 +145,22 @@ export default function CreateNetworkDialog() {
     setShowWarningDialog(false);
     setIsLoading(true);
 
-    // 1) Add a "pending" notification to Redux:
-    const notificationId = uuidv4();
-    dispatch(
-      addNotification({
-        id: notificationId,
-        title: `Creating network "${pendingValues.name}"`,
-        description: 'Starting network creation process...',
-        status: 'pending',
-        time: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }),
-        read: false,
-      }),
-    );
+    // // 1) Add a "pending" notification to Redux:
+    // const notificationId = uuidv4();
+    // dispatch(
+    //   addNotification({
+    //     id: notificationId,
+    //     title: `Creating network "${pendingValues.name}"`,
+    //     description: 'Starting network creation process...',
+    //     status: 'pending',
+    //     time: new Date().toLocaleTimeString([], {
+    //       hour: '2-digit',
+    //       minute: '2-digit',
+    //       hour12: false,
+    //     }),
+    //     read: false,
+    //   }),
+    // );
 
     try {
       const networkRes = await dispatch(
@@ -194,16 +194,16 @@ export default function CreateNetworkDialog() {
         variant: 'destructive',
       });
 
-      // Mark notification as error
-      dispatch(
-        updateNotification({
-          id: notificationId,
-          changes: {
-            status: 'error',
-            description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
-          },
-        }),
-      );
+      // // Mark notification as error
+      // dispatch(
+      //   updateNotification({
+      //     id: notificationId,
+      //     changes: {
+      //       status: 'error',
+      //       description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
+      //     },
+      //   }),
+      // );
     } finally {
       setIsLoading(false);
     }

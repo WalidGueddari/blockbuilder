@@ -26,15 +26,16 @@ export class JobSevice {
     this.networkService = new NewtorkSevice(options);
   }
 
-  async initJob(userId: string) {
+  async initJob(userId: string, networkId: string) {
     try {
       const job = await this.prisma.job.create({
         data: {
           userId: userId,
-          status: 'queued',
+          networkId: networkId,
+          status: 'Initializing blockchain',
         },
       });
-      console.log('Job created:', job.id);
+      // console.log('Job created:', job.id);
       return job;
     } catch (error) {
       console.error('Error creating job:', error);
@@ -42,200 +43,126 @@ export class JobSevice {
     }
   }
 
-  async runJob(payload: InitNetworkPayload, networkId: string, jobId: string) {
+  async getJob(userId: string) {
+    try {
+      const job = await this.prisma.job.findFirstOrThrow({
+        where: { userId },
+        include: {
+          Network: true,
+        },
+      });
+      console.log('Job found:', job);
+      return job;
+    } catch (error) {
+      console.error(`Error getting job for ${userId} :`, error);
+      throw error;
+    }
+  }
+
+  public async runJob(
+    payload: InitNetworkPayload,
+    networkId: string,
+    jobId: string,
+  ): Promise<void> {
     setImmediate(async () => {
       try {
-        /*
-         * step 1 create azure vm for blockchain
-         */
-        console.log('Creating Azure VM Job...');
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Creating Vm',
-          },
-        });
-        const azurePayload: CreateAzureVMParams = {
+        // Step 1: Deploy blockchain VM
+        await this._updateJobStatus(jobId, 'Deploying blockchain');
+        const blockchainVm = await this.serverService.createAzureVMServer({
           resourceGroup: payload.name,
           userId: payload.userId,
           vmName: payload.name,
           sshKeyName: payload.name,
-        };
-        const server = await this.serverService.createAzureVMServer(azurePayload);
-        console.log('Azure VM created successfully');
-
-        /*
-         * step 2 update network: set server id to network
-         */
-        console.log('Updating network...');
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Updating Network',
-          },
-        });
-        const initNetwork = await this.networkService.updateServerId(networkId, server.id);
-        console.log('Network updated successfully');
-
-        /*
-         * step 3  setup blockchain server
-         */
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Setting up Blockchain Server',
-          },
-        });
-        console.log('Setting up blockchain server...');
-        await this.serverService.setupDockerAndNginx(server.id, false);
-        console.log('Blockchain server set up successfully');
-
-        /*
-         * step 4 Transferring network directory to VM
-         */
-
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Transferring Network Directory',
-          },
-        });
-        console.log('Transferring network directory to VM...');
-        await this.serverService.transferDirectoryByName(server.id, initNetwork.id);
-        console.log('Directory transferred to VM successfully');
-
-        /*
-         * step 5 start network
-         */
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Starting Network',
-          },
         });
 
-        console.log('Starting network...');
-        const start = await this.containerService.runNode({
-          networkId: initNetwork.id,
-          nodeCount: initNetwork.nodeCount,
-          vmId: server.id,
+        // Step 2: Associate VM with network
+        // await this._updateJobStatus(jobId, 'Updating network with VM');
+        const network = await this.networkService.updateServerId(networkId, blockchainVm.id);
+
+        // Step 3: Configure Docker & Nginx
+        // await this._updateJobStatus(jobId, 'Setting up blockchain server');
+        await this.serverService.setupDockerAndNginx(blockchainVm.id, false);
+
+        // Step 4: Transfer network files
+        // await this._updateJobStatus(jobId, 'Transferring network directory');
+        await this.serverService.transferDirectoryByName(blockchainVm.id, network.id);
+
+        // Step 5: Start the blockchain nodes
+        // await this._updateJobStatus(jobId, 'Starting network');
+        const startResult = await this.containerService.runNode({
+          networkId: network.id,
+          nodeCount: network.nodeCount,
+          vmId: blockchainVm.id,
         });
-        if (start.success) {
-          await this.networkService.updateStatus(initNetwork.id, Status.ACTIVE);
-          console.info(`Network started successfully on VM ID: ${server.id}`);
-        } else {
-          await this.networkService.updateStatus(initNetwork.id, Status.FAILED);
-          console.error(`Failed to start network on VM ID: ${server.id}`);
+
+        // Update network status based on start outcome
+        await this.networkService.updateStatus(
+          network.id,
+          startResult.success ? Status.ACTIVE : Status.FAILED,
+        );
+
+        // Step 6: Prepare Blockscout
+        if (!blockchainVm.dnsName) {
+          throw new Error('VM DNS name is missing');
         }
+        await this._updateJobStatus(jobId, 'Setting up Blockscout');
+        await this.blockscoutService._generateDockerComposeFile(
+          network.chainId,
+          blockchainVm.dnsName,
+          network.id,
+        );
 
-        /*
-         * step 6 create azure vm for blockscout
-         */
-        const azurePayloadBlockscout: CreateAzureVMParams = {
-          // Merge or override any properties from the original azureParams if needed
+        // Step 7: Deploy Blockscout VM
+        await this._updateJobStatus(jobId, 'Deploying Blockscout');
+        const blockscoutVm = await this.serverService.createAzureVMServer({
           resourceGroup: `${payload.name}-blockscout`,
           userId: payload.userId,
           vmName: `${payload.name}-blockscout`,
           sshKeyName: `${payload.name}-blockscout`,
-        };
-
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Creating Blockscout VM',
-          },
         });
-        console.log('Creating Azure VM for Blockscout...');
-        const blockscoutServer =
-          await this.serverService.createAzureVMServer(azurePayloadBlockscout);
-        console.log('Azure VM for Blockscout created successfully');
 
-        /*
-         * update network: set server id to network
-         */
-        console.log('Updating network...');
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Updating Network',
-          },
-        });
-        const network = await this.networkService.updateBsServerId(networkId, blockscoutServer.id);
-        console.log('Network updated successfully');
+        // Step 8: Associate Blockscout VM
+        // await this._updateJobStatus(jobId, 'Updating network with Blockscout VM');
+        await this.networkService.updateBsServerId(networkId, blockscoutVm.id);
 
-        /*
-         * step 7 setup blockscout server
-         */
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Setting up Blockscout Server',
-          },
-        });
-        console.log('Setting up Blockscout server...');
-        await this.serverService.setupDockerAndNginx(blockscoutServer.id, true);
-        console.log('Blockscout server set up successfully');
+        // Step 9: Configure Blockscout server
+        // await this._updateJobStatus(jobId, 'Setting up Blockscout server');
+        await this.serverService.setupDockerAndNginx(blockscoutVm.id, true);
 
-        /*
-         * step 8 generating blockscout docker compose file
-         */
-
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Generating Blockscout Docker Compose File',
-          },
-        });
-        if (!server.dnsName) {
-          throw new Error('DNS name is missing from the Azure VM server.');
-        }
-        console.log('Generating Blockscout Docker Compose file...');
-        await this.blockscoutService._generateDockerComposeFile(
-          initNetwork.chainId,
-          server.dnsName,
-          initNetwork.id,
-        );
-        console.log('Blockscout Docker Compose file generated successfully');
-
-        /*
-         * step 9 Transferring blockscout directory to VM
-         */
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Transferring Blockscout Directory',
-          },
-        });
-        console.log('Transferring Blockscout directory to VM...');
+        // Step 10: Transfer Blockscout files and start
+        // await this._updateJobStatus(jobId, 'Transferring Blockscout directory');
         await this.serverService.transferDirectoryByName(
-          blockscoutServer.id,
-          `blockscout-${initNetwork.id}`,
+          blockscoutVm.id,
+          `blockscout-${network.id}`,
         );
-        console.log('Blockscout directory transferred to VM successfully');
 
-        /*
-         * step 10 start blockscout
-         */
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'Starting Blockscout',
-          },
-        });
-        console.log('Starting Blockscout...');
-        await this.blockscoutService.runBlockscout(initNetwork.id, blockscoutServer.id);
+        // await this._updateJobStatus(jobId, 'Starting Blockscout');
+        await this.blockscoutService.runBlockscout(network.id, blockscoutVm.id);
 
-        console.log('Stopping any running Besu nodes...');
+        // Cleanup any stray Besu nodes
         await this.containerService.killBesuNode();
-        console.info('Existing Besu nodes terminated');
+
+        // Final: mark job complete
+        await this._updateJobStatus(jobId, 'Blockchain ready');
       } catch (error: any) {
-        console.error('Error running job:', error);
-        await this.prisma.job.update({
-          where: { id: jobId },
-          data: { status: 'error', errorMessage: error.message },
-        });
+        console.error('Deployment job failed:', error);
+        await this._updateJobStatus(jobId, 'error', error.message);
         throw error;
       }
+    });
+  }
+
+  private async _updateJobStatus(
+    jobId: string,
+    status: string,
+    errorMessage?: string,
+  ): Promise<void> {
+    await this.prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status,
+        ...(errorMessage && { errorMessage }),
+      },
     });
   }
 }

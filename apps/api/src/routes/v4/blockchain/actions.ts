@@ -26,6 +26,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
 
       try {
         const initNetwork = await networkService.initNetwork(initNetPayload);
+        const job = await jobService.initJob(initNetwork.userId, initNetwork.id);
 
         console.log('Setting up network containers...');
         await containerService.SetUpNetwork(
@@ -56,8 +57,6 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
           initNetwork.nodeCount,
         );
         console.log('Full Docker Compose file generated successfully');
-
-        const job = await jobService.initJob(initNetPayload.userId);
 
         console.log('Job created:', job.id);
         jobService.runJob(initNetPayload, initNetwork.id, job.id);
