@@ -145,6 +145,117 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       }
     },
   );
+
+  fastify.post<{ Body: { networkId: string } }>(
+    '/setup-hardhat',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['networkId'],
+          properties: {
+            networkId: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { networkId } = request.body;
+
+        fastify.log.info('Received /setup-hardhat request');
+        console.log(`Setting up Hardhat for network: ${networkId}`);
+
+        // Generate Hardhat Docker Compose file
+        await containerService.generateHardhatDockerCompose(networkId);
+        fastify.log.info('Hardhat Docker Compose file generated');
+
+        return reply.send({ success: true, message: 'Hardhat setup completed successfully' });
+      } catch (error: any) {
+        fastify.log.error(`Error setting up Hardhat: ${error.message}`);
+        console.error('Setup Hardhat Error:', error);
+        return reply.status(500).send({ success: false, error: error.message });
+      }
+    },
+  );
+
+  fastify.post<{ Body: { networkId: string; vmId: string } }>(
+    '/start-hardhat',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['networkId', 'vmId'],
+          properties: {
+            networkId: { type: 'string' },
+            vmId: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { networkId, vmId } = request.body;
+
+        fastify.log.info('Received /start-hardhat request');
+        console.log(`Starting Hardhat for network: ${networkId} on VM: ${vmId}`);
+
+        // Start Hardhat container
+        const result = await containerService.startHardhat(networkId, vmId);
+
+        if (!result.success) {
+          fastify.log.error(`Failed to start Hardhat: ${result.errors?.join(', ')}`);
+          return reply.status(500).send(result);
+        }
+
+        fastify.log.info('Hardhat started successfully');
+        return reply.send(result);
+      } catch (error: any) {
+        fastify.log.error(`Error starting Hardhat: ${error.message}`);
+        console.error('Start Hardhat Error:', error);
+        return reply.status(500).send({ success: false, error: error.message });
+      }
+    },
+  );
+
+  fastify.post<{ Body: { networkId: string; vmId: string } }>(
+    '/stop-hardhat',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['networkId', 'vmId'],
+          properties: {
+            networkId: { type: 'string' },
+            vmId: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { networkId, vmId } = request.body;
+
+        fastify.log.info('Received /stop-hardhat request');
+        console.log(`Stopping Hardhat for network: ${networkId} on VM: ${vmId}`);
+
+        // Stop Hardhat container
+        const result = await containerService.stopHardhat(networkId, vmId);
+
+        if (!result.success) {
+          fastify.log.error(`Failed to stop Hardhat: ${result.errors?.join(', ')}`);
+          return reply.status(500).send(result);
+        }
+
+        fastify.log.info('Hardhat stopped successfully');
+        return reply.send(result);
+      } catch (error: any) {
+        fastify.log.error(`Error stopping Hardhat: ${error.message}`);
+        console.error('Stop Hardhat Error:', error);
+        return reply.status(500).send({ success: false, error: error.message });
+      }
+    },
+  );
 };
 
 export default routes;

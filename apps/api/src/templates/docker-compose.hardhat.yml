@@ -1,0 +1,25 @@
+services:
+  hardhat:
+    image: ${DOCKER_REGISTRY_USER}/hardhat_staging:latest
+    container_name: hardhat
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./hardhat/contracts:/usr/src/app/contracts
+    working_dir: /usr/src/app
+    environment:
+      - LOCAL_RPC_URL=${LOCAL_RPC_URL}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    networks:
+      - ${NET_ID}
+    depends_on:
+      - node-1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ${NET_ID}:
+    external: true
