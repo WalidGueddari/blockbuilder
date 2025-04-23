@@ -37,6 +37,7 @@ generate_docker_compose_hardhat() {
 
     # Replace placeholders with actual values
     DOCKER_COMPOSE_CONTENT=$(echo "$DOCKER_COMPOSE_CONTENT" |
+        sed "s/\${HARDHAT_DOCKE_IMAGE}/$HARDHAT_DOCKE_IMAGE/g" |
         sed "s/\${NET_ID}/$NET_ID/g" |
         sed "s/\${LOCAL_RPC_URL}/$LOCAL_RPC_URL/g" |
         sed "s/\${PRIVATE_KEY}/$PRIVATE_KEY/g"

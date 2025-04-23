@@ -120,5 +120,5 @@ export const config = {
   /**
    * Hardhat Configuration
    */
-  hardhatRegistryUser: requiredVar('DOCKER_REGISTRY_USER'),
+  hardhatDockerImage: requiredVar('HARDHAT_DOCKE_IMAGE'),
 };

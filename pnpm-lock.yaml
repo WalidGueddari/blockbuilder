@@ -107,6 +107,9 @@ importers:
       '@saas-monorepo/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@sinclair/typebox':
+        specifier: ^0.32.15
+        version: 0.32.35
       '@types/dockerode':
         specifier: ^3.3.34
         version: 3.3.37
@@ -3675,6 +3678,10 @@ packages:
       '@sentry/types': 5.30.0
       tslib: 1.14.1
     dev: true
+
+  /@sinclair/typebox@0.32.35:
+    resolution: {integrity: sha512-Ul3YyOTU++to8cgNkttakC0dWvpERr6RYoHO2W47DLbFvrwBDJUY31B1sImH6JZSYc4Kt4PyHtoPNu+vL2r2dA==}
+    dev: false
 
   /@solidity-parser/parser@0.14.5:
     resolution: {integrity: sha512-6dKnHZn7fg/iQATVEzqyUOyEidbn05q7YA2mQ9hC0MMXhhV3/JrsxmFSYZAcr7j1yUP700LLhTruvJ3MiQmjJg==}

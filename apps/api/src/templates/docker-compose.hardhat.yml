@@ -1,6 +1,6 @@
 services:
   hardhat:
-    image: ${DOCKER_REGISTRY_USER}/hardhat_staging:latest
+    image: ${HARDHAT_DOCKE_IMAGE}
     container_name: hardhat
     ports:
       - "8545:8545"
