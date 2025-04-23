@@ -1,10 +1,11 @@
 import { Type } from '@sinclair/typebox';
-import { FastifyInstance } from 'fastify';
+import { FastifyPluginAsync } from 'fastify';
 
 import { ContractService } from '../../../services/contract.js';
 
-export default async function contractRoutes(fastify: FastifyInstance) {
-  const contractService = new ContractService(fastify.prisma);
+const routes: FastifyPluginAsync = async (fastify, opts) => {
+  const { prisma } = fastify;
+  const contractService = new ContractService({ prisma });
 
   // Route to interact with a deployed contract
   fastify.post(
@@ -185,4 +186,6 @@ export default async function contractRoutes(fastify: FastifyInstance) {
       }
     },
   );
-}
+};
+
+export default routes;

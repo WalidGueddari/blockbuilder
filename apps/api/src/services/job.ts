@@ -1,13 +1,11 @@
 import { PrismaClient } from '@saas-monorepo/database';
-import path from 'path';
 
-import { config } from '../config.js';
 import { Status } from '../constants.js';
 import { InitNetworkPayload } from '../types/network.js';
-import { CreateAzureVMParams } from '../types/server.js';
 import { AbstractServiceOptions } from '../types/services.js';
 import { BlockscoutService } from './blockscout.js';
 import { ContainerService } from './containers.js';
+import { HardhatService } from './hardhat.js';
 import { NewtorkSevice } from './network.js';
 import { ServerService } from './server.js';
 
@@ -17,6 +15,7 @@ export class JobSevice {
   serverService: ServerService;
   blockscoutService: BlockscoutService;
   networkService: NewtorkSevice;
+  hardhatService: HardhatService;
 
   constructor(options: AbstractServiceOptions) {
     this.prisma = options.prisma;
@@ -24,6 +23,7 @@ export class JobSevice {
     this.serverService = new ServerService(options);
     this.blockscoutService = new BlockscoutService(options);
     this.networkService = new NewtorkSevice(options);
+    this.hardhatService = new HardhatService(options);
   }
 
   async initJob(userId: string, networkId: string) {
@@ -35,7 +35,7 @@ export class JobSevice {
           status: 'Initializing blockchain',
         },
       });
-      // console.log('Job created:', job.id);
+      console.log('Job created:', job.id);
       return job;
     } catch (error) {
       console.error('Error creating job:', error);
@@ -51,7 +51,7 @@ export class JobSevice {
           Network: true,
         },
       });
-      console.log('Job found:', job);
+      // console.log('Job found:', job);
       return job;
     } catch (error) {
       console.error(`Error getting job for ${userId} :`, error);
@@ -67,6 +67,7 @@ export class JobSevice {
     setImmediate(async () => {
       try {
         // Step 1: Deploy blockchain VM
+        console.info('Step 1: Deploying blockchain VM');
         await this._updateJobStatus(jobId, 'Deploying blockchain');
         const blockchainVm = await this.serverService.createAzureVMServer({
           resourceGroup: payload.name,
@@ -76,32 +77,35 @@ export class JobSevice {
         });
 
         // Step 2: Associate VM with network
-        // await this._updateJobStatus(jobId, 'Updating network with VM');
+        console.info('Step 2: Associating VM with network');
         const network = await this.networkService.updateServerId(networkId, blockchainVm.id);
 
         // Step 3: Configure Docker & Nginx
-        // await this._updateJobStatus(jobId, 'Setting up blockchain server');
+        console.info('Step 3: Configuring Docker & Nginx');
         await this.serverService.setupDockerAndNginx(blockchainVm.id, false);
 
         // Step 4: Transfer network files
-        // await this._updateJobStatus(jobId, 'Transferring network directory');
+        console.info('Step 4: Transferring network files');
         await this.serverService.transferDirectoryByName(blockchainVm.id, network.id);
 
         // Step 5: Start the blockchain nodes
-        // await this._updateJobStatus(jobId, 'Starting network');
+        console.info('Step 5: Starting the blockchain nodes');
         const startResult = await this.containerService.runNode({
           networkId: network.id,
           nodeCount: network.nodeCount,
           vmId: blockchainVm.id,
         });
+        await this.hardhatService.startHardhat(networkId, blockchainVm.id);
 
         // Update network status based on start outcome
+        console.info('Updating network status based on start outcome');
         await this.networkService.updateStatus(
           network.id,
           startResult.success ? Status.ACTIVE : Status.FAILED,
         );
 
         // Step 6: Prepare Blockscout
+        console.info('Step 6: Preparing Blockscout');
         if (!blockchainVm.dnsName) {
           throw new Error('VM DNS name is missing');
         }
@@ -113,6 +117,7 @@ export class JobSevice {
         );
 
         // Step 7: Deploy Blockscout VM
+        console.info('Step 7: Deploying Blockscout VM');
         await this._updateJobStatus(jobId, 'Deploying Blockscout');
         const blockscoutVm = await this.serverService.createAzureVMServer({
           resourceGroup: `${payload.name}-blockscout`,
@@ -122,27 +127,27 @@ export class JobSevice {
         });
 
         // Step 8: Associate Blockscout VM
-        // await this._updateJobStatus(jobId, 'Updating network with Blockscout VM');
+        console.info('Step 8: Associating Blockscout VM');
         await this.networkService.updateBsServerId(networkId, blockscoutVm.id);
 
         // Step 9: Configure Blockscout server
-        // await this._updateJobStatus(jobId, 'Setting up Blockscout server');
+        console.info('Step 9: Configuring Blockscout server');
         await this.serverService.setupDockerAndNginx(blockscoutVm.id, true);
 
         // Step 10: Transfer Blockscout files and start
-        // await this._updateJobStatus(jobId, 'Transferring Blockscout directory');
+        console.info('Step 10: Transferring Blockscout files and starting');
         await this.serverService.transferDirectoryByName(
           blockscoutVm.id,
           `blockscout-${network.id}`,
         );
-
-        // await this._updateJobStatus(jobId, 'Starting Blockscout');
         await this.blockscoutService.runBlockscout(network.id, blockscoutVm.id);
 
-        // Cleanup any stray Besu nodes
+        // Cleanup stray Besu nodes
+        console.info('Cleaning up stray Besu nodes');
         await this.containerService.killBesuNode();
 
         // Final: mark job complete
+        console.info('Final: marking job as complete');
         await this._updateJobStatus(jobId, 'Blockchain ready');
       } catch (error: any) {
         console.error('Deployment job failed:', error);

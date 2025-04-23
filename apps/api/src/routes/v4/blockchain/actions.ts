@@ -4,6 +4,7 @@ import path from 'path';
 import { config } from '../../../config.js';
 import { blockchainSchema } from '../../../schemas/v2/blockchain.js';
 import { ContainerService } from '../../../services/containers.js';
+import { HardhatService } from '../../../services/hardhat.js';
 import { JobSevice } from '../../../services/job.js';
 import { NewtorkSevice } from '../../../services/network.js';
 import { InitNetworkPayload } from '../../../types/network.js';
@@ -13,6 +14,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   const jobService = new JobSevice({ prisma });
   const networkService = new NewtorkSevice({ prisma });
   const containerService = new ContainerService({ prisma });
+  const hardhatService = new HardhatService({ prisma });
 
   const { bootnodeIndex, baseDir } = config;
 
@@ -58,8 +60,11 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         );
         console.log('Full Docker Compose file generated successfully');
 
+        console.info('Generating Hardhat Docker Compose file...');
+        await hardhatService.generateHardhatDockerCompose(initNetwork.id);
+
         console.log('Job created:', job.id);
-        jobService.runJob(initNetPayload, initNetwork.id, job.id);
+        // jobService.runJob(initNetPayload, initNetwork.id, job.id);
 
         return reply.send(initNetwork);
       } catch (error) {

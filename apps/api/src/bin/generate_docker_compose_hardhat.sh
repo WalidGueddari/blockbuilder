@@ -1,5 +1,4 @@
 #!/bin/bash
-
 generate_docker_compose_hardhat() {
     local TEMPLATE_FILE
     local OUTPUT_FILE

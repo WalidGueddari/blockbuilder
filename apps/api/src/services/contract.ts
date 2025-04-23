@@ -5,18 +5,20 @@ import { NodeSSH } from 'node-ssh';
 import path from 'path';
 import { promisify } from 'util';
 
+import { AbstractServiceOptions } from '../types/services.js';
+
 const execAsync = promisify(exec);
 
 export class ContractService {
-  private readonly prisma: PrismaClient;
+  prisma: PrismaClient;
   private readonly CONTAINER_NAME = 'hardhat-service';
   private readonly ssh: NodeSSH;
   private readonly config = {
     sshKeyDir: process.env.SSH_KEY_DIR || '',
   };
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
+  constructor(options: AbstractServiceOptions) {
+    this.prisma = options.prisma;
     this.ssh = new NodeSSH();
   }
 

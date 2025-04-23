@@ -55,6 +55,7 @@ export const config = {
   bootnodeTemplateFile: requiredVar('BOOTNODE_TEMPLATE_FILE'),
   nodeTemplateFile: requiredVar('NODE_TEMPLATE_FILE'),
   blockScoutTemplateFile: requiredVar('BLOCKSCOUT_TEMPLATE_FILE'),
+  hardhatTemplateFile: requiredVar('HARDHAT_TEMPLATE_FILE'),
   networkBinDir: requiredVar('NETWORK_BIN_DIR'),
   sshKeyDir: requiredVar('SSH_KEY_DIR'),
   templateDir: requiredVar('TEMPLATE_DIR'),

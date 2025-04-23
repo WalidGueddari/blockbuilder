@@ -53,7 +53,7 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId, userId }: UseW
     socketRef.current = socket;
 
     socket.onopen = () => {
-      console.log('WebSocket connected:', url);
+      // console.log('WebSocket connected:', url);
       dispatch(connected());
     };
 
@@ -77,7 +77,7 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId, userId }: UseW
           dispatch(updateStatus(data.status));
         } else if (mode === 'status-job' && data.jobId && data.status && data.networkName) {
           const { jobId, status, networkName } = data;
-          console.log('Job status update:', jobId, status, networkName);
+          // console.log('Job status update:', jobId, status, networkName);
           const prev = lastStatuses.current[jobId];
           const time = new Date()
             .toLocaleTimeString('en-US', {
@@ -123,7 +123,7 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId, userId }: UseW
     };
 
     socket.onclose = (event) => {
-      console.log('WebSocket closed:', event);
+      // console.log('WebSocket closed:', event);
       dispatch(disconnected());
     };
 
