@@ -1,38 +1,51 @@
-// useWebSocket.ts (modified for status mode)
+// useWebSocket.ts
 import {
   addMessage,
   connect as connectAction,
   connected,
   disconnected,
   setError,
-  updateStatus, // import new action
+  updateStatus,
 } from '@/services/v1/websocketSlice';
+import { addNotification, updateNotification } from '@/services/v2/notificationSlice';
 import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 
 interface UseWebSocketParams {
-  mode: 'logs' | 'status';
+  mode: 'logs' | 'status' | 'status-job';
   networkId?: string;
   container?: string;
   vmId?: string;
   nodeId?: string;
+  userId?: string;
 }
 
-const useWebSocket = ({ mode, networkId, container, vmId, nodeId }: UseWebSocketParams) => {
+const useWebSocket = ({ mode, networkId, container, vmId, nodeId, userId }: UseWebSocketParams) => {
   const dispatch = useDispatch();
   const socketRef = useRef<WebSocket | null>(null);
+  const lastStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
     let url: string | null = null;
 
-    if (mode === 'logs') {
-      if (!container || !vmId || networkId === undefined) return;
-      url = `${process.env.NEXT_PUBLIC_BASE_WS_URL_V2}/ws/get-logs/${container}/${vmId}`;
-    } else if (mode === 'status') {
-      if (!nodeId) return;
-      url = `${process.env.NEXT_PUBLIC_BASE_WS_URL_V2}/ws/get-status/${nodeId}`;
-    } else {
-      return;
+    switch (mode) {
+      case 'logs':
+        if (!container || !vmId || !networkId) return;
+        url = `${process.env.NEXT_PUBLIC_BASE_WS_URL_V2}/ws/get-logs/${container}/${vmId}`;
+        break;
+
+      case 'status':
+        if (!nodeId) return;
+        url = `${process.env.NEXT_PUBLIC_BASE_WS_URL_V2}/ws/get-status/${nodeId}`;
+        break;
+
+      case 'status-job':
+        if (!userId) return;
+        url = `${process.env.NEXT_PUBLIC_BASE_WS_URL_V2}/ws/get-status-job/${userId}`;
+        break;
+
+      default:
+        return;
     }
 
     dispatch(connectAction());
@@ -46,25 +59,56 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId }: UseWebSocket
 
     socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
+        const { success, data, error, message } = JSON.parse(event.data);
 
-        if (!data.success && (data.error || data.message)) {
-          dispatch(setError(data.error || data.message));
+        if (!success) {
+          dispatch(setError(error || message));
           return;
         }
 
-        if (mode === 'logs') {
-          if (data.log) {
-            dispatch(addMessage({ timestamp: new Date().toISOString(), message: data.log }));
-          } else if (data.message) {
-            console.log('Message from logs server:', data.message);
-          }
-        } else if (mode === 'status') {
-          if (data.data) {
-            // Dispatch updateStatus action with the new status
-            dispatch(updateStatus(data.data.status));
-          } else if (data.message) {
-            console.log('Message from status server:', data.message);
+        if (mode === 'logs' && data.log) {
+          dispatch(
+            addMessage({
+              timestamp: new Date().toISOString(),
+              message: data.log,
+            }),
+          );
+        } else if (mode === 'status' && data.status) {
+          dispatch(updateStatus(data.status));
+        } else if (mode === 'status-job' && data.jobId && data.status && data.networkName) {
+          const { jobId, status, networkName } = data;
+          console.log('Job status update:', jobId, status, networkName);
+          const prev = lastStatuses.current[jobId];
+          const time = new Date()
+            .toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })
+            .toLowerCase();
+
+          if (!prev) {
+            lastStatuses.current[jobId] = status;
+            dispatch(
+              addNotification({
+                id: `${jobId}-created-${Date.now()}`,
+                title: `Network: ${networkName}`,
+                description: `Status: ${status}`,
+                time,
+                read: false,
+              }),
+            );
+          } else if (prev !== status) {
+            lastStatuses.current[jobId] = status;
+            dispatch(
+              updateNotification({
+                id: `${jobId}-updated-${Date.now()}`,
+                changes: {
+                  description: `Status: ${status}`,
+                  read: false,
+                },
+              }),
+            );
           }
         }
       } catch (err) {
@@ -84,14 +128,12 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId }: UseWebSocket
     };
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
+      socketRef.current?.close();
     };
-  }, [mode, networkId, container, vmId, nodeId, dispatch]);
+  }, [mode, networkId, container, vmId, nodeId, userId, dispatch]);
 
   const sendMessage = (msg: string) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(msg);
     }
   };

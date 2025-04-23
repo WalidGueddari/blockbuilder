@@ -152,7 +152,7 @@ export default function CreateNetworkDialog() {
         id: notificationId,
         title: `Creating network "${pendingValues.name}"`,
         description: 'Starting network creation process...',
-        status: 'pending',
+        // status: 'pending',
         time: new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
@@ -202,7 +202,7 @@ export default function CreateNetworkDialog() {
             updateNotification({
               id: notificationId,
               changes: {
-                status: 'success',
+                // status: 'success',
                 description: `Network "${pendingValues.name}" setup is fully complete.`,
                 read: false,
               },
@@ -223,7 +223,7 @@ export default function CreateNetworkDialog() {
             updateNotification({
               id: notificationId,
               changes: {
-                status: 'error',
+                // status: 'error',
                 description: `Network "${pendingValues.name}" setup failed: ${errorMessage}`,
               },
             }),
@@ -246,7 +246,7 @@ export default function CreateNetworkDialog() {
         updateNotification({
           id: notificationId,
           changes: {
-            status: 'error',
+            // status: 'error',
             description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
           },
         }),

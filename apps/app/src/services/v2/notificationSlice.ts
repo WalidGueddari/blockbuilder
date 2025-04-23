@@ -5,7 +5,7 @@ export interface Notification {
   id: string;
   title: string;
   description?: string;
-  status: 'pending' | 'success' | 'error';
+  // status: 'pending' | 'success' | 'error';
   // Additional fields:
   read?: boolean;
   time?: string; // e.g. to store creation timestamp

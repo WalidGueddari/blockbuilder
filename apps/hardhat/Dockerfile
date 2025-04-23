@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
+RUN pnpm install
 
 # Ensure binaries are executable
 RUN chmod -R 755 node_modules/.bin
