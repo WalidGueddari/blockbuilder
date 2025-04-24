@@ -66,8 +66,8 @@ export class JobSevice {
   ): Promise<void> {
     setImmediate(async () => {
       try {
-        // Step 1: Deploy blockchain VM
-        console.info('Step 1: Deploying blockchain VM');
+        // Step 1: Create blockchain VM
+        console.info('Step 1: Creating blockchain VM');
         await this._updateJobStatus(jobId, 'Deploying blockchain');
         const blockchainVm = await this.serverService.createAzureVMServer({
           resourceGroup: payload.name,
@@ -83,7 +83,11 @@ export class JobSevice {
         // Step 3: Configure Docker & Nginx
         console.info('Step 3: Configuring Docker & Nginx');
         await this.serverService.setupDockerAndNginx(blockchainVm.id, false);
-
+        // Step 3.1: Prepare Hardhat Before Transfering the network
+        await this.hardhatService.generateHardhatDockerCompose(
+          networkId,
+          blockchainVm.dnsName as string,
+        );
         // Step 4: Transfer network files
         console.info('Step 4: Transferring network files');
         await this.serverService.transferDirectoryByName(blockchainVm.id, network.id);
