@@ -23,7 +23,7 @@ export class HardhatService {
   }
 
   async generateHardhatDockerCompose(networkId: string, network_dns: string): Promise<void> {
-    const { networkBinDir, hardhatDockerImage, hardhatTemplateFile } = config;
+    const { networkBinDir, hardhatDockerImage, hardhatTemplateFile, baseDir } = config;
     try {
       // Get the first allocation (which contains the private key) from the database
       const alloc = await this.prisma.alloc.findFirst({
@@ -35,7 +35,7 @@ export class HardhatService {
         throw new Error('No private key found for this network');
       }
 
-      const command = `NET_ID=${networkId} HARDHAT_TEMPLATE_FILE=${hardhatTemplateFile} PRIVATE_KEY=${alloc.private_key} DNS_PLACEHOLDER=${network_dns} HARDHAT_DOCKE_IMAGE=${hardhatDockerImage} ${networkBinDir}/generate_docker_compose_hardhat.sh`;
+      const command = `NET_ID=${networkId} HARDHAT_TEMPLATE_FILE=${hardhatTemplateFile} PRIVATE_KEY=${alloc.private_key} DNS_PLACEHOLDER=${network_dns} BASE_DIR=${baseDir} HARDHAT_DOCKE_IMAGE=${hardhatDockerImage} ${networkBinDir}/generate_docker_compose_hardhat.sh`;
       console.log(`Executing: ${command}`);
 
       const { stdout } = await execAsync(command, { shell: '/bin/bash' });

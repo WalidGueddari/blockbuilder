@@ -37,6 +37,7 @@ generate_docker_compose_hardhat() {
         sed "s/\${PRIVATE_KEY}/$PRIVATE_KEY/g"
     )
 
+    NODE_DIR="$BASE_DIR/$NET_ID"
     # Save to Node's directory
     OUTPUT_FILE="$NODE_DIR/hardhat/docker-compose.yml"
     echo "$DOCKER_COMPOSE_CONTENT" > "$OUTPUT_FILE"
