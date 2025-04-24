@@ -22,7 +22,7 @@ create_structure() {
   fi
 
   # Create hardhat/contracts directory
-  HARDHAT_DIR="$BASE_DIR/hardhat/contracts"
+  HARDHAT_DIR="$BASE_DIR/$NET_ID/hardhat/contracts"
   if [ ! -d "$HARDHAT_DIR" ]; then
     mkdir -p "$HARDHAT_DIR"
     echo "Hardhat contracts directory '$HARDHAT_DIR' created."

@@ -47,7 +47,7 @@ generate_docker_compose_hardhat() {
     mkdir -p "$NODE_DIR"
 
     # Save to Node's directory
-    OUTPUT_FILE="$NODE_DIR/docker-compose.hardhat.yml"
+    OUTPUT_FILE="$NODE_DIR/hardhat/docker-compose.yml"
     echo "$DOCKER_COMPOSE_CONTENT" > "$OUTPUT_FILE"
 
     echo "Hardhat Docker Compose file generated for $NET_ID at '$OUTPUT_FILE'."
