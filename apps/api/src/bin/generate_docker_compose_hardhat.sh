@@ -21,15 +21,10 @@ generate_docker_compose_hardhat() {
         exit 1
     fi
 
-    # Get the first node's IP address
-    FIRST_NODE_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${NET_ID}-node-1")
-    if [ -z "$FIRST_NODE_IP" ]; then
-        echo "Error: Could not get IP address of first node"
+    if [ -z "$DNS_PLACEHOLDER" ]; then
+        echo "Error: DNS_PLACEHOLDER parameter is required"
         exit 1
     fi
-
-    # Set the RPC URL to point to the first node
-    LOCAL_RPC_URL="http://${FIRST_NODE_IP}:8545"
 
     # Read template and replace placeholders
     DOCKER_COMPOSE_CONTENT=$(<"$TEMPLATE_FILE")
@@ -38,21 +33,17 @@ generate_docker_compose_hardhat() {
     DOCKER_COMPOSE_CONTENT=$(echo "$DOCKER_COMPOSE_CONTENT" |
         sed "s/\${HARDHAT_DOCKE_IMAGE}/$HARDHAT_DOCKE_IMAGE/g" |
         sed "s/\${NET_ID}/$NET_ID/g" |
-        sed "s/\${LOCAL_RPC_URL}/$LOCAL_RPC_URL/g" |
+        sed "s/\${DNS_PLACEHOLDER}/$DNS_PLACEHOLDER/g" |
         sed "s/\${PRIVATE_KEY}/$PRIVATE_KEY/g"
     )
 
-    # Ensure Node directory exists
-    NODE_DIR="$BASE_DIR/$NET_ID"
-    mkdir -p "$NODE_DIR"
-
     # Save to Node's directory
-    OUTPUT_FILE="$NODE_DIR/docker-compose.hardhat.yml"
+    OUTPUT_FILE="$NODE_DIR/hardhat/docker-compose.yml"
     echo "$DOCKER_COMPOSE_CONTENT" > "$OUTPUT_FILE"
 
     echo "Hardhat Docker Compose file generated for $NET_ID at '$OUTPUT_FILE'."
     echo "RPC URL set to: $LOCAL_RPC_URL"
 }
 
-# Execute the generation function
-generate_docker_compose_hardhat 
+# Execute the generation function with the first node IP as parameter
+generate_docker_compose_hardhat

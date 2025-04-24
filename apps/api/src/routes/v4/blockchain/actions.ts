@@ -14,7 +14,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   const jobService = new JobSevice({ prisma });
   const networkService = new NewtorkSevice({ prisma });
   const containerService = new ContainerService({ prisma });
-  const hardhatService = new HardhatService({ prisma });
+  //const hardhatService = new HardhatService({ prisma });
 
   const { bootnodeIndex, baseDir } = config;
 
@@ -60,8 +60,8 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         );
         console.log('Full Docker Compose file generated successfully');
 
-        console.info('Generating Hardhat Docker Compose file...');
-        await hardhatService.generateHardhatDockerCompose(initNetwork.id);
+        /* console.info('Generating Hardhat Docker Compose file...');
+        await hardhatService.generateHardhatDockerCompose(initNetwork.id); */
 
         console.log('Job created:', job.id);
         jobService.runJob(initNetPayload, initNetwork.id, job.id);
