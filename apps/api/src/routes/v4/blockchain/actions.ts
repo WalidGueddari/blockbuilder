@@ -64,7 +64,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         await hardhatService.generateHardhatDockerCompose(initNetwork.id);
 
         console.log('Job created:', job.id);
-        // jobService.runJob(initNetPayload, initNetwork.id, job.id);
+        jobService.runJob(initNetPayload, initNetwork.id, job.id);
 
         return reply.send(initNetwork);
       } catch (error) {
