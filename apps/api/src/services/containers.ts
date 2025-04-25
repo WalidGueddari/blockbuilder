@@ -182,6 +182,22 @@ export class ContainerService {
         }
       }
 
+      // Start Hardhat
+      const hardhatDir = `${remoteBaseDir}/${payload.networkId}/hardhat`;
+      console.log(`Node directory for Hardhat`, hardhatDir);
+
+      let hardhatResult = await ssh.execCommand(`cd ${hardhatDir} && docker-compose up -d`, {
+        execOptions: { pty: true },
+      });
+
+      if (hardhatResult.stderr) {
+        console.error('Error starting Hardhat:', hardhatResult.stderr);
+        errors.push(`Hardhat failed to start: ${hardhatResult.stderr}`);
+      } else {
+        console.log('Hardhat started successfully:', hardhatResult.stdout);
+        outputs.push('Hardhat started successfully.');
+      }
+
       ssh.dispose();
 
       if (errors.length > 0) {
