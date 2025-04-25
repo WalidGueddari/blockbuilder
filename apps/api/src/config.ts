@@ -1,4 +1,5 @@
 // config.ts
+import { HardhatService } from './services/hardhat.js';
 
 /**
  * Throws an error if the environment variable is missing.
@@ -121,5 +122,6 @@ export const config = {
   /**
    * Hardhat Configuration
    */
-  hardhatDockerImage: requiredVar('HARDHAT_DOCKE_IMAGE'),
+  dockerUsername: requiredVar('DOCKER_USER'),
+  hardhatContainerName: requiredVar('HARDHAT_CONTAINER_NAME'),
 };

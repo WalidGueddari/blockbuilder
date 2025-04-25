@@ -13,7 +13,7 @@ generate_docker_compose_blockscout() {
     # Read template and replace placeholders
     DOCKER_COMPOSE_CONTENT=$(<"$TEMPLATE_FILE")
 
-    echo "Debug:   NET_ID=$NET_ID, CHAINID_PlACEHOLDER=$CHAINID_PlACEHOLDER, DNS_PLACEHOLDER=$DNS_PLACEHOLDER"
+    echo "Debug: NET_ID=$NET_ID, CHAINID_PlACEHOLDER=$CHAINID_PlACEHOLDER, DNS_PLACEHOLDER=$DNS_PLACEHOLDER"
 
     DOCKER_COMPOSE_CONTENT=$(echo "$DOCKER_COMPOSE_CONTENT" |
         sed "s/NET_ID/$NET_ID/g" |
