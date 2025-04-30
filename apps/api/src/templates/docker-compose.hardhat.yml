@@ -1,21 +1,19 @@
 services:
   hardhat:
-    image: DOCKER_USER/HARDHAT_CONTAINER_NAME:latest
+    image: DOCKER_USER/HARDHAT_CONTAINER_NAME:v1
     container_name: hardhat
     ports:
-      - "8545:8545"
+      - "8540:8540"
     volumes:
       - ./contracts:/usr/src/app/contracts
     working_dir: /usr/src/app
     environment:
       - LOCAL_RPC_URL=https://DNS_PLACEHOLDER
-      - PRIVATE_KEY=PRIVATE_KEY
+      - PRIVATE_KEY=PRIVATE_KEY_PLACEHOLDER
     networks:
       - NET_ID
-    depends_on:
-      - node-1
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      test: ["CMD", "curl", "-f", "http://localhost:8540"]
       interval: 30s
       timeout: 10s
       retries: 3

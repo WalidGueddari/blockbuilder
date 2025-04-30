@@ -76,7 +76,11 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         }),
         body: Type.Object({
           contractName: Type.String({ description: 'The name of the contract to deploy' }),
-          contractContent: Type.String({ description: 'The Solidity code of the contract' }),
+          contractContent: Type.String({
+            description: 'The Solidity code of the contract',
+            contentEncoding: 'utf-8',
+            contentMediaType: 'text/plain',
+          }),
         }),
         response: {
           200: Type.Object({
@@ -98,9 +102,11 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       };
 
       try {
+        // Replace escaped newlines with actual newlines
+        const unescapedContent = contractContent.replace(/\\n/g, '\n');
         const result = await contractService.deployContract(
           networkId,
-          Buffer.from(contractContent),
+          Buffer.from(unescapedContent, 'utf-8'),
           contractName,
         );
         return { result };
