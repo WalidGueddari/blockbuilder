@@ -43,6 +43,9 @@ export default function SmartContractGenerator() {
   const [pausable, setPausable] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
 
+  // Add state to manage mode
+  const [isBeginnerMode, setIsBeginnerMode] = useState(true);
+
   // Get user ID from sessionStorage
   useEffect(() => {
     try {
@@ -731,6 +734,11 @@ contract ${name || 'CustomContract'} {
     generateCode();
   }, [contractType, name, symbol, mintable, burnable, pausable]);
 
+  // Add a function to handle mode toggle
+  const toggleMode = () => {
+    setIsBeginnerMode(!isBeginnerMode);
+  };
+
   // -----------------------------
   // Render UI
   // -----------------------------
@@ -738,11 +746,17 @@ contract ${name || 'CustomContract'} {
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-6 text-center text-3xl font-bold">Smart Contract Generator</h1>
       <p className="text-muted-foreground mb-8 text-center">
-        Generate Solidity smart contracts based on OpenZeppelin standards
+        Build powerful, secure smart contracts with just a few clicks.
       </p>
 
-      <div className="grid gap-6 md:grid-cols-[350px_1fr]">
-        {/* Left side - Form controls */}
+      <div className="mb-6 flex justify-center">
+        <Button variant="outline" onClick={toggleMode}>
+          {isBeginnerMode ? 'Switch to Advanced Mode' : 'Switch to Beginner Mode'}
+        </Button>
+      </div>
+
+      {isBeginnerMode ? (
+        // Beginner Mode UI
         <div className="space-y-6">
           <Card>
             <CardContent className="pt-6">
@@ -774,130 +788,215 @@ contract ${name || 'CustomContract'} {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contract-type">Contract Type</Label>
+                  <Label htmlFor="contract-type">
+                    What kind of digital asset do you want to create? (e.g., a standard token for
+                    currency, a unique collectible, etc.)
+                  </Label>
                   <Select value={contractType} onValueChange={setContractType}>
                     <SelectTrigger id="contract-type">
-                      <SelectValue placeholder="Select contract type" />
+                      <SelectValue placeholder="Select asset type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ERC20">ERC20 Token</SelectItem>
-                      <SelectItem value="ERC721">ERC721 NFT</SelectItem>
-                      <SelectItem value="ERC1155">ERC1155 MultiToken</SelectItem>
-                      <SelectItem value="Stablecoin">Stablecoin</SelectItem>
-                      <SelectItem value="Real-World Asset">Real-World Asset</SelectItem>
-                      <SelectItem value="Governor">Governor</SelectItem>
-                      <SelectItem value="Custom">Custom</SelectItem>
+                      <SelectItem value="ERC20">Standard Token (Currency)</SelectItem>
+                      <SelectItem value="ERC721">Unique Collectible (NFT)</SelectItem>
+                      <SelectItem value="ERC1155">Multi-Asset Token</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Contract Name</Label>
+                  <Label htmlFor="name">What should we name your token?</Label>
                   <Input
                     id="name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter contract name"
+                    placeholder="Enter token name"
                   />
                 </div>
 
-                {showSymbol && (
-                  <div className="space-y-2">
-                    <Label htmlFor="symbol">Symbol</Label>
-                    <Input
-                      id="symbol"
-                      type="text"
-                      value={symbol}
-                      onChange={(e) => setSymbol(e.target.value)}
-                      placeholder="Enter contract symbol"
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="symbol">Choose a token symbol</Label>
+                  <Input
+                    id="symbol"
+                    type="text"
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value)}
+                    placeholder="Enter token symbol"
+                  />
+                </div>
 
                 <div className="space-y-3">
-                  <Label>Features</Label>
+                  <Label>Should it be mintable or pausable?</Label>
                   <div className="space-y-2">
-                    {showMintable && (
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="mintable"
-                          checked={mintable}
-                          onCheckedChange={(checked) => setMintable(checked === true)}
-                        />
-                        <Label htmlFor="mintable" className="font-normal">
-                          Mintable
-                        </Label>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="mintable"
+                        checked={mintable}
+                        onCheckedChange={(checked) => setMintable(checked === true)}
+                      />
+                      <Label htmlFor="mintable" className="font-normal">
+                        Mintable
+                      </Label>
+                    </div>
 
-                    {showBurnable && (
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="burnable"
-                          checked={burnable}
-                          onCheckedChange={(checked) => setBurnable(checked === true)}
-                        />
-                        <Label htmlFor="burnable" className="font-normal">
-                          Burnable
-                        </Label>
-                      </div>
-                    )}
-
-                    {showPausable && (
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="pausable"
-                          checked={pausable}
-                          onCheckedChange={(checked) => setPausable(checked === true)}
-                        />
-                        <Label htmlFor="pausable" className="font-normal">
-                          Pausable
-                        </Label>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="pausable"
+                        checked={pausable}
+                        onCheckedChange={(checked) => setPausable(checked === true)}
+                      />
+                      <Label htmlFor="pausable" className="font-normal">
+                        Pausable
+                      </Label>
+                    </div>
                   </div>
                   <Button
                     onClick={handleDeployContract}
                     className="w-full"
                     disabled={loading || !selectedNetworkId}
                   >
-                    {loading ? 'Deploying...' : 'Deploy Contract'}
+                    {loading ? 'Deploying...' : 'Generate and Deploy'}
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          <div className="text-muted-foreground text-center text-sm">
-            Powered by OpenZeppelin contracts
-          </div>
         </div>
-
-        {/* Right side - Code display */}
-        <div className="relative">
-          <div className="sticky top-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-lg font-medium">Generated Solidity Code</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={copyToClipboard}
-              >
-                <Copy className="h-4 w-4" /> Copy
-              </Button>
-            </div>
+      ) : (
+        // Advanced Mode UI
+        <div className="grid gap-6 md:grid-cols-[350px_1fr]">
+          {/* Left side - Form controls */}
+          <div className="space-y-6">
             <Card>
-              <CardContent className="p-0">
-                <pre className="max-h-[70vh] overflow-auto p-4 text-sm">
-                  <code>{generatedCode}</code>
-                </pre>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="contract-type">Contract Type</Label>
+                    <Select value={contractType} onValueChange={setContractType}>
+                      <SelectTrigger id="contract-type">
+                        <SelectValue placeholder="Select contract type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ERC20">ERC20 Token</SelectItem>
+                        <SelectItem value="ERC721">ERC721 NFT</SelectItem>
+                        <SelectItem value="ERC1155">ERC1155 MultiToken</SelectItem>
+                        <SelectItem value="Stablecoin">Stablecoin</SelectItem>
+                        <SelectItem value="Real-World Asset">Real-World Asset</SelectItem>
+                        <SelectItem value="Governor">Governor</SelectItem>
+                        <SelectItem value="Custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Contract Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter contract name"
+                    />
+                  </div>
+
+                  {showSymbol && (
+                    <div className="space-y-2">
+                      <Label htmlFor="symbol">Symbol</Label>
+                      <Input
+                        id="symbol"
+                        type="text"
+                        value={symbol}
+                        onChange={(e) => setSymbol(e.target.value)}
+                        placeholder="Enter contract symbol"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <Label>Features</Label>
+                    <div className="space-y-2">
+                      {showMintable && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="mintable"
+                            checked={mintable}
+                            onCheckedChange={(checked) => setMintable(checked === true)}
+                          />
+                          <Label htmlFor="mintable" className="font-normal">
+                            Mintable
+                          </Label>
+                        </div>
+                      )}
+
+                      {showBurnable && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="burnable"
+                            checked={burnable}
+                            onCheckedChange={(checked) => setBurnable(checked === true)}
+                          />
+                          <Label htmlFor="burnable" className="font-normal">
+                            Burnable
+                          </Label>
+                        </div>
+                      )}
+
+                      {showPausable && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="pausable"
+                            checked={pausable}
+                            onCheckedChange={(checked) => setPausable(checked === true)}
+                          />
+                          <Label htmlFor="pausable" className="font-normal">
+                            Pausable
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleDeployContract}
+                      className="w-full"
+                      disabled={loading || !selectedNetworkId}
+                    >
+                      {loading ? 'Deploying...' : 'Deploy Contract'}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+
+            <div className="text-muted-foreground text-center text-sm">
+              Powered by OpenZeppelin contracts
+            </div>
+          </div>
+
+          {/* Right side - Code display */}
+          <div className="relative">
+            <div className="sticky top-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-lg font-medium">Generated Solidity Code</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={copyToClipboard}
+                >
+                  <Copy className="h-4 w-4" /> Copy
+                </Button>
+              </div>
+              <Card>
+                <CardContent className="p-0">
+                  <pre className="max-h-[70vh] overflow-auto p-4 text-sm">
+                    <code>{generatedCode}</code>
+                  </pre>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

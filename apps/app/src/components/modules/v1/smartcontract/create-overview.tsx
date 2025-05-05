@@ -1,6 +1,6 @@
 'use client';
 
-import SmartContractGenerator from './pages/create-smartcontract';
+import SmartContractGenerator from './sections/create-smartcontract';
 
 export default function Component() {
   return (
