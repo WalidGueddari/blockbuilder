@@ -20,9 +20,26 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertCircle, Code, Eye, HelpCircle, Send } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Code,
+  Copy,
+  Cpu,
+  Eye,
+  HelpCircle,
+  Info,
+  Layers,
+  Send,
+  Sliders,
+  Zap,
+} from 'lucide-react';
+import { Highlight, themes } from 'prism-react-renderer';
+import defaultProps from 'prism-react-renderer';
 import { useState } from 'react';
 
 interface FunctionInput {
@@ -43,6 +60,13 @@ interface FunctionAbi {
   stateMutability: string;
   inputs: FunctionInput[];
   outputs: FunctionOutput[];
+}
+
+interface BatchOperation {
+  functionName: string;
+  inputs: string[];
+  status: 'pending' | 'success' | 'error';
+  result?: string;
 }
 
 interface Props {
@@ -96,6 +120,27 @@ export default function ContractInteractionModal({
   const [output, setOutput] = useState<Record<string, string>>({});
   const [activeFunction, setActiveFunction] = useState<string | null>(null);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [mode, setMode] = useState<'beginner' | 'advanced'>('beginner');
+  const [gasLimit, setGasLimit] = useState<number>(100000);
+  const [gasPrice, setGasPrice] = useState<number>(5);
+  const [batchOperations, setBatchOperations] = useState<BatchOperation[]>([]);
+  const [highlightedAbiFunction, setHighlightedAbiFunction] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Format big numbers to be more readable
+  const formatBigNumber = (value: string): string => {
+    if (!value || isNaN(Number(value))) return value;
+
+    const num = Number(value);
+    if (num > 1e18) {
+      return `${(num / 1e18).toFixed(4)} ETH`;
+    } else if (num > 1e9) {
+      return `${(num / 1e9).toFixed(2)} Gwei`;
+    } else if (num > 1e6) {
+      return `${(num / 1e6).toFixed(2)} million`;
+    }
+    return value;
+  };
 
   const handleInputChange = (fnName: string, index: number, value: string) => {
     setInputs((prev) => {
@@ -108,6 +153,7 @@ export default function ContractInteractionModal({
 
   const handleCall = (fn: FunctionAbi) => {
     setLoading((prev) => ({ ...prev, [fn.name]: true }));
+    setHighlightedAbiFunction(fn.name);
 
     // Simulate network delay
     setTimeout(() => {
@@ -128,7 +174,7 @@ export default function ContractInteractionModal({
         mockResponse = `Response: ${JSON.stringify(
           fn.outputs.map((o) =>
             o.type.includes('int')
-              ? '123'
+              ? '123456789000000000000'
               : o.type === 'bool'
                 ? 'true'
                 : o.type === 'address'
@@ -138,13 +184,20 @@ export default function ContractInteractionModal({
         )}`;
       }
 
-      setOutput((prev) => ({ ...prev, [fn.name]: mockResponse }));
+      // Format big numbers in the response
+      const formattedResponse =
+        mode === 'beginner' && fn.name === 'totalSupply'
+          ? formatBigNumber(mockResponse)
+          : mockResponse;
+
+      setOutput((prev) => ({ ...prev, [fn.name]: formattedResponse }));
       setLoading((prev) => ({ ...prev, [fn.name]: false }));
     }, 1000);
   };
 
   const handleSend = (fn: FunctionAbi) => {
     setLoading((prev) => ({ ...prev, [fn.name]: true }));
+    setHighlightedAbiFunction(fn.name);
 
     // Simulate network delay
     setTimeout(() => {
@@ -166,14 +219,69 @@ export default function ContractInteractionModal({
     }, 1500);
   };
 
+  const addToBatch = (fn: FunctionAbi) => {
+    const args = inputs[fn.name] || [];
+    setBatchOperations([
+      ...batchOperations,
+      {
+        functionName: fn.name,
+        inputs: [...args],
+        status: 'pending',
+      },
+    ]);
+  };
+
+  const executeBatch = () => {
+    // Simulate batch execution
+    const updatedBatch = [...batchOperations];
+
+    // Set all to loading first
+    setBatchOperations(updatedBatch.map((op) => ({ ...op, status: 'pending' })));
+
+    // Process each operation with a delay
+    updatedBatch.forEach((operation, index) => {
+      setTimeout(
+        () => {
+          const success = Math.random() > 0.2; // 80% success rate for demo
+
+          setBatchOperations((current) => {
+            const updated = [...current];
+            updated[index] = {
+              ...updated[index],
+              status: success ? 'success' : 'error',
+              result: success
+                ? `Success: ${operation.functionName} executed`
+                : `Error: Failed to execute ${operation.functionName}`,
+            };
+            return updated;
+          });
+        },
+        1000 + index * 500,
+      ); // Stagger the updates
+    });
+  };
+
+  const clearBatch = () => {
+    setBatchOperations([]);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const renderFunctionCard = (fn: FunctionAbi, index: number) => {
     const isView = fn.stateMutability === 'view' || fn.stateMutability === 'pure';
     const isActive = activeFunction === fn.name;
+    const estimatedGas = isView ? 0 : Math.floor(50000 + Math.random() * 100000);
 
     return (
       <Card
         key={`${fn.name}-${index}`}
         className={`mb-4 transition-all ${isActive ? 'ring-primary ring-2' : ''}`}
+        onMouseEnter={() => setHighlightedAbiFunction(fn.name)}
+        onMouseLeave={() => setHighlightedAbiFunction(null)}
       >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -233,7 +341,7 @@ export default function ContractInteractionModal({
                     )}
                   </div>
 
-                  {inputDescriptions[fn.name]?.[input.name] && (
+                  {mode === 'beginner' && inputDescriptions[fn.name]?.[input.name] && (
                     <p className="text-muted-foreground mb-1 text-xs">
                       {inputDescriptions[fn.name][input.name]}
                     </p>
@@ -250,6 +358,28 @@ export default function ContractInteractionModal({
             </div>
           )}
 
+          {/* Gas estimation for write functions in advanced mode */}
+          {!isView && mode === 'advanced' && (
+            <div className="bg-muted rounded-md p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-yellow-500" />
+                  <span>Estimated Gas:</span>
+                </div>
+                <span className="font-mono">{estimatedGas.toLocaleString()}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Cpu className="h-4 w-4 text-blue-500" />
+                  <span>Est. Cost:</span>
+                </div>
+                <span className="font-mono">
+                  {((estimatedGas * gasPrice) / 1e9).toFixed(6)} ETH
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             {isView ? (
               <Button onClick={() => handleCall(fn)} disabled={loading[fn.name]} className="gap-2">
@@ -261,14 +391,27 @@ export default function ContractInteractionModal({
                 Read
               </Button>
             ) : (
-              <Button onClick={() => handleSend(fn)} disabled={loading[fn.name]} className="gap-2">
-                {loading[fn.name] ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Send className="h-4 w-4" />
+              <div className="flex w-full gap-2">
+                <Button
+                  onClick={() => handleSend(fn)}
+                  disabled={loading[fn.name]}
+                  className="gap-2"
+                >
+                  {loading[fn.name] ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Write
+                </Button>
+
+                {mode === 'advanced' && (
+                  <Button variant="outline" onClick={() => addToBatch(fn)} className="gap-2">
+                    <Layers className="h-4 w-4" />
+                    Add to Batch
+                  </Button>
                 )}
-                Write
-              </Button>
+              </div>
             )}
           </div>
 
@@ -315,6 +458,26 @@ export default function ContractInteractionModal({
       fn.type === 'function' && fn.stateMutability !== 'view' && fn.stateMutability !== 'pure',
   );
 
+  // Find the ABI function that matches the highlighted function
+  const highlightedFunction = abi.find(
+    (fn: any) => fn.name === highlightedAbiFunction && fn.type === 'function',
+  );
+
+  // Format ABI for display
+  const formatAbiForDisplay = () => {
+    if (!abi || abi.length === 0) return '[]';
+
+    const formattedAbi = JSON.stringify(abi, null, 2);
+
+    if (!highlightedFunction) return formattedAbi;
+
+    // Simple highlighting by replacing the function definition
+    const functionStr = JSON.stringify(highlightedFunction, null, 2);
+    const highlightedStr = `\x1b[33m${functionStr}\x1b[0m`; // ANSI yellow
+
+    return formattedAbi.replace(functionStr, highlightedStr);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
@@ -328,8 +491,29 @@ export default function ContractInteractionModal({
           <DialogDescription>Interact with this smart contract on the blockchain</DialogDescription>
         </DialogHeader>
 
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="mode-switch">Mode:</Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="mode-switch"
+                checked={mode === 'advanced'}
+                onCheckedChange={(checked) => setMode(checked ? 'advanced' : 'beginner')}
+              />
+              <Label htmlFor="mode-switch">{mode === 'advanced' ? 'Advanced' : 'Beginner'}</Label>
+            </div>
+          </div>
+
+          {mode === 'advanced' && (
+            <Button variant="outline" size="sm" className="gap-1">
+              <Sliders className="h-3.5 w-3.5" />
+              <span>Settings</span>
+            </Button>
+          )}
+        </div>
+
         <Tabs defaultValue="read" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-2">
+          <TabsList className="mb-4 grid w-full grid-cols-3">
             <TabsTrigger value="read" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               <span>Read Contract</span>
@@ -338,6 +522,12 @@ export default function ContractInteractionModal({
               <Send className="h-4 w-4" />
               <span>Write Contract</span>
             </TabsTrigger>
+            {mode === 'advanced' && (
+              <TabsTrigger value="batch" className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                <span>Batch Operations</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="read" className="space-y-4">
@@ -364,10 +554,102 @@ export default function ContractInteractionModal({
                     Write functions will modify data on the blockchain and may require gas fees.
                   </AlertDescription>
                 </Alert>
+
+                {mode === 'advanced' && (
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="gas-limit">Gas Limit</Label>
+                      <span className="font-mono text-sm">{gasLimit.toLocaleString()}</span>
+                    </div>
+                    <Slider
+                      id="gas-limit"
+                      min={21000}
+                      max={500000}
+                      step={1000}
+                      value={[gasLimit]}
+                      onValueChange={(value) => setGasLimit(value[0])}
+                    />
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="gas-price">Gas Price (Gwei)</Label>
+                      <span className="font-mono text-sm">{gasPrice}</span>
+                    </div>
+                    <Slider
+                      id="gas-price"
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={[gasPrice]}
+                      onValueChange={(value) => setGasPrice(value[0])}
+                    />
+                  </div>
+                )}
+
                 {writeFunctions.map((fn: FunctionAbi, index) => renderFunctionCard(fn, index))}
               </>
             )}
           </TabsContent>
+
+          {mode === 'advanced' && (
+            <TabsContent value="batch" className="space-y-4">
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-2 text-lg font-medium">Batch Operations</h3>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  Queue multiple contract function calls to execute in a single transaction
+                </p>
+
+                {batchOperations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Layers className="text-muted-foreground mb-2 h-12 w-12" />
+                    <p className="text-muted-foreground text-center">
+                      No operations in batch. Add operations from the Write tab.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 space-y-2">
+                      {batchOperations.map((op, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-md border p-3"
+                        >
+                          <div>
+                            <div className="font-medium">{op.functionName}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {op.inputs.length > 0
+                                ? `Inputs: ${op.inputs.join(', ')}`
+                                : 'No inputs'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {op.status === 'pending' ? (
+                              <Badge variant="outline">Pending</Badge>
+                            ) : op.status === 'success' ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                Success
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">Error</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button onClick={executeBatch} className="gap-2">
+                        <Send className="h-4 w-4" />
+                        Execute Batch
+                      </Button>
+                      <Button variant="outline" onClick={clearBatch}>
+                        Clear
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-0">
@@ -383,15 +665,57 @@ export default function ContractInteractionModal({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="font-medium">Address:</span>{' '}
-                    <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-                      {address}
-                    </code>
+                    <div className="flex items-center gap-2">
+                      <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
+                        {address}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => copyToClipboard(address)}
+                      >
+                        {copied ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <div>
-                    <span className="font-medium">ABI:</span>
-                    <pre className="bg-muted mt-1 overflow-x-auto rounded p-2 text-xs">
-                      {JSON.stringify(abi, null, 2).substring(0, 300)}...
-                    </pre>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">ABI:</span>
+                      {highlightedAbiFunction && (
+                        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                          <Info className="h-3.5 w-3.5" />
+                          <span>Hover over functions to highlight in ABI</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1 max-h-40 overflow-auto rounded border">
+                      <Highlight
+                        {...defaultProps}
+                        code={JSON.stringify(abi, null, 2)}
+                        language="json"
+                        theme={themes.nightOwl}
+                      >
+                        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                          <pre
+                            className={`${className} max-h-40 overflow-auto rounded p-3 text-sm`}
+                            style={style}
+                          >
+                            {tokens.map((line, i) => (
+                              <div key={i} {...getLineProps({ line })}>
+                                {line.map((token, key) => (
+                                  <span key={key} {...getTokenProps({ token })} />
+                                ))}
+                              </div>
+                            ))}
+                          </pre>
+                        )}
+                      </Highlight>
+                    </div>
                   </div>
                 </div>
               </AccordionContent>

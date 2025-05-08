@@ -63,8 +63,9 @@ export class ContractService {
           host: server.publicIpAddress,
           username: server.adminUsername,
           privateKey: privateKey,
-          readyTimeout: 30000,
-          keepaliveInterval: 10000,
+          readyTimeout: 120000,
+          keepaliveInterval: 50000,
+          keepaliveCountMax: 30,
         });
         console.log('Successfully connected to server');
         return;
@@ -162,9 +163,16 @@ export class ContractService {
       const compileCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat compile`;
       console.log(`🛠️ Compiling contract inside container: ${this.CONTAINER_NAME}`);
       const compileResult = await this.ssh.execCommand(compileCommand);
-      if (compileResult.stderr) {
-        console.error('❌ Compilation error:', compileResult.stderr);
-        throw new Error(`Compilation failed: ${compileResult.stderr}`);
+
+      // Filter out npm notices from stderr
+      const filteredStderr = compileResult.stderr
+        .split('\n')
+        .filter((line) => !line.includes('npm notice'))
+        .join('\n');
+
+      if (filteredStderr) {
+        console.error('❌ Compilation error:', filteredStderr);
+        throw new Error(`Compilation failed: ${filteredStderr}`);
       }
       console.log('✅ Compilation output:\n', compileResult.stdout);
 
@@ -183,6 +191,19 @@ export class ContractService {
       console.error('🛑 Deployment process failed:', error);
       throw new Error(`Failed to deploy contract: ${error.message}`);
     } finally {
+      try {
+        // Cleanup: Remove the uploaded contract file
+        const cleanupCommand = `rm ${destPath}`;
+        console.log(`🧹 Cleaning up contract file at: ${destPath}`);
+        const cleanupResult = await this.ssh.execCommand(cleanupCommand);
+        if (cleanupResult.stderr) {
+          console.warn('⚠️ Warning: Failed to remove contract file:', cleanupResult.stderr);
+        } else {
+          console.log('🧼 Contract file removed successfully');
+        }
+      } catch (cleanupError) {
+        console.warn('⚠️ Warning: Failed to cleanup contract file:', cleanupError);
+      }
       await this.disconnectFromServer();
     }
   }

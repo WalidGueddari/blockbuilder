@@ -1,8 +1,21 @@
 'use client';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
+import { CardTitle } from '@/components/ui/card';
+import { CardHeader } from '@/components/ui/card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,27 +25,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
-import { AppDispatch, RootState } from '@/services/store';
 import {
   fetchNetworksByUserId,
   selectNetworkLoading,
   selectNetworks,
 } from '@/services/v1/networkSlice';
 import { deployContract } from '@/services/v1/smartContractSlice';
-import { Copy } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Copy,
+  Download,
+  ExternalLink,
+  ListChecks,
+  Save,
+  Zap,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Highlight, themes } from 'prism-react-renderer';
+import defaultProps from 'prism-react-renderer';
+import { useEffect, useRef, useState } from 'react';
+
+// Example use cases for beginner mode
+const exampleUseCases = [
+  {
+    id: 'token',
+    name: 'Create my own token',
+    description: 'A standard ERC20 token that can be transferred between wallets',
+    type: 'ERC20',
+    defaults: {
+      name: 'MyToken',
+      symbol: 'MTK',
+      mintable: true,
+      burnable: false,
+      pausable: true,
+    },
+  },
+  {
+    id: 'nft',
+    name: 'Build an NFT collection',
+    description: 'Unique digital collectibles that can be bought and sold',
+    type: 'ERC721',
+    defaults: {
+      name: 'MyNFTCollection',
+      symbol: 'MNFT',
+      mintable: true,
+      burnable: false,
+      pausable: false,
+    },
+  },
+  {
+    id: 'stablecoin',
+    name: 'Create a stablecoin',
+    description: 'A token with stable value, typically pegged to a fiat currency',
+    type: 'Stablecoin',
+    defaults: {
+      name: 'MyStableCoin',
+      symbol: 'USDC',
+      mintable: true,
+      burnable: true,
+      pausable: true,
+    },
+  },
+  {
+    id: 'multi-token',
+    name: 'Create multiple token types',
+    description: 'A single contract that can manage multiple token types',
+    type: 'ERC1155',
+    defaults: {
+      name: 'MyMultiToken',
+      symbol: '',
+      mintable: true,
+      burnable: true,
+      pausable: false,
+    },
+  },
+];
 
 export default function SmartContractGenerator() {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
-  const { loading, error } = useSelector((state: RootState) => state.smartContract);
   const networks = useAppSelector(selectNetworks);
   const networksLoading = useAppSelector(selectNetworkLoading);
+  const [loading, setLoading] = useState(false);
   const [selectedNetworkId, setSelectedNetworkId] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [savedDrafts, setSavedDrafts] = useState<any[]>([]);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+  const editorRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // State variables for user selections
   const [contractType, setContractType] = useState('ERC20');
@@ -42,9 +129,22 @@ export default function SmartContractGenerator() {
   const [burnable, setBurnable] = useState(false);
   const [pausable, setPausable] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
+  const [selectedUseCase, setSelectedUseCase] = useState('');
 
   // Add state to manage mode
   const [isBeginnerMode, setIsBeginnerMode] = useState(true);
+
+  // Estimated gas fee
+  const [estimatedGas, setEstimatedGas] = useState<number | null>(null);
+  const [gasPrice, setGasPrice] = useState<number>(5); // in Gwei
+
+  const [deploymentSuccess, setDeploymentSuccess] = useState<{
+    open: boolean;
+    address: string;
+  }>({
+    open: false,
+    address: '',
+  });
 
   // Get user ID from sessionStorage
   useEffect(() => {
@@ -87,18 +187,54 @@ export default function SmartContractGenerator() {
     }
   }, [dispatch, userId]);
 
-  // Determine which options should be visible based on contract type
-  const handleDeployContract = async () => {
-    if (!selectedNetworkId) {
-      toast({
-        title: 'Network Error',
-        description: 'Please select a network to deploy the contract',
-        variant: 'destructive',
-      });
-      return;
+  // Validate contract name and symbol
+  useEffect(() => {
+    const errors: { [key: string]: string } = {};
+
+    if (name) {
+      if (!/^[A-Za-z][A-Za-z0-9]*$/.test(name)) {
+        errors.name =
+          'Contract name must start with a letter and contain only alphanumeric characters';
+      }
     }
 
+    if (symbol) {
+      if (symbol.length > 11) {
+        errors.symbol = 'Symbol should be 11 characters or less';
+      } else if (!/^[A-Z0-9]*$/.test(symbol)) {
+        errors.symbol = 'Symbol must contain only uppercase letters and numbers';
+      }
+    }
+
+    setValidationErrors(errors);
+  }, [name, symbol]);
+
+  // Handle use case selection
+  useEffect(() => {
+    if (selectedUseCase) {
+      const useCase = exampleUseCases.find((uc) => uc.id === selectedUseCase);
+      if (useCase) {
+        setContractType(useCase.type);
+        setName(useCase.defaults.name);
+        setSymbol(useCase.defaults.symbol);
+        setMintable(useCase.defaults.mintable);
+        setBurnable(useCase.defaults.burnable);
+        setPausable(useCase.defaults.pausable);
+      }
+    }
+  }, [selectedUseCase]);
+
+  // Update handleDeployContract to use the actual API
+  const handleDeployContract = async () => {
     try {
+      if (!selectedNetworkId) {
+        toast({
+          title: 'Network Error',
+          description: 'Please select a network to deploy the contract',
+          variant: 'destructive',
+        });
+        return;
+      }
       const result = await dispatch(
         deployContract({
           contractName: name || 'MyContract',
@@ -106,16 +242,59 @@ export default function SmartContractGenerator() {
           networkId: selectedNetworkId,
         }),
       ).unwrap();
-
-      toast({
-        title: 'Deployed Successfully',
-        description: `Contract deployed at address: ${result.result}`,
+      setDeploymentSuccess({
+        open: true,
+        address: result.result,
       });
     } catch (error: any) {
       toast({
         title: 'Deployment Error',
         description: error.message,
         variant: 'destructive',
+      });
+    }
+  };
+
+  const saveDraft = () => {
+    const draft = {
+      id: Date.now().toString(),
+      name: name || 'Untitled Contract',
+      type: contractType,
+      updatedAt: new Date().toISOString(),
+      data: {
+        contractType,
+        name,
+        symbol,
+        mintable,
+        burnable,
+        pausable,
+        code: generatedCode,
+      },
+    };
+
+    setSavedDrafts([draft, ...savedDrafts]);
+
+    toast({
+      title: 'Draft Saved',
+      description: `Your contract "${draft.name}" has been saved as a draft.`,
+    });
+  };
+
+  const loadDraft = (draftId: string) => {
+    const draft = savedDrafts.find((d) => d.id === draftId);
+    if (draft) {
+      setContractType(draft.data.contractType);
+      setName(draft.data.name);
+      setSymbol(draft.data.symbol);
+      setMintable(draft.data.mintable);
+      setBurnable(draft.data.burnable);
+      setPausable(draft.data.pausable);
+      setGeneratedCode(draft.data.code);
+      setShowDrafts(false);
+
+      toast({
+        title: 'Draft Loaded',
+        description: `Loaded draft "${draft.name}"`,
       });
     }
   };
@@ -361,6 +540,10 @@ contract ${name || 'MyMultiToken'} is ERC1155, AccessControl`;
         _pause();
     }
 
+    function unpause() public onlyRole(PAUSER_ROLE) {  {
+        _pause();
+    }
+
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
     }
@@ -410,7 +593,7 @@ contract ${name || 'MyMultiToken'} is ERC1155, AccessControl`;
   };
 
   const generateStablecoinCode = () => {
-    let code = `// SPDX-License-Identifier: MIT
+    const code = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -470,7 +653,7 @@ contract ${name || 'MyStablecoin'} is ERC20, ERC20Burnable, Pausable, AccessCont
   };
 
   const generateRealWorldAssetCode = () => {
-    let code = `// SPDX-License-Identifier: MIT
+    const code = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -549,7 +732,7 @@ contract ${name || 'RealWorldAssetToken'} is ERC20, ERC20Burnable, Pausable, Acc
   };
 
   const generateGovernorCode = () => {
-    let code = `// SPDX-License-Identifier: MIT
+    const code = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/governance/Governor.sol";
@@ -718,14 +901,53 @@ contract ${name || 'CustomContract'} {
         code = `// Unsupported contract type`;
     }
     setGeneratedCode(code);
+
+    // Calculate estimated gas
+    const baseGas = 1000000;
+    const featureMultiplier = (mintable ? 1.2 : 1) * (burnable ? 1.1 : 1) * (pausable ? 1.15 : 1);
+    const typeMultiplier =
+      contractType === 'ERC20'
+        ? 1
+        : contractType === 'ERC721'
+          ? 1.3
+          : contractType === 'ERC1155'
+            ? 1.5
+            : contractType === 'Stablecoin'
+              ? 1.4
+              : contractType === 'Real-World Asset'
+                ? 1.6
+                : contractType === 'Governor'
+                  ? 2
+                  : 1;
+
+    setEstimatedGas(Math.floor(baseGas * featureMultiplier * typeMultiplier));
   };
 
   // Copy code to clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+
     toast({
       title: 'Code copied',
       description: 'The generated code has been copied to your clipboard.',
+    });
+  };
+
+  // Download code as a file
+  const downloadCode = () => {
+    const element = document.createElement('a');
+    const file = new Blob([generatedCode], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${name || 'contract'}.sol`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+
+    toast({
+      title: 'Code downloaded',
+      description: `File saved as ${name || 'contract'}.sol`,
     });
   };
 
@@ -738,6 +960,35 @@ contract ${name || 'CustomContract'} {
   const toggleMode = () => {
     setIsBeginnerMode(!isBeginnerMode);
   };
+
+  // Update the network selection UI in both beginner and advanced modes
+  const renderNetworkSelect = () => (
+    <div className="space-y-2">
+      <Label htmlFor="network">Select Network</Label>
+      <Select value={selectedNetworkId} onValueChange={setSelectedNetworkId}>
+        <SelectTrigger id="network">
+          <SelectValue placeholder="Select a network" />
+        </SelectTrigger>
+        <SelectContent>
+          {networksLoading ? (
+            <SelectItem value="loading" disabled>
+              Loading networks...
+            </SelectItem>
+          ) : networks.length === 0 ? (
+            <SelectItem value="none" disabled>
+              No networks available
+            </SelectItem>
+          ) : (
+            networks.map((network) => (
+              <SelectItem key={network.id} value={network.id}>
+                {network.name}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   // -----------------------------
   // Render UI
@@ -755,168 +1006,73 @@ contract ${name || 'CustomContract'} {
         </Button>
       </div>
 
-      {isBeginnerMode ? (
-        // Beginner Mode UI
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="network">Select Network</Label>
-                  <Select value={selectedNetworkId} onValueChange={setSelectedNetworkId}>
-                    <SelectTrigger id="network">
-                      <SelectValue placeholder="Select a network" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {networksLoading ? (
-                        <SelectItem value="loading" disabled>
-                          Loading networks...
-                        </SelectItem>
-                      ) : networks.length === 0 ? (
-                        <SelectItem value="none" disabled>
-                          No networks available
-                        </SelectItem>
-                      ) : (
-                        networks.map((network) => (
-                          <SelectItem key={network.id} value={network.id}>
-                            {network.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+      <Tabs defaultValue="create" className="w-full">
+        <TabsList className="mx-auto mb-4 grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="create">Create Contract</TabsTrigger>
+          <TabsTrigger value="drafts" onClick={() => setShowDrafts(true)}>
+            Saved Drafts
+          </TabsTrigger>
+        </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="contract-type">
-                    What kind of digital asset do you want to create? (e.g., a standard token for
-                    currency, a unique collectible, etc.)
-                  </Label>
-                  <Select value={contractType} onValueChange={setContractType}>
-                    <SelectTrigger id="contract-type">
-                      <SelectValue placeholder="Select asset type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ERC20">Standard Token (Currency)</SelectItem>
-                      <SelectItem value="ERC721">Unique Collectible (NFT)</SelectItem>
-                      <SelectItem value="ERC1155">Multi-Asset Token</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="name">What should we name your token?</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter token name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="symbol">Choose a token symbol</Label>
-                  <Input
-                    id="symbol"
-                    type="text"
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
-                    placeholder="Enter token symbol"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Should it be mintable or pausable?</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="mintable"
-                        checked={mintable}
-                        onCheckedChange={(checked) => setMintable(checked === true)}
-                      />
-                      <Label htmlFor="mintable" className="font-normal">
-                        Mintable
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="pausable"
-                        checked={pausable}
-                        onCheckedChange={(checked) => setPausable(checked === true)}
-                      />
-                      <Label htmlFor="pausable" className="font-normal">
-                        Pausable
-                      </Label>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleDeployContract}
-                    className="w-full"
-                    disabled={loading || !selectedNetworkId}
-                  >
-                    {loading ? 'Deploying...' : 'Generate and Deploy'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        // Advanced Mode UI
-        <div className="grid gap-6 md:grid-cols-[350px_1fr]">
-          {/* Left side - Form controls */}
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="contract-type">Contract Type</Label>
-                    <Select value={contractType} onValueChange={setContractType}>
-                      <SelectTrigger id="contract-type">
-                        <SelectValue placeholder="Select contract type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ERC20">ERC20 Token</SelectItem>
-                        <SelectItem value="ERC721">ERC721 NFT</SelectItem>
-                        <SelectItem value="ERC1155">ERC1155 MultiToken</SelectItem>
-                        <SelectItem value="Stablecoin">Stablecoin</SelectItem>
-                        <SelectItem value="Real-World Asset">Real-World Asset</SelectItem>
-                        <SelectItem value="Governor">Governor</SelectItem>
-                        <SelectItem value="Custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Contract Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter contract name"
-                    />
-                  </div>
-
-                  {showSymbol && (
+        <TabsContent value="create">
+          {isBeginnerMode ? (
+            // Beginner Mode UI
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {renderNetworkSelect()}
                     <div className="space-y-2">
-                      <Label htmlFor="symbol">Symbol</Label>
+                      <Label>What would you like to create?</Label>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {exampleUseCases.map((useCase) => (
+                          <div
+                            key={useCase.id}
+                            className={`hover:bg-muted cursor-pointer rounded-lg border p-4 transition-colors ${
+                              selectedUseCase === useCase.id ? 'border-primary bg-primary/5' : ''
+                            }`}
+                            onClick={() => setSelectedUseCase(useCase.id)}
+                          >
+                            <h3 className="font-medium">{useCase.name}</h3>
+                            <p className="text-muted-foreground text-sm">{useCase.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="name">What should we name your token?</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter token name"
+                        className={validationErrors.name ? 'border-red-500' : ''}
+                      />
+                      {validationErrors.name && (
+                        <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="symbol">Choose a token symbol</Label>
                       <Input
                         id="symbol"
                         type="text"
                         value={symbol}
                         onChange={(e) => setSymbol(e.target.value)}
-                        placeholder="Enter contract symbol"
+                        placeholder="Enter token symbol"
+                        className={validationErrors.symbol ? 'border-red-500' : ''}
                       />
+                      {validationErrors.symbol && (
+                        <p className="mt-1 text-xs text-red-500">{validationErrors.symbol}</p>
+                      )}
                     </div>
-                  )}
 
-                  <div className="space-y-3">
-                    <Label>Features</Label>
-                    <div className="space-y-2">
-                      {showMintable && (
+                    <div className="space-y-3">
+                      <Label>Should it be mintable or pausable?</Label>
+                      <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="mintable"
@@ -925,24 +1081,12 @@ contract ${name || 'CustomContract'} {
                           />
                           <Label htmlFor="mintable" className="font-normal">
                             Mintable
+                            <span className="text-muted-foreground block text-xs">
+                              Allows creating new tokens after deployment
+                            </span>
                           </Label>
                         </div>
-                      )}
 
-                      {showBurnable && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="burnable"
-                            checked={burnable}
-                            onCheckedChange={(checked) => setBurnable(checked === true)}
-                          />
-                          <Label htmlFor="burnable" className="font-normal">
-                            Burnable
-                          </Label>
-                        </div>
-                      )}
-
-                      {showPausable && (
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="pausable"
@@ -951,52 +1095,413 @@ contract ${name || 'CustomContract'} {
                           />
                           <Label htmlFor="pausable" className="font-normal">
                             Pausable
+                            <span className="text-muted-foreground block text-xs">
+                              Allows pausing all transfers in case of emergency
+                            </span>
                           </Label>
                         </div>
+                      </div>
+
+                      {/* Real-time preview */}
+                      <div className="mt-4 rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium">Contract Preview</h3>
+                          <Badge variant="outline">{contractType}</Badge>
+                        </div>
+                        <div className="mt-2 space-y-1 text-sm">
+                          <div>
+                            <span className="font-medium">Name:</span> {name || 'MyToken'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Symbol:</span> {symbol || 'MTK'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Features:</span>{' '}
+                            {[
+                              mintable ? 'Mintable' : null,
+                              burnable ? 'Burnable' : null,
+                              pausable ? 'Pausable' : null,
+                            ]
+                              .filter(Boolean)
+                              .join(', ') || 'None'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {estimatedGas && (
+                        <Alert className="mt-4">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <AlertTitle>Estimated Deployment Cost</AlertTitle>
+                          <AlertDescription className="flex items-center justify-between">
+                            <span>Gas: ~{estimatedGas.toLocaleString()} units</span>
+                            <span className="font-medium">
+                              ~{((estimatedGas * gasPrice) / 1e9).toFixed(6)} ETH
+                            </span>
+                          </AlertDescription>
+                        </Alert>
                       )}
+
+                      <div className="flex gap-2 pt-4">
+                        <Button
+                          onClick={handleDeployContract}
+                          className="flex-1"
+                          disabled={
+                            loading ||
+                            !selectedNetworkId ||
+                            Object.keys(validationErrors).length > 0
+                          }
+                        >
+                          {loading ? 'Deploying...' : 'Deploy Contract'}
+                        </Button>
+                        <Button variant="outline" onClick={saveDraft}>
+                          <Save className="mr-2 h-4 w-4" />
+                          Save Draft
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      onClick={handleDeployContract}
-                      className="w-full"
-                      disabled={loading || !selectedNetworkId}
-                    >
-                      {loading ? 'Deploying...' : 'Deploy Contract'}
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="text-muted-foreground text-center text-sm">
-              Powered by OpenZeppelin contracts
-            </div>
-          </div>
-
-          {/* Right side - Code display */}
-          <div className="relative">
-            <div className="sticky top-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-lg font-medium">Generated Solidity Code</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                  onClick={copyToClipboard}
-                >
-                  <Copy className="h-4 w-4" /> Copy
-                </Button>
-              </div>
-              <Card>
-                <CardContent className="p-0">
-                  <pre className="max-h-[70vh] overflow-auto p-4 text-sm">
-                    <code>{generatedCode}</code>
-                  </pre>
                 </CardContent>
               </Card>
             </div>
+          ) : (
+            // Advanced Mode UI
+            <div className="grid gap-6 md:grid-cols-[350px_1fr]">
+              {/* Left side - Form controls */}
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-6">
+                      {renderNetworkSelect()}
+                      <div className="space-y-2">
+                        <Label htmlFor="contract-type">Contract Type</Label>
+                        <Select value={contractType} onValueChange={setContractType}>
+                          <SelectTrigger id="contract-type">
+                            <SelectValue placeholder="Select contract type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ERC20">ERC20 Token</SelectItem>
+                            <SelectItem value="ERC721">ERC721 NFT</SelectItem>
+                            <SelectItem value="ERC1155">ERC1155 MultiToken</SelectItem>
+                            <SelectItem value="Stablecoin">Stablecoin</SelectItem>
+                            <SelectItem value="Real-World Asset">Real-World Asset</SelectItem>
+                            <SelectItem value="Governor">Governor</SelectItem>
+                            <SelectItem value="Custom">Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Contract Name</Label>
+                        <div className="relative">
+                          <Input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter contract name"
+                            className={validationErrors.name ? 'border-red-500 pr-8' : 'pr-8'}
+                          />
+                          {validationErrors.name ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertCircle className="absolute right-2 top-2.5 h-4 w-4 text-red-500" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{validationErrors.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <CheckCircle2 className="absolute right-2 top-2.5 h-4 w-4 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+
+                      {showSymbol && (
+                        <div className="space-y-2">
+                          <Label htmlFor="symbol">Symbol</Label>
+                          <div className="relative">
+                            <Input
+                              id="symbol"
+                              type="text"
+                              value={symbol}
+                              onChange={(e) => setSymbol(e.target.value)}
+                              placeholder="Enter contract symbol"
+                              className={validationErrors.symbol ? 'border-red-500 pr-8' : 'pr-8'}
+                            />
+                            {validationErrors.symbol ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertCircle className="absolute right-2 top-2.5 h-4 w-4 text-red-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{validationErrors.symbol}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : symbol ? (
+                              <CheckCircle2 className="absolute right-2 top-2.5 h-4 w-4 text-green-500" />
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <Label>Features</Label>
+                        <div className="space-y-2">
+                          {showMintable && (
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="mintable"
+                                checked={mintable}
+                                onCheckedChange={(checked) => setMintable(checked === true)}
+                              />
+                              <Label htmlFor="mintable" className="font-normal">
+                                Mintable
+                              </Label>
+                            </div>
+                          )}
+
+                          {showBurnable && (
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="burnable"
+                                checked={burnable}
+                                onCheckedChange={(checked) => setBurnable(checked === true)}
+                              />
+                              <Label htmlFor="burnable" className="font-normal">
+                                Burnable
+                              </Label>
+                            </div>
+                          )}
+
+                          {showPausable && (
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="pausable"
+                                checked={pausable}
+                                onCheckedChange={(checked) => setPausable(checked === true)}
+                              />
+                              <Label htmlFor="pausable" className="font-normal">
+                                Pausable
+                              </Label>
+                            </div>
+                          )}
+                        </div>
+
+                        {estimatedGas && (
+                          <Alert className="mt-4">
+                            <Zap className="h-4 w-4 text-yellow-500" />
+                            <AlertTitle>Estimated Deployment Cost</AlertTitle>
+                            <AlertDescription className="flex items-center justify-between">
+                              <span>Gas: ~{estimatedGas.toLocaleString()} units</span>
+                              <span className="font-medium">
+                                ~{((estimatedGas * gasPrice) / 1e9).toFixed(6)} ETH
+                              </span>
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="flex gap-2 pt-4">
+                          <Button
+                            onClick={handleDeployContract}
+                            className="flex-1"
+                            disabled={
+                              loading ||
+                              !selectedNetworkId ||
+                              Object.keys(validationErrors).length > 0
+                            }
+                          >
+                            {loading ? 'Deploying...' : 'Deploy Contract'}
+                          </Button>
+                          <Button variant="outline" onClick={saveDraft}>
+                            <Save className="h-4 w-4" />
+                            <span className="sr-only">Save Draft</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="text-muted-foreground text-center text-sm">
+                  Powered by OpenZeppelin contracts
+                </div>
+              </div>
+
+              {/* Right side - Code display */}
+              <div className="relative">
+                <div className="sticky top-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h2 className="text-lg font-medium">Generated Solidity Code</h2>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={copyToClipboard}
+                      >
+                        {copied ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                        {copied ? 'Copied!' : 'Copy'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={downloadCode}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                  <Card>
+                    <CardContent className="p-0">
+                      <div ref={editorRef} className="relative">
+                        <Highlight
+                          {...defaultProps}
+                          code={generatedCode}
+                          language="solidity"
+                          theme={themes.nightOwl}
+                        >
+                          {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                            <pre
+                              className={`${className} max-h-[70vh] overflow-auto rounded`}
+                              style={style}
+                            >
+                              {tokens.map((line, i) => (
+                                <div key={i} {...getLineProps({ line })}>
+                                  {line.map((token, key) => (
+                                    <span key={key} {...getTokenProps({ token })} />
+                                  ))}
+                                </div>
+                              ))}
+                            </pre>
+                          )}
+                        </Highlight>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="drafts">
+          {savedDrafts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Save className="text-muted-foreground mb-4 h-12 w-12" />
+              <h3 className="mb-2 text-xl font-medium">No saved drafts</h3>
+              <p className="text-muted-foreground text-center">
+                Save your contract drafts to continue working on them later.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {savedDrafts.map((draft) => (
+                <Card
+                  key={draft.id}
+                  className="cursor-pointer hover:shadow-md"
+                  onClick={() => loadDraft(draft.id)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle>{draft.name}</CardTitle>
+                    <CardDescription>
+                      {new Date(draft.updatedAt).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline">{draft.type}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Deployment Success Modal */}
+      <Dialog
+        open={deploymentSuccess.open}
+        onOpenChange={(open) => setDeploymentSuccess((prev) => ({ ...prev, open }))}
+      >
+        <DialogContent className="sm:max-w-[725px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Contract Deployed Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Your smart contract has been deployed to the blockchain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Contract Address</Label>
+              <div className="flex items-center gap-2">
+                <code className="bg-muted rounded px-2 py-1 font-mono text-sm">
+                  {deploymentSuccess.address}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    navigator.clipboard.writeText(deploymentSuccess.address);
+                    toast({
+                      title: 'Copied!',
+                      description: 'Contract address copied to clipboard',
+                    });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Important</AlertTitle>
+              <AlertDescription>
+                Save this address. if you need it to interact with your contract from outside .
+              </AlertDescription>
+            </Alert>
           </div>
-        </div>
-      )}
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() =>
+                window.open(`https://etherscan.io/address/${deploymentSuccess.address}`, '_blank')
+              }
+              disabled
+            >
+              <ExternalLink className="h-4 w-4" />
+              View on Explorer
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setDeploymentSuccess((prev) => ({ ...prev, open: false }));
+                router.push('/deployedcontracts');
+              }}
+            >
+              <ListChecks className="h-4 w-4" />
+              View All Contracts
+            </Button>
+            <Button onClick={() => setDeploymentSuccess((prev) => ({ ...prev, open: false }))}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
