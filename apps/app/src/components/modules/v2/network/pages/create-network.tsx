@@ -41,6 +41,7 @@ import { z } from 'zod';
 
 const formSchema = z.object({
   name: z.string().nonempty({ message: 'Network name is required.' }),
+  secretKey: z.string().nonempty({ message: 'Secret key is required.' }),
   nodeCount: z
     .number()
     .min(1, { message: 'Node count must be at least 1.' })
@@ -108,6 +109,7 @@ export default function CreateNetworkDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      secretKey: '',
       nodeCount: 2,
     },
   });
@@ -145,22 +147,7 @@ export default function CreateNetworkDialog() {
     setShowWarningDialog(false);
     setIsLoading(true);
 
-    // // 1) Add a "pending" notification to Redux:
-    // const notificationId = uuidv4();
-    // dispatch(
-    //   addNotification({
-    //     id: notificationId,
-    //     title: `Creating network "${pendingValues.name}"`,
-    //     description: 'Starting network creation process...',
-    //     status: 'pending',
-    //     time: new Date().toLocaleTimeString([], {
-    //       hour: '2-digit',
-    //       minute: '2-digit',
-    //       hour12: false,
-    //     }),
-    //     read: false,
-    //   }),
-    // );
+    // 1) Add a "pending" notification to Redux:
 
     try {
       const networkRes = await dispatch(
@@ -172,6 +159,10 @@ export default function CreateNetworkDialog() {
           },
         }),
       ).unwrap();
+
+      // dispatch(
+      //   dispatch(addNotification(networkRes.jobRow))
+      // );
 
       if (!networkRes?.id) {
         throw new Error('Network creation failed: No network ID was returned.');
@@ -231,6 +222,20 @@ export default function CreateNetworkDialog() {
                   <FormLabel className="font-semibold">Network Name</FormLabel>
                   <FormControl>
                     <Input autoComplete="off" placeholder="Enter network name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/**secret key password */}
+            <FormField
+              control={form.control}
+              name="secretKey"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-semibold">Secret Key</FormLabel>
+                  <FormControl>
+                    <Input autoComplete="off" placeholder="Enter secret key" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

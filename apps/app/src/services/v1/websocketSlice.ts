@@ -1,4 +1,4 @@
-// websocketSlice.ts
+// src/services/v1/websocketSlice.ts
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
 interface WebSocketMessage {
@@ -10,14 +10,14 @@ interface WebSocketState {
   messages: WebSocketMessage[];
   connectionStatus: 'disconnected' | 'connecting' | 'connected';
   error: string | null;
-  nodeStatus: string; // Added for status updates
+  nodeStatus: string;
 }
 
 const initialState: WebSocketState = {
   messages: [],
   connectionStatus: 'disconnected',
   error: null,
-  nodeStatus: '', // default value
+  nodeStatus: '',
 };
 
 const websocketSlice = createSlice({
@@ -38,12 +38,12 @@ const websocketSlice = createSlice({
     addMessage(state, action: PayloadAction<WebSocketMessage>) {
       state.messages.push(action.payload);
     },
+    clearMessages(state) {
+      state.messages = [];
+    },
     setError(state, action: PayloadAction<string>) {
       state.error = action.payload;
       state.connectionStatus = 'disconnected';
-    },
-    clearMessages(state) {
-      state.messages = [];
     },
     updateStatus(state, action: PayloadAction<string>) {
       state.nodeStatus = action.payload;
@@ -56,8 +56,8 @@ export const {
   connected,
   disconnected,
   addMessage,
-  setError,
   clearMessages,
+  setError,
   updateStatus,
 } = websocketSlice.actions;
 

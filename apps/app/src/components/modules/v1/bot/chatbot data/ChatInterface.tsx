@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAppDispatch } from '@/services/hooks';
-import { setupNetwork, startNetwork } from '@/services/v2/blockchainSlice';
 import { createServer, setupServer } from '@/services/v2/serverSlice';
+import { startNetwork } from '@/services/v4/blockchainSlice';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +64,7 @@ export default function Chat() {
     try {
       // Step 2: Setup network
       const networkRes = await dispatch(
-        setupNetwork({
+        startNetwork({
           initNetPayload: { name, userId, nodeCount },
           // vmId: createRes.id,
         }),
@@ -73,15 +73,15 @@ export default function Chat() {
       if (!networkRes?.id) throw new Error('Network setup failed');
 
       // Step 4: Start network
-      await dispatch(
-        startNetwork({
-          payload: {
-            vmId: networkRes.serverId,
-            networkId: networkRes.id,
-            nodeCount,
-          },
-        }),
-      ).unwrap();
+      // await dispatch(
+      //   startNetwork({
+      //     payload: {
+      //       vmId: networkRes.serverId,
+      //       networkId: networkRes.id,
+      //       nodeCount,
+      //     },
+      //   }),
+      // ).unwrap();
 
       // Update chat
       setMessages((prev) => [
@@ -95,7 +95,7 @@ export default function Chat() {
       ]);
 
       // Redirect after delay
-      // setTimeout(() => router.push(`/network/${networkRes.id}`), 2000); // Removed redirection
+      router.push(`/network/${networkRes.id}`);
     } catch (error) {
       const errorMessage = (error as Error).message;
       setMessages((prev) => [

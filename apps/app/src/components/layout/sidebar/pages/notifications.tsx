@@ -1,6 +1,7 @@
-// notifications.tsx
+//notifiction panel
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,161 +12,167 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Toaster } from '@/components/ui/sonner';
-import { useToast } from '@/components/ui/use-toast';
 import useWebSocket from '@/hooks/useWebSocket';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
-import { updateNotification } from '@/services/v2/notificationSlice';
-import { Bell } from 'lucide-react';
-import * as React from 'react';
+import { fetchJobsByUserId, updateNotification } from '@/services/v2/notificationSlice';
+import { formatDistanceToNow } from 'date-fns';
+import { Bell, CheckCheck, Dot, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-// notifications.tsx
-
-// notifications.tsx
+//notifiction panel
 
 export function NotificationPanel() {
   const dispatch = useAppDispatch();
-  const { toast } = useToast();
-
-  // 1) Load userId from sessionStorage
   const [userId, setUserId] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Load user ID from sessionStorage on mount
   useEffect(() => {
-    try {
-      const user = sessionStorage.getItem('user');
-      if (!user) {
-        toast({
-          title: 'Authentication Error',
-          description: 'You must be logged in to view notifications.',
-          variant: 'destructive',
-        });
-        return;
+    const stored = sessionStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed?.id) setUserId(parsed.id);
+      } catch {
+        console.error('Invalid user in sessionStorage');
       }
-      const parsed = JSON.parse(user);
-      if (!parsed?.id) {
-        toast({
-          title: 'Invalid User Data',
-          description: 'Your session appears to be corrupted. Please log in again.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setUserId(parsed.id);
-    } catch (e) {
-      console.error('Failed to parse user from sessionStorage:', e);
-      toast({
-        title: 'Session Error',
-        description: 'There was a problem with your session. Please log in again.',
-        variant: 'destructive',
-      });
     }
-  }, [toast]);
+  }, []);
 
-  // 2) Subscribe to job‑status updates (will no‑op until userId is set)
-  useWebSocket({ mode: 'status-job', userId: userId ?? undefined });
-
-  // 3) Grab and toast new notifications
-  const notifications = useAppSelector((state) => state.notifications.items);
+  // Fetch jobs when dropdown opens or userId changes
   useEffect(() => {
-    const unread = notifications.filter((n) => !n.read);
-    if (unread.length) {
-      unread.forEach((notification) => {
-        toast({
-          title: notification.title,
-          description: notification.description,
-          variant: 'default',
-        });
-      });
+    if (userId && isOpen) {
+      dispatch(fetchJobsByUserId({ userId, page: 1, limit: 5 }));
     }
-  }, [notifications, toast]);
+  }, [dispatch, userId, isOpen]);
 
-  // 4) Unread count & mark‑read actions
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const markAsRead = (id: string) => dispatch(updateNotification({ id, changes: { read: true } }));
-  const markAllAsRead = () =>
-    notifications.forEach((n) => {
-      if (!n.read) {
-        dispatch(updateNotification({ id: n.id, changes: { read: true } }));
-      }
+  // Refresh notifications every minute when dropdown is open
+  useEffect(() => {
+    if (!isOpen || !userId) return;
+
+    const intervalId = setInterval(() => {
+      dispatch(fetchJobsByUserId({ userId, page: 1, limit: 5 }));
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [dispatch, userId, isOpen]);
+
+  // Select notifications state
+  const jobs = useAppSelector((state) => state.notifications.items);
+  const jobIds = jobs.map((j) => j.id);
+  // subscribe them all in one shot
+  jobIds.forEach((jobId) => {
+    useWebSocket({ mode: 'jobs', jobId });
+  });
+  const loading = useAppSelector((state) => state.notifications.loading);
+  const error = useAppSelector((state) => state.notifications.error);
+
+  // Mock read state (in a real app, this would be stored in your state management)
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
+
+  const markAsRead = (id: string) => {
+    setReadNotifications((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(id);
+      return newSet;
     });
+  };
+
+  const markAllAsRead = () => {
+    const newSet = new Set(readNotifications);
+    jobs.forEach((job) => newSet.add(job.id));
+    setReadNotifications(newSet);
+  };
+
+  const unreadCount = jobs.filter((job) => !readNotifications.has(job.id)).length;
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'outline';
+      case 'done':
+        return 'secondary';
+    }
+  };
+
+  const normalize = (status: string) => (status === 'Blockchain ready' ? 'Done' : status);
 
   return (
-    <>
-      <Toaster />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="bg-primary text-primary-foreground absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-medium">
-                {unreadCount}
-              </span>
-            )}
-            <span className="sr-only">Notifications</span>
-          </Button>
-        </DropdownMenuTrigger>
+    <DropdownMenu onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+              {unreadCount}
+            </span>
+          )}
+          <span className="sr-only">Notifications ({unreadCount} unread)</span>
+        </Button>
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-96">
-          <DropdownMenuLabel className="flex items-center justify-between">
-            <span>Notifications</span>
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto text-xs font-normal"
-                onClick={markAllAsRead}
-              >
-                Mark all as read
-              </Button>
-            )}
-          </DropdownMenuLabel>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
-            {notifications.length > 0 ? (
-              [...notifications]
-                .slice()
-                .reverse()
-                .map((notification) => (
-                  <DropdownMenuItem
-                    key={notification.id}
-                    className="flex cursor-pointer flex-col items-start py-2"
-                    onClick={() => markAsRead(notification.id)}
-                  >
-                    <div className="flex w-full justify-between gap-2">
-                      <span className={`font-medium ${notification.read ? '' : 'text-primary'}`}>
-                        {notification.title}
-                      </span>
-                      {notification.time && (
-                        <span className="text-muted-foreground text-xs">{notification.time}</span>
-                      )}
-                    </div>
-
-                    {notification.description && (
-                      <span className="text-muted-foreground text-sm">
-                        {notification.description}
-                      </span>
-                    )}
-
-                    {!notification.read && (
-                      <div className="bg-primary mt-1 h-2 w-2 rounded-full"></div>
-                    )}
-                  </DropdownMenuItem>
-                ))
-            ) : (
-              <div className="text-muted-foreground py-6 text-center">No notifications</div>
-            )}
-          </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="justify-center">
-            <Button variant="ghost" size="sm" className="w-full" disabled>
-              View all notifications
+      <DropdownMenuContent align="end" className="w-[350px] sm:w-[400px]">
+        <DropdownMenuLabel className="flex items-center justify-between py-2">
+          <span className="text-base font-semibold">Notifications</span>
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-8 text-xs">
+              <CheckCheck className="mr-1 h-3 w-3" />
+              Mark all as read
             </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+          )}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup className="max-h-[300px] overflow-y-auto py-1">
+          {loading ? (
+            <div className="text-muted-foreground flex items-center justify-center py-8">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading notifications...
+            </div>
+          ) : error ? (
+            <div className="py-6 text-center text-red-500">
+              <p>Failed to load notifications</p>
+              <p className="text-xs">{error}</p>
+            </div>
+          ) : jobs.length > 0 ? (
+            [...jobs]
+              .slice()
+              .reverse()
+              .map((job) => {
+                const isRead = readNotifications.has(job.id);
+                return (
+                  <DropdownMenuItem
+                    key={job.id}
+                    className={`flex cursor-pointer items-start gap-2 p-3 ${isRead ? '' : 'bg-muted/30'}`}
+                    onClick={() => markAsRead(job.id)}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`font-medium ${isRead ? '' : 'font-semibold'}`}>
+                          {job.Network?.name ?? 'Unnamed Network'}
+                        </span>
+                        <Badge variant={getStatusColor(normalize(job.status))} className="ml-2">
+                          {normalize(job.status)}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground mt-1 text-sm">{job.status}</p>
+                      <div className="mt-1 flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">
+                          {formatDistanceToNow(new Date(job.updatedAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                        {!isRead && <Dot size={24} className="text-warning" />}
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })
+          ) : (
+            <div className="text-muted-foreground py-8 text-center">No notifications</div>
+          )}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

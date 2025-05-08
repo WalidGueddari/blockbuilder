@@ -1,4 +1,5 @@
 // nodeSlice.ts
+import api from '@/lib/api';
 import { InitNetwork } from '@/types/v1/network';
 import { Node, NodeResponse, NodesResponse } from '@/types/v1/node';
 import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
@@ -29,7 +30,7 @@ export const fetchNodesByNetworkId = createAsyncThunk<
   { rejectValue: string }
 >('node/fetchNodesByNetworkId', async (networkId, { rejectWithValue }) => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${process.env.NEXT_PUBLIC_BASE_URL}/node/nodes-by-network/${networkId}`,
     );
     if (response.data.success) {
@@ -47,7 +48,7 @@ export const fetchNodesById = createAsyncThunk<NodeResponse, string, { rejectVal
   'node/fetchNodesById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/node/${id}`);
+      const response = await api.get(`${process.env.NEXT_PUBLIC_BASE_URL}/node/${id}`);
       if (response.data.success) {
         return response.data;
       } else {
@@ -64,7 +65,7 @@ export const fetchNetworks = createAsyncThunk<InitNetwork[], void, { rejectValue
   'node/fetchNetworks',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/networks`);
+      const response = await api.get(`${process.env.NEXT_PUBLIC_BASE_URL}/networks`);
       if (response.data.success) {
         return response.data.networks;
       } else {

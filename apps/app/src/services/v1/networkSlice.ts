@@ -1,4 +1,5 @@
 // networkSlice.ts
+import api from '@/lib/api';
 import { InitNetwork, NetworksResponse, Pagination } from '@/types/v1/network';
 import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
@@ -26,7 +27,7 @@ export const fetchNetworksByUserId = createAsyncThunk<
   { rejectValue: string }
 >('network/fetchNetworksByUserId', async ({ userId, page, limit }, { rejectWithValue }) => {
   try {
-    const response = await axios.get<NetworksResponse>(
+    const response = await api.get<NetworksResponse>(
       `${process.env.NEXT_PUBLIC_BASE_URL}/network/${userId}`,
       {
         params: {
@@ -85,7 +86,8 @@ const networkSlice = createSlice({
 export const { clearNetworkError, clearNetworks } = networkSlice.actions;
 
 // Selectors
-export const selectNetworks = (state: RootState): InitNetwork[] => state.network.networks;
+export const selectNetworks = (state: RootState & { network: NetworkState }): InitNetwork[] =>
+  state.network.networks;
 
 export const selectNetworkPagination = (state: RootState): Pagination | null =>
   state.network.pagination;

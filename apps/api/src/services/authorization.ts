@@ -5,6 +5,7 @@ import { AbstractServiceOptions } from '../types/services.js';
 
 export class AuthorizationService {
   prisma: PrismaClient;
+
   constructor(options: AbstractServiceOptions) {
     this.prisma = options.prisma;
   }

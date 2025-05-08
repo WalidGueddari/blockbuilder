@@ -19,6 +19,15 @@ export interface SetupNetworkResponse {
   serverId: string;
 }
 
+// export interface SetupNetworkResponse {
+//   initNetwork: {
+//     id: string;
+//     nodeCount: number;
+//     serverId: string;
+//   },
+//   jobRow: JobNotification
+// }
+
 // The payload for /start-network
 export interface StartNodePayload {
   vmId: string;

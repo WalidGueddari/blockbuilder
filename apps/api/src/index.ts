@@ -1,9 +1,12 @@
 import { ajvFilePlugin } from '@fastify/multipart';
 import { PrismaClient, User } from '@saas-monorepo/database';
 import ajvFormat from 'ajv-formats';
-// Require library to exit fastify process, gracefully (if possible)
+import { Queue, QueueEvents } from 'bullmq';
 import closeWithGrace from 'close-with-grace';
 import { FastifyInstance, FastifyServerOptions, fastify } from 'fastify';
+
+import { serviceAccount } from './config/firebaseConfig.js';
+import './lib/deployWorker.js';
 
 interface FastifyWithAjv extends FastifyInstance {
   ajv: {
@@ -21,6 +24,11 @@ declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
     verifyToken: () => Promise<void>;
+    verifyWsToken: () => Promise<void>;
+    bull: {
+      deployQueue: Queue;
+      deployEvents: QueueEvents;
+    };
   }
   interface FastifyRequest {
     loggedUser: User;

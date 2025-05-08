@@ -1,4 +1,5 @@
 // nodeSlice.ts
+import api from '@/lib/api';
 import { InitNetwork, InitNetworkPayload } from '@/types/v1/network';
 import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
@@ -26,7 +27,7 @@ export const createNetwork = createAsyncThunk<
   { rejectValue: string } // Types for rejectWithValue
 >('node/createNetwork', async (payload: InitNetworkPayload, { rejectWithValue }) => {
   try {
-    const response = await axios.post(
+    const response = await api.post(
       `${process.env.NEXT_PUBLIC_BASE_URL}/containers/build-network`,
       {
         initNetPayload: payload,

@@ -1,3 +1,4 @@
+import api from '@/lib/api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
@@ -25,7 +26,7 @@ export const setupNetwork = createAsyncThunk<
 >('blockchain/setupNetwork', async ({ initNetPayload }, { rejectWithValue }) => {
   try {
     // POST to /setup-network
-    const res = await axios.post<SetupNetworkResponse>(
+    const res = await api.post<SetupNetworkResponse>(
       `${process.env.NEXT_PUBLIC_BASE_URL_V3}/blockchain/setup-network`,
       {
         initNetPayload,
@@ -44,7 +45,7 @@ export const startNetwork = createAsyncThunk<
 >('blockchain/startNetwork', async ({ payload }, { rejectWithValue }) => {
   try {
     // POST to /start-network
-    const res = await axios.post<StartNetworkResponse>(
+    const res = await api.post<StartNetworkResponse>(
       `${process.env.NEXT_PUBLIC_BASE_URL_V3}/blockchain/start-network`,
       { payload },
     );

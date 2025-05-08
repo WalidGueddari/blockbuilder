@@ -1,7 +1,9 @@
 // store/serverSlice.ts
+import api from '@/lib/api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+// Assuming you have a custom API utility
 import {
   CreateAzureVMParams,
   CreateServerResponse,
@@ -24,7 +26,7 @@ export const createServer = createAsyncThunk<CreateServerResponse, CreateAzureVM
   'server/create',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await axios.post<CreateServerResponse>(
+      const response = await api.post<CreateServerResponse>(
         `${process.env.NEXT_PUBLIC_BASE_URL_V2}/server/create`,
         { payload: params },
       );
@@ -41,7 +43,7 @@ export const setupServer = createAsyncThunk<
 >('server/setupServer', async ({ id, networkId }, { rejectWithValue }) => {
   try {
     // Notice how we call `/setup/:id` and pass in the body { id, networkId }:
-    const res = await axios.post<SetupServerResponse>(
+    const res = await api.post<SetupServerResponse>(
       `${process.env.NEXT_PUBLIC_BASE_URL_V2}/server/setup`,
       { id, networkId },
     );

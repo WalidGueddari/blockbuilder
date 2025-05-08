@@ -9,10 +9,6 @@ import React from 'react';
 
 // ClientPage.tsx
 
-// ClientPage.tsx
-
-// ClientPage.tsx
-
 const ClientPage = () => {
   const params = useParams();
   const networkId = params.id as string;

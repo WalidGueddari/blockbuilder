@@ -124,4 +124,11 @@ export const config = {
    */
   dockerUsername: requiredVar('DOCKER_USER'),
   hardhatContainerName: requiredVar('HARDHAT_CONTAINER_NAME'),
+
+  /*
+   * Firebase Configuration
+   */
+  firebaseProjectId: requiredVar('FIREBASE_PROJECT_ID'),
+  firebaseClientEmail: requiredVar('FIREBASE_CLIENT_EMAIL'),
+  firebasePrivateKey: requiredVar('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
 };

@@ -35,6 +35,23 @@ async function authorization(fastify: FastifyInstance) {
     }
   }
 
+  async function verifyWsToken(request: FastifyRequest) {
+    let token: string | undefined = (request.headers['authorization'] as string | undefined)?.split(
+      ' ',
+    )[1];
+
+    if (!token && typeof request.query === 'object' && request.query !== null) {
+      token = (request.query as Record<string, string>).token;
+    }
+
+    if (!token) {
+      throw fastify.httpErrors.unauthorized('Missing access token');
+    }
+
+    request.loggedUser = await authorizationService.verifyAccessToken(token);
+  }
+
+  fastify.decorate<any>('verifyWsToken', verifyWsToken);
   fastify.decorate<any>('verifyToken', verifyToken);
   fastify.decorateRequest<User | null>('loggedUser', null);
 }
