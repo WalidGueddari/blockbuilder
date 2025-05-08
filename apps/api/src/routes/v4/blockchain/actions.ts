@@ -15,7 +15,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   const jobService = new JobService({ prisma, redis });
   const networkService = new NewtorkSevice({ prisma });
   const containerService = new ContainerService({ prisma });
-  const hardhatService = new HardhatService({ prisma });
+  //const hardhatService = new HardhatService({ prisma });
 
   const { bootnodeIndex, baseDir } = config;
 

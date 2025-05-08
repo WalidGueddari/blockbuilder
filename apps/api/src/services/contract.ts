@@ -11,7 +11,7 @@ const execAsync = promisify(exec);
 
 export class ContractService {
   prisma: PrismaClient;
-  private readonly CONTAINER_NAME = 'hardhat-service';
+  private readonly CONTAINER_NAME = 'hardhat';
   private readonly ssh: NodeSSH;
   private readonly config = {
     sshKeyDir: process.env.SSH_KEY_DIR || '',
@@ -23,17 +23,28 @@ export class ContractService {
   }
 
   private async getSSHConnection(networkId: string) {
+    console.log(`Getting SSH connection for network ${networkId}`);
     const network = await this.prisma.network.findUnique({
       where: { id: networkId },
       include: { server: true },
     });
 
     if (!network || !network.server) {
+      console.error(`Network ${networkId} or its server not found`);
       throw new Error(`Network ${networkId} or its server not found`);
     }
 
+    console.log(`Found network and server for ${networkId}`);
     const sshKeyPath = path.join(this.config.sshKeyDir, network.server.sshKeyName);
+    console.log(`SSH key path: ${sshKeyPath}`);
+
+    if (!fs.existsSync(sshKeyPath)) {
+      console.error(`SSH key file not found at ${sshKeyPath}`);
+      throw new Error(`SSH key file not found at ${sshKeyPath}`);
+    }
+
     const privateKeyContent = fs.readFileSync(sshKeyPath, 'utf8');
+    console.log('SSH key loaded successfully');
 
     return {
       server: network.server,
@@ -42,19 +53,24 @@ export class ContractService {
   }
 
   private async connectToServer(networkId: string, retries = 3): Promise<void> {
+    console.log(`Connecting to server for network ${networkId}`);
     const { server, privateKey } = await this.getSSHConnection(networkId);
 
     for (let i = 0; i < retries; i++) {
       try {
+        console.log(`Attempt ${i + 1} to connect to server ${server.publicIpAddress}`);
         await this.ssh.connect({
           host: server.publicIpAddress,
           username: server.adminUsername,
           privateKey: privateKey,
-          readyTimeout: 30000,
-          keepaliveInterval: 10000,
+          readyTimeout: 120000,
+          keepaliveInterval: 50000,
+          keepaliveCountMax: 30,
         });
+        console.log('Successfully connected to server');
         return;
       } catch (error: any) {
+        console.error(`Connection attempt ${i + 1} failed:`, error.message);
         if (i === retries - 1) {
           throw new Error(
             `Failed to connect to server after ${retries} attempts: ${error.message}`,
@@ -66,6 +82,7 @@ export class ContractService {
   }
 
   private async disconnectFromServer(): Promise<void> {
+    console.log('Disconnecting from server');
     this.ssh.dispose();
   }
 
@@ -93,8 +110,9 @@ export class ContractService {
 
       await this.connectToServer(networkId);
 
-      // Execute the command on the server
-      const command = `docker exec ${this.CONTAINER_NAME} npx ts-node --transpile-only scripts/interact.ts "${address}" "${functionName}" ${args.join(' ')}`;
+      // Quote each argument to handle spaces/special chars
+      const quotedArgs = args.map((arg) => `"${arg}"`).join(' ');
+      const command = `docker exec ${this.CONTAINER_NAME} npx ts-node --transpile-only scripts/interact.ts "${address}" "${functionName}" ${quotedArgs}`;
       const result = await this.ssh.execCommand(command);
 
       if (result.stderr) {
@@ -114,42 +132,78 @@ export class ContractService {
     contractFile: Buffer,
     contractName: string,
   ): Promise<string> {
+    console.log(`🚀 Starting contract deployment: ${contractName} on network: ${networkId}`);
+
+    const tempFilePath = `/tmp/${contractName}.sol`;
+    const destPath = `.containers/${networkId}/hardhat/contracts/${contractName}.sol`;
+
     try {
       await this.connectToServer(networkId);
 
-      // Create a temporary file to store the contract
-      const tempFilePath = `/tmp/${contractName}.sol`;
+      // Step 1: Upload contract to temp file
+      const contractContent = contractFile.toString('utf-8');
+      const createFileCommand = `echo '${contractContent.replace(/'/g, "'\\''")}' > ${tempFilePath}`;
+      console.log(`📦 Uploading contract to: ${tempFilePath}`);
+      const createResult = await this.ssh.execCommand(createFileCommand);
+      if (createResult.stderr) {
+        console.error('❌ Error uploading contract:', createResult.stderr);
+        throw new Error(`Failed to create contract file: ${createResult.stderr}`);
+      }
 
-      // Upload the contract file to the server
-      await this.ssh.putFile(contractFile.toString(), tempFilePath);
+      // Step 2: Move to Hardhat container-mounted path
+      const moveCommand = `mv ${tempFilePath} ${destPath}`;
+      console.log(`📂 Moving contract to: ${destPath}`);
+      const moveResult = await this.ssh.execCommand(moveCommand);
+      if (moveResult.stderr) {
+        console.error('❌ Error moving contract:', moveResult.stderr);
+        throw new Error(`Failed to move contract file: ${moveResult.stderr}`);
+      }
 
-      // Compile the contract first
+      // Step 3: Compile inside the container
       const compileCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat compile`;
+      console.log(`🛠️ Compiling contract inside container: ${this.CONTAINER_NAME}`);
       const compileResult = await this.ssh.execCommand(compileCommand);
 
-      if (compileResult.stderr) {
-        throw new Error(`Compilation failed: ${compileResult.stderr}`);
+      // Filter out npm notices from stderr
+      const filteredStderr = compileResult.stderr
+        .split('\n')
+        .filter((line) => !line.includes('npm notice'))
+        .join('\n');
+
+      if (filteredStderr) {
+        console.error('❌ Compilation error:', filteredStderr);
+        throw new Error(`Compilation failed: ${filteredStderr}`);
       }
+      console.log('✅ Compilation output:\n', compileResult.stdout);
 
-      // Move the file to the contracts directory
-      const moveCommand = `docker cp ${tempFilePath} ${this.CONTAINER_NAME}:/app/contracts/${contractName}.sol`;
-      await this.ssh.execCommand(moveCommand);
-
-      // Clean up the temporary file
-      await this.ssh.execCommand(`rm ${tempFilePath}`);
-
-      // Trigger deployment
+      // Step 4: Deploy the contract
       const deployCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`;
-      const result = await this.ssh.execCommand(deployCommand);
-
-      if (result.stderr) {
-        throw new Error(result.stderr);
+      console.log('🚀 Deploying contract...');
+      const deployResult = await this.ssh.execCommand(deployCommand);
+      if (deployResult.stderr) {
+        console.error('❌ Deployment error:', deployResult.stderr);
+        throw new Error(`Deployment failed: ${deployResult.stderr}`);
       }
+      console.log('✅ Deployment output:\n', deployResult.stdout);
 
-      return result.stdout;
+      return deployResult.stdout || 'Contract deployed successfully';
     } catch (error: any) {
+      console.error('🛑 Deployment process failed:', error);
       throw new Error(`Failed to deploy contract: ${error.message}`);
     } finally {
+      try {
+        // Cleanup: Remove the uploaded contract file
+        const cleanupCommand = `rm ${destPath}`;
+        console.log(`🧹 Cleaning up contract file at: ${destPath}`);
+        const cleanupResult = await this.ssh.execCommand(cleanupCommand);
+        if (cleanupResult.stderr) {
+          console.warn('⚠️ Warning: Failed to remove contract file:', cleanupResult.stderr);
+        } else {
+          console.log('🧼 Contract file removed successfully');
+        }
+      } catch (cleanupError) {
+        console.warn('⚠️ Warning: Failed to cleanup contract file:', cleanupError);
+      }
       await this.disconnectFromServer();
     }
   }

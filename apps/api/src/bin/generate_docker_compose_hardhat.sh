@@ -27,7 +27,7 @@ generate_docker_compose_hardhat() {
             sed "s/DOCKER_USER/$DOCKER_USER/g" |
             sed "s/NET_ID/$NET_ID/g" |
             sed "s/DNS_PLACEHOLDER/$DNS_PLACEHOLDER/g" |
-            sed "s/PRIVATE_KEY/$PRIVATE_KEY/g"
+            sed "s/PRIVATE_KEY_PLACEHOLDER/$PRIVATE_KEY/g"
     )
 
     NODE_DIR="$BASE_DIR/$NET_ID/hardhat"

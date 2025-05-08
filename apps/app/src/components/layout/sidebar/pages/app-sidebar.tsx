@@ -68,12 +68,23 @@ const data = {
     {
       title: 'Smart Contracts',
       url: '#',
+      isActive: true,
       icon: Code,
       items: [
         {
+          title: 'Deploy Smart Contract',
+          url: '/smartcontract',
+          disabled: false,
+        },
+        {
           title: 'Deployed Contracts',
+          url: '/deployedcontracts',
+          disabled: false,
+        },
+        {
+          title: 'Settings',
           url: '#',
-          disabled: true, // Future feature
+          disabled: true,
         },
       ],
     },

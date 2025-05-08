@@ -5,6 +5,7 @@ import authReducer from './v1/authSlice';
 import containerReducer from './v1/containerSlice';
 import networkReducer from './v1/networkSlice';
 import nodeReducer from './v1/nodeSlice';
+import smartContractReducer from './v1/smartContractSlice';
 import websocketReducer from './v1/websocketSlice';
 //v2 reducers
 // import blockchainReducer from './v2/blockchainSlice';
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   node: nodeReducer,
   network: networkReducer,
   websocket: websocketReducer,
+  smartContract: smartContractReducer,
 
   //v2 reducers
   blockchain: blockchainReducer,
