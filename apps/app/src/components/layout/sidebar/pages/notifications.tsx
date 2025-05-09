@@ -21,6 +21,8 @@ import { useEffect, useState } from 'react';
 
 //notifiction panel
 
+//notifiction panel
+
 export function NotificationPanel() {
   const dispatch = useAppDispatch();
   const [userId, setUserId] = useState<string | null>(null);
@@ -86,7 +88,8 @@ export function NotificationPanel() {
 
   const unreadCount = jobs.filter((job) => !readNotifications.has(job.id)).length;
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    if (!status) return 'default'; // or some fallback color
     switch (status.toLowerCase()) {
       case 'completed':
         return 'outline';
@@ -158,9 +161,9 @@ export function NotificationPanel() {
                       <p className="text-muted-foreground mt-1 text-sm">{job.status}</p>
                       <div className="mt-1 flex items-center justify-between">
                         <span className="text-muted-foreground text-xs">
-                          {formatDistanceToNow(new Date(job.updatedAt), {
-                            addSuffix: true,
-                          })}
+                          {job.updatedAt && !isNaN(new Date(job.updatedAt).getTime())
+                            ? formatDistanceToNow(new Date(job.updatedAt), { addSuffix: true })
+                            : 'Unknown time'}
                         </span>
                         {!isRead && <Dot size={24} className="text-warning" />}
                       </div>
