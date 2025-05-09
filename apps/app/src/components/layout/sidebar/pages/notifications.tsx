@@ -21,6 +21,8 @@ import { useEffect, useState } from 'react';
 
 //notifiction panel
 
+//notifiction panel
+
 export function NotificationPanel() {
   const dispatch = useAppDispatch();
   const [userId, setUserId] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export function NotificationPanel() {
     }
   };
 
-  const normalize = (status: string) => (status === 'Blockchain ready' ? 'Done' : status);
+  const normalize = (status: string) => (status === 'Blockchain ready' ? 'Done' : 'Processing...');
 
   return (
     <DropdownMenu onOpenChange={setIsOpen}>

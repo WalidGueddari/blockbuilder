@@ -146,21 +146,21 @@ export default function CreateNetworkDialog() {
     setIsLoading(true);
 
     // 1) Add a "pending" notification to Redux:
-    const notificationId = uuidv4();
-    dispatch(
-      addNotification({
-        id: notificationId,
-        title: `Creating network "${pendingValues.name}"`,
-        description: 'Starting network creation process...',
-        // status: 'pending',
-        time: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }),
-        read: false,
-      }),
-    );
+    // const notificationId = uuidv4();
+    // dispatch(
+    //   addNotification({
+    //     id: notificationId,
+    //     title: `Creating network "${pendingValues.name}"`,
+    //     description: 'Starting network creation process...',
+    //     // status: 'pending',
+    //     time: new Date().toLocaleTimeString([], {
+    //       hour: '2-digit',
+    //       minute: '2-digit',
+    //       hour12: false,
+    //     }),
+    //     read: false,
+    //   }),
+    // );
 
     try {
       const networkRes = await dispatch(
@@ -198,16 +198,16 @@ export default function CreateNetworkDialog() {
           ).unwrap();
 
           // 3) On success, update the original notification to 'success':
-          dispatch(
-            updateNotification({
-              id: notificationId,
-              changes: {
-                // status: 'success',
-                description: `Network "${pendingValues.name}" setup is fully complete.`,
-                read: false,
-              },
-            }),
-          );
+          // dispatch(
+          //   updateNotification({
+          //     id: notificationId,
+          //     changes: {
+          //       // status: 'success',
+          //       description: `Network "${pendingValues.name}" setup is fully complete.`,
+          //       read: false,
+          //     },
+          //   }),
+          // );
         } catch (err) {
           const errorMessage = getErrorMessage(err);
           console.error('Failed to complete the remaining setup steps:', err);
@@ -219,15 +219,15 @@ export default function CreateNetworkDialog() {
           });
 
           // Mark notification as error
-          dispatch(
-            updateNotification({
-              id: notificationId,
-              changes: {
-                // status: 'error',
-                description: `Network "${pendingValues.name}" setup failed: ${errorMessage}`,
-              },
-            }),
-          );
+          // dispatch(
+          //   updateNotification({
+          //     id: notificationId,
+          //     changes: {
+          //       // status: 'error',
+          //       description: `Network "${pendingValues.name}" setup failed: ${errorMessage}`,
+          //     },
+          //   }),
+          // );
         }
       })();
     } catch (err) {
@@ -242,15 +242,15 @@ export default function CreateNetworkDialog() {
       });
 
       // Mark notification as error
-      dispatch(
-        updateNotification({
-          id: notificationId,
-          changes: {
-            // status: 'error',
-            description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
-          },
-        }),
-      );
+      // dispatch(
+      //   updateNotification({
+      //     id: notificationId,
+      //     changes: {
+      //       // status: 'error',
+      //       description: `Failed to create network "${pendingValues.name}": ${errorMessage}`,
+      //     },
+      //   }),
+      // );
     } finally {
       setIsLoading(false);
     }
