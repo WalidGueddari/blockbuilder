@@ -10,7 +10,7 @@ import {
   updateStatus,
 } from '@/services/v1/websocketSlice';
 import { addNotification, updateNotification } from '@/services/v2/notificationSlice';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 interface UseWebSocketParams {
@@ -22,9 +22,22 @@ interface UseWebSocketParams {
   jobId?: string;
 }
 
-const useWebSocket = ({ mode, networkId, container, vmId, nodeId, jobId }: UseWebSocketParams) => {
+interface UseWebSocketReturn {
+  sendMessage: (msg: string) => void;
+  statusPayload?: any; // ← add this
+}
+
+const useWebSocket = ({
+  mode,
+  networkId,
+  container,
+  vmId,
+  nodeId,
+  jobId,
+}: UseWebSocketParams): UseWebSocketReturn => {
   const dispatch = useDispatch();
   const socketRef = useRef<WebSocket | null>(null);
+  const [statusPayload, setStatusPayload] = useState<any>(null);
 
   useEffect(() => {
     // figure out the URL strictly inside the effect
@@ -70,7 +83,12 @@ const useWebSocket = ({ mode, networkId, container, vmId, nodeId, jobId }: UseWe
               );
             break;
           case 'status':
-            data.data && dispatch(updateStatus(data.data.status));
+            if (data.data) {
+              dispatch(updateStatus(data.data.status));
+              if (data.data.network) {
+                setStatusPayload(data.data.network);
+              }
+            }
             break;
           case 'jobs':
             if (data.type === 'job_created') {

@@ -73,19 +73,29 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const mode = 'status';
-  useWebSocket({ mode, nodeId: nodes[0]?.id });
+  const { statusPayload } = useWebSocket({ mode, nodeId: nodes[0]?.id });
 
-  // Extract network data once to avoid redundancy
   const networkData = {
-    name: nodes[0]?.network?.name || 'Unknown Network',
-    ip: nodes[0]?.network?.server?.publicIpAddress || 'Unknown IP',
-    dns: nodes[0]?.network?.server?.dnsName || 'Unknown DNS',
-    blockscoutDns: nodes[0]?.network?.blockscoutServer?.dnsName,
-    chainId: nodes[0]?.network?.chainId?.toString() || 'Unknown Chain ID',
+    name: statusPayload?.name || nodes[0]?.network?.name || 'Unknown Network',
+    ip:
+      statusPayload?.blockscoutServer?.publicIpAddress ||
+      nodes[0]?.network?.server?.publicIpAddress ||
+      'Unknown IP',
+    dns:
+      statusPayload?.blockscoutServer?.dnsName ||
+      nodes[0]?.network?.server?.dnsName ||
+      'Unknown DNS',
+    blockscoutDns:
+      statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.blockscoutServer?.dnsName,
+    chainId:
+      statusPayload?.chainId?.toString() ||
+      nodes[0]?.network?.chainId?.toString() ||
+      'Unknown Chain ID',
     wallets: nodes[0]?.network?.allocs || [],
-    rpcUrl: nodes[0]?.network?.server?.dnsName
-      ? `https://${nodes[0]?.network?.server?.dnsName}`
-      : 'Unknown URL',
+    rpcUrl:
+      statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.server?.dnsName
+        ? `https://${statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.server?.dnsName}`
+        : 'Unknown URL',
   };
 
   const activeNodes = nodes.filter((node) => node.status === 'ACTIVE').length;
@@ -599,11 +609,12 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                   <span>View Transactions</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button className="w-full justify-between" variant="outline">
+                <Button disabled className="w-full justify-between" variant="outline">
                   <span>Monitor Gas Prices</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button
+                  disabled
                   className="w-full justify-between"
                   variant="outline"
                   onClick={() => setActiveTab('nodes')}
@@ -611,19 +622,19 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                   <span>Check Node Status</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button className="w-full justify-between" variant="outline">
+                <Button disabled className="w-full justify-between" variant="outline">
                   <span>Network Analytics</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </CardContent>
-              <CardFooter>
+              {/* <CardFooter>
                 <div className="bg-muted/50 flex w-full items-center gap-2 rounded-md p-3">
                   <Info className="h-4 w-4 text-blue-500" />
                   <p className="text-muted-foreground text-xs">
                     Access more actions in the network settings
                   </p>
                 </div>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           </div>
         </TabsContent>
