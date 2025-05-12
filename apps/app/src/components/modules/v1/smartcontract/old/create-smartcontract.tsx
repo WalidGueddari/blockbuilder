@@ -47,7 +47,6 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Highlight, themes } from 'prism-react-renderer';
-import defaultProps from 'prism-react-renderer';
 import { useEffect, useRef, useState } from 'react';
 
 // Example use cases for beginner mode
@@ -60,9 +59,9 @@ const exampleUseCases = [
     defaults: {
       name: 'MyToken',
       symbol: 'MTK',
-      mintable: true,
+      mintable: false,
       burnable: false,
-      pausable: true,
+      pausable: false,
     },
   },
   {
@@ -73,7 +72,7 @@ const exampleUseCases = [
     defaults: {
       name: 'MyNFTCollection',
       symbol: 'MNFT',
-      mintable: true,
+      mintable: false,
       burnable: false,
       pausable: false,
     },
@@ -86,9 +85,9 @@ const exampleUseCases = [
     defaults: {
       name: 'MyStableCoin',
       symbol: 'USDC',
-      mintable: true,
-      burnable: true,
-      pausable: true,
+      mintable: false,
+      burnable: false,
+      pausable: false,
     },
   },
   {
@@ -99,8 +98,8 @@ const exampleUseCases = [
     defaults: {
       name: 'MyMultiToken',
       symbol: '',
-      mintable: true,
-      burnable: true,
+      mintable: false,
+      burnable: false,
       pausable: false,
     },
   },
@@ -129,7 +128,7 @@ export default function SmartContractGenerator() {
   const [burnable, setBurnable] = useState(false);
   const [pausable, setPausable] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
-  const [selectedUseCase, setSelectedUseCase] = useState('');
+  const [selectedUseCase, setSelectedUseCase] = useState('token');
 
   // Add state to manage mode
   const [isBeginnerMode, setIsBeginnerMode] = useState(true);
@@ -235,13 +234,22 @@ export default function SmartContractGenerator() {
         });
         return;
       }
-      const result = await dispatch(
+      /* const result = await dispatch(
         deployContract({
           contractName: name || 'MyContract',
           contractContent: generatedCode,
           networkId: selectedNetworkId,
         }),
-      ).unwrap();
+      ).unwrap(); */
+      setLoading(true);
+      // Simulate a delay of 10 seconds
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+
+      // Simulate a successful deployment response
+      const result = {
+        result: '0x1234567890abcdef1234567890abcdef12345678', // Mock contract address
+      };
+      setLoading(false);
       setDeploymentSuccess({
         open: true,
         address: result.result,
@@ -1364,12 +1372,7 @@ contract ${name || 'CustomContract'} {
                   <Card>
                     <CardContent className="p-0">
                       <div ref={editorRef} className="relative">
-                        <Highlight
-                          {...defaultProps}
-                          code={generatedCode}
-                          language="solidity"
-                          theme={themes.nightOwl}
-                        >
+                        <Highlight code={generatedCode} language="solidity" theme={themes.nightOwl}>
                           {({ className, style, tokens, getLineProps, getTokenProps }) => (
                             <pre
                               className={`${className} max-h-[70vh] overflow-auto rounded`}
