@@ -5,7 +5,6 @@ import { Queue, QueueEvents } from 'bullmq';
 import closeWithGrace from 'close-with-grace';
 import { FastifyInstance, FastifyServerOptions, fastify } from 'fastify';
 
-import { serviceAccount } from './config/firebaseConfig.js';
 import './lib/deployWorker.js';
 
 interface FastifyWithAjv extends FastifyInstance {

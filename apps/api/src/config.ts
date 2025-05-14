@@ -126,9 +126,11 @@ export const config = {
   hardhatContainerName: requiredVar('HARDHAT_CONTAINER_NAME'),
 
   /*
-   * Firebase Configuration
+   * Redis Configuration
    */
-  firebaseProjectId: requiredVar('FIREBASE_PROJECT_ID'),
-  firebaseClientEmail: requiredVar('FIREBASE_CLIENT_EMAIL'),
-  firebasePrivateKey: requiredVar('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+
+  redisHost: requiredVar('REDIS_HOST'),
+  redisPort: requiredIntVar('REDIS_PORT'),
+  redisPassword: requiredVar('REDIS_PASSWORD'),
+  redisFamily: requiredIntVar('REDIS_FAMILY'),
 };

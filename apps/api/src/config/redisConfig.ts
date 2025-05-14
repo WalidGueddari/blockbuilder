@@ -1,9 +1,13 @@
 /* Shared connection options for BullMQ worker & queue */
 import type { RedisOptions } from 'ioredis';
 
+import { config } from '../config.js';
+
+const { redisHost, redisPort, redisPassword, redisFamily } = config;
+
 export const redisConfig: RedisOptions = {
-  host: process.env.REDIS_HOST ?? 'localhost',
-  port: Number(process.env.REDIS_PORT ?? '6379'),
-  password: process.env.REDIS_PASSWORD ?? 'passer',
-  family: 4,
+  host: redisHost,
+  port: redisPort,
+  password: redisPassword,
+  family: redisFamily,
 };
