@@ -23,25 +23,25 @@ model User {
 }
 
 model Network {
-  id                 String    @id @default(cuid())
+  id                 String             @id @default(cuid())
   name               String
-  type               String    @default("QBFT")
-  status             Status    @default(PENDING)
+  type               String             @default("QBFT")
+  status             Status             @default(PENDING)
   nodeCount          Int
   userId             String
-  chainId            Int       @default(1337)
-  user               User      @relation(fields: [userId], references: [id])
-  server             VmServer? @relation(fields: [serverId], references: [id])
+  chainId            Int                @default(1337)
+  user               User               @relation(fields: [userId], references: [id])
+  server             VmServer?          @relation(fields: [serverId], references: [id])
   serverId           String?
   nodes              Node[]
   genesis            Genesis?
   allocs             Alloc[]
-  blockscoutServer   VmServer? @relation("BlockscoutServer", fields: [blockscoutServerId], references: [id])
+  blockscoutServer   VmServer?          @relation("BlockscoutServer", fields: [blockscoutServerId], references: [id])
   blockscoutServerId String?
-
-  create_at  DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-  Job        Job[]
+  deployedContracts  DeployedContract[]
+  create_at          DateTime           @default(now())
+  updated_at         DateTime           @default(now()) @updatedAt
+  Job                Job[]
 }
 
 model Genesis {
@@ -143,4 +143,53 @@ enum UserRole {
   USER
   ADMIN
   DEMO
+}
+
+// Add new models for contract management
+model DeployedContract {
+  id           String                @id @default(cuid())
+  address      String                @unique
+  name         String
+  type         String
+  description  String?
+  tags         String[]
+  abi          Json? // Store ABI as JSON
+  deployedAt   DateTime              @default(now())
+  networkId    String
+  network      Network               @relation(fields: [networkId], references: [id])
+  interactions ContractInteraction[]
+  favorites    FavoriteContract[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+}
+
+model DraftContract {
+  id          String   @id @default(cuid())
+  name        String
+  content     String // Store contract source code
+  type        String?
+  description String?
+  tags        String[]
+  networkId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContractInteraction {
+  id           String           @id @default(cuid())
+  contractId   String
+  contract     DeployedContract @relation(fields: [contractId], references: [id])
+  functionName String
+  args         String[]
+  result       Json?
+  status       String // 'success' or 'error'
+  error        String?
+  createdAt    DateTime         @default(now())
+}
+
+model FavoriteContract {
+  id         String           @id @default(cuid())
+  contractId String
+  contract   DeployedContract @relation(fields: [contractId], references: [id])
+  createdAt  DateTime         @default(now())
 }

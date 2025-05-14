@@ -1,26 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
-import type { Contract } from '../types';
+import { useAppDispatch, useAppSelector } from '@/services/hooks';
+import {
+  addToFavorites,
+  fetchDeployedContracts,
+  fetchFavoriteContracts,
+  removeFromFavorites,
+} from '@/services/v1/smartContractSlice';
+import type { DeployedContract } from '@/types/smartContract';
+import { useEffect, useState } from 'react';
 
 // Mock data for initial contracts
-const mockDeployedContracts: Contract[] = [
+/* const mockDeployedContracts: DeployedContract[] = [
   {
-    id: '1',
+    address: '0x42AefF2F987dc0b23BbFa5dE1B58Cb2b43bD9273',
     name: 'BlockToken',
     type: 'ERC20',
-    address: '0x42AefF2F987dc0b23BbFa5dE1B58Cb2b43bD9273',
+    deployedAt: new Date().toISOString(),
     description: 'A standard ERC20 token for fast and secure value transfer.',
-    status: {
-      successCount: 12,
-      failureCount: 2,
-      lastInteraction: '2 hours ago',
-    },
-    accounts: [
-      { role: 'Owner', address: '0x1234567890abcdef1234567890abcdef12345678' },
-      { role: 'Minter', address: '0xabcdef1234567890abcdef1234567890abcdef12' },
-    ],
     tags: ['token', 'mainnet'],
     abi: [
       {
@@ -67,17 +64,11 @@ const mockDeployedContracts: Contract[] = [
     ],
   },
   {
-    id: '2',
+    address: '0x8f23b987D135c29aA29cE2456fD6d01d72eF4f80',
     name: 'RareCollectible',
     type: 'ERC721',
-    address: '0x8f23b987D135c29aA29cE2456fD6d01d72eF4f80',
+    deployedAt: new Date().toISOString(),
     description: 'A limited edition NFT series representing rare digital artwork.',
-    status: {
-      successCount: 5,
-      failureCount: 0,
-      lastInteraction: '1 day ago',
-    },
-    accounts: [{ role: 'Creator', address: '0x1234567890abcdef1234567890abcdef12345678' }],
     tags: ['nft', 'art', 'testnet'],
     abi: [
       {
@@ -114,16 +105,11 @@ const mockDeployedContracts: Contract[] = [
     ],
   },
   {
-    id: '3',
+    address: '0x3a4B7aB9BDFBD17F5E6B441E34e8123bBD52714A',
     name: 'MultiAssetToken',
     type: 'ERC1155',
-    address: '0x3a4B7aB9BDFBD17F5E6B441E34e8123bBD52714A',
+    deployedAt: new Date().toISOString(),
     description: 'A multi-asset token for gaming items and collectibles.',
-    status: {
-      successCount: 8,
-      failureCount: 1,
-      lastInteraction: '3 days ago',
-    },
     tags: ['gaming', 'multi-token', 'testnet'],
     abi: [
       {
@@ -154,87 +140,77 @@ const mockDeployedContracts: Contract[] = [
       },
     ],
   },
-];
+]; */
 
 export const useContractData = () => {
-  const [contracts, setContracts] = useState<Contract[]>(mockDeployedContracts);
+  const dispatch = useAppDispatch();
+  const { deployedContracts, loading, error } = useAppSelector((state) => state.smartContract);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [favoriteContracts, setFavoriteContracts] = useState<string[]>([]);
 
-  // Get all unique tags from contracts
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    contracts.forEach((contract) => {
-      contract.tags?.forEach((tag) => tagSet.add(tag));
-    });
-    return Array.from(tagSet);
-  }, [contracts]);
+  useEffect(() => {
+    dispatch(fetchDeployedContracts());
+    dispatch(fetchFavoriteContracts());
+  }, [dispatch]);
 
-  // Filter contracts based on search query and active filters
-  const filteredContracts = useMemo(() => {
-    return contracts.filter((contract) => {
-      // Filter by search query
-      const matchesSearch =
-        searchQuery === '' ||
-        contract.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contract.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contract.type.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Filter by active tags
-      const matchesFilters =
-        activeFilters.length === 0 ||
-        (contract.tags && contract.tags.some((tag) => activeFilters.includes(tag)));
-
-      return matchesSearch && matchesFilters;
-    });
-  }, [contracts, searchQuery, activeFilters]);
-
-  // Get favorite contracts
-  const favoritedContracts = useMemo(() => {
-    return filteredContracts.filter((contract) => favoriteContracts.includes(contract.id));
-  }, [filteredContracts, favoriteContracts]);
-
-  // Toggle a filter
-  const toggleFilter = (tag: string) => {
-    setActiveFilters((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setActiveFilters([]);
-  };
-
-  // Toggle favorite status for a contract
-  const toggleFavorite = (contractId: string) => {
-    setFavoriteContracts((prev) => {
-      if (prev.includes(contractId)) {
-        return prev.filter((id) => id !== contractId);
+  const handleToggleFavorite = async (contractAddress: string) => {
+    try {
+      if (favoriteContracts.includes(contractAddress)) {
+        await dispatch(removeFromFavorites(contractAddress)).unwrap();
+        setFavoriteContracts((prev) => prev.filter((addr) => addr !== contractAddress));
       } else {
-        return [...prev, contractId];
+        await dispatch(addToFavorites(contractAddress)).unwrap();
+        setFavoriteContracts((prev) => [...prev, contractAddress]);
       }
-    });
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    }
   };
 
-  // Add a new contract
-  const addContract = (contract: Contract) => {
-    setContracts((prev) => [contract, ...prev]);
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
+
+  const handleFilterChange = (filters: string[]) => {
+    setActiveFilters(filters);
+  };
+
+  const getUniqueTags = (contracts: DeployedContract[]): string[] => {
+    const tags = new Set<string>();
+    contracts.forEach((contract) => {
+      contract.tags?.forEach((tag) => tags.add(tag));
+    });
+    return Array.from(tags);
+  };
+
+  const filteredContracts = deployedContracts.filter((contract) => {
+    const matchesSearch =
+      contract.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contract.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contract.address.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesFilters =
+      activeFilters.length === 0 || activeFilters.some((filter) => contract.tags?.includes(filter));
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const favoritedContracts = deployedContracts.filter((contract) =>
+    favoriteContracts.includes(contract.address),
+  );
 
   return {
-    contracts,
-    filteredContracts,
+    contracts: filteredContracts,
     favoritedContracts,
+    loading,
+    error,
     searchQuery,
-    setSearchQuery,
     activeFilters,
-    allTags,
-    toggleFilter,
-    clearFilters,
     favoriteContracts,
-    toggleFavorite,
-    addContract,
+    uniqueTags: getUniqueTags(deployedContracts),
+    handleSearch,
+    handleFilterChange,
+    handleToggleFavorite,
   };
 };

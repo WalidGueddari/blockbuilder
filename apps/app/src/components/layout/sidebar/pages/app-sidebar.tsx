@@ -73,12 +73,17 @@ const data = {
       items: [
         {
           title: 'Deploy Smart Contract',
-          url: '/smartcontract',
+          url: '/smartcontract/create',
           disabled: false,
         },
         {
           title: 'Deployed Contracts',
-          url: '/deployedcontracts',
+          url: '/smartcontract/deployed',
+          disabled: false,
+        },
+        {
+          title: 'Drafts',
+          url: '/smartcontract/drafts',
           disabled: false,
         },
         {

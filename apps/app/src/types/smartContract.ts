@@ -3,10 +3,26 @@ export interface DeployedContract {
   name: string;
   type: string;
   deployedAt: string;
+  description?: string;
+  tags?: string[];
+  abi?: any[];
+}
+
+export interface DraftContract {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  networkId?: string;
+  description?: string;
+  tags?: string[];
+  type?: string;
 }
 
 export interface SmartContractState {
   deployedContracts: DeployedContract[];
+  drafts: DraftContract[];
   loading: boolean;
   error: string | null;
 }
@@ -26,10 +42,10 @@ export interface InteractContractPayload {
   networkId: string;
   address: string;
   functionName: string;
-  args?: string[];
+  args: string[];
 }
 
 export interface InteractContractResponse {
-  result: string;
+  result: any;
   error?: string;
 }

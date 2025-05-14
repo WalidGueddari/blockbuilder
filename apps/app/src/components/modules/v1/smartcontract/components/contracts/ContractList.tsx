@@ -1,14 +1,15 @@
 'use client';
 
-import ContractListItem from '../../old/sections/ContractListItem';
-import type { Contract } from '../../types';
+import type { DeployedContract } from '@/types/smartContract';
+
+import ContractListItem from './ContractListItem';
 import { EmptyState } from './EmptyState';
 
 interface ContractListProps {
-  contracts: Contract[];
+  contracts: DeployedContract[];
   favoriteContracts: string[];
   toggleFavorite: (contractId: string) => void;
-  openContractModal: (contract: Contract) => void;
+  openContractModal: (contract: DeployedContract) => void;
   type: 'all' | 'favorites';
   hasFilters: boolean;
 }
@@ -29,17 +30,21 @@ export const ContractList = ({
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {contracts.map((contract) => (
         <ContractListItem
-          key={contract.id}
+          key={contract.address}
           name={contract.name}
           type={contract.type}
           address={contract.address}
           description={contract.description}
-          status={contract.status}
-          accounts={contract.accounts}
+          status={{
+            successCount: 0,
+            failureCount: 0,
+            lastInteraction: contract.deployedAt,
+          }}
+          accounts={[]}
           tags={contract.tags}
           onInteract={() => openContractModal(contract)}
-          onToggleFavorite={() => toggleFavorite(contract.id)}
-          isFavorite={favoriteContracts.includes(contract.id)}
+          onToggleFavorite={() => toggleFavorite(contract.address)}
+          isFavorite={favoriteContracts.includes(contract.address)}
         />
       ))}
     </div>
