@@ -2,9 +2,10 @@
 
 import { useToast } from '@/components/ui/use-toast';
 import { useAppDispatch } from '@/services/hooks';
+import { deployContract } from '@/services/v1/smartContractSlice';
 import { useState } from 'react';
 
-import type { Contract, ContractConfig } from '../types';
+import type { ContractConfig } from '../types';
 
 interface DeploymentResult {
   contractAddress: string;
@@ -40,46 +41,25 @@ export const useDeployment = () => {
         return null;
       }
 
-      // TODO: Implement actual contract deployment
-      // This is a mock implementation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const result = await dispatch(
+        deployContract({
+          contractName,
+          contractContent: contractCode,
+          networkId,
+        }),
+      ).unwrap();
 
-      const mockResult: DeploymentResult = {
-        contractAddress: '0x' + Math.random().toString(16).slice(2, 42),
-        transactionHash: '0x' + Math.random().toString(16).slice(2, 66),
+      const deploymentResult: DeploymentResult = {
+        contractAddress: result.result,
+        transactionHash: result.result, // In a real implementation, we would get the transaction hash from the deployment result
       };
-
-      // If we have a config, save the deployed contract to our list
-      if (config) {
-        const newContract: Contract = {
-          id: Date.now().toString(),
-          name: config.name,
-          type: config.contractType,
-          address: mockResult.contractAddress,
-          description: config.description,
-          tags: config.tags,
-          abi: [], // In a real implementation, we would get the ABI from the compiled contract
-          status: {
-            successCount: 0,
-            failureCount: 0,
-            lastInteraction: new Date().toISOString(),
-          },
-          config: config,
-        };
-
-        // In a real implementation, we would save this to a database or state management
-        console.log('Deployed contract:', newContract);
-
-        // You could dispatch an action to add the contract to your state
-        // dispatch(addContract(newContract))
-      }
 
       toast({
         title: 'Success',
         description: `Contract ${contractName} deployed successfully!`,
       });
 
-      return mockResult;
+      return deploymentResult;
     } catch (error) {
       toast({
         title: 'Error',

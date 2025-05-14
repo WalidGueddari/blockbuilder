@@ -73,10 +73,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
   abi?: any[];
-  address?: string;
-  name?: string;
-  providerUrl?: string;
-  signerPrivateKey?: string;
+  address: string;
+  name: string;
+  onInteract: (
+    networkId: string,
+    address: string,
+    functionName: string,
+    args: string[],
+  ) => Promise<any>;
+  isInteracting?: boolean;
 }
 
 // Function descriptions for beginner mode
@@ -113,8 +118,10 @@ export default function ContractInteractionModal({
   open,
   onClose,
   abi = [],
-  address = '',
-  name = '',
+  address,
+  name,
+  onInteract,
+  isInteracting = false,
 }: Props) {
   const [inputs, setInputs] = useState<Record<string, string[]>>({});
   const [output, setOutput] = useState<Record<string, string>>({});
@@ -151,72 +158,97 @@ export default function ContractInteractionModal({
     });
   };
 
-  const handleCall = (fn: FunctionAbi) => {
+  const handleCall = async (fn: FunctionAbi) => {
     setLoading((prev) => ({ ...prev, [fn.name]: true }));
     setHighlightedAbiFunction(fn.name);
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
       const args = inputs[fn.name] || [];
       console.log(`Calling function ${fn.name} on ${address} with`, args);
 
-      // Mock responses based on function name for better demo
-      let mockResponse = '';
-      if (fn.name === 'name') {
-        mockResponse = name || 'TokenName';
-      } else if (fn.name === 'symbol') {
-        mockResponse = name?.substring(0, 3).toUpperCase() || 'TKN';
-      } else if (fn.name === 'totalSupply') {
-        mockResponse = '1000000000000000000000000';
-      } else if (fn.name === 'tokenURI') {
-        mockResponse = `https://example.com/metadata/${args[0] || '1'}.json`;
+      if (onInteract) {
+        const result = await onInteract('1', address, fn.name, args);
+        setOutput((prev) => ({ ...prev, [fn.name]: JSON.stringify(result) }));
       } else {
-        mockResponse = `Response: ${JSON.stringify(
-          fn.outputs.map((o) =>
-            o.type.includes('int')
-              ? '123456789000000000000'
-              : o.type === 'bool'
-                ? 'true'
-                : o.type === 'address'
-                  ? '0x123...'
-                  : 'Sample data',
-          ),
-        )}`;
+        // Mock responses based on function name for better demo
+        let mockResponse = '';
+        if (fn.name === 'name') {
+          mockResponse = name || 'TokenName';
+        } else if (fn.name === 'symbol') {
+          mockResponse = name?.substring(0, 3).toUpperCase() || 'TKN';
+        } else if (fn.name === 'totalSupply') {
+          mockResponse = '1000000000000000000000000';
+        } else if (fn.name === 'tokenURI') {
+          mockResponse = `https://example.com/metadata/${args[0] || '1'}.json`;
+        } else {
+          mockResponse = `Response: ${JSON.stringify(
+            fn.outputs.map((o) =>
+              o.type.includes('int')
+                ? '123456789000000000000'
+                : o.type === 'bool'
+                  ? 'true'
+                  : o.type === 'address'
+                    ? '0x123...'
+                    : 'Sample data',
+            ),
+          )}`;
+        }
+
+        // Format big numbers in the response
+        const formattedResponse =
+          mode === 'beginner' && fn.name === 'totalSupply'
+            ? formatBigNumber(mockResponse)
+            : mockResponse;
+
+        setOutput((prev) => ({ ...prev, [fn.name]: formattedResponse }));
       }
-
-      // Format big numbers in the response
-      const formattedResponse =
-        mode === 'beginner' && fn.name === 'totalSupply'
-          ? formatBigNumber(mockResponse)
-          : mockResponse;
-
-      setOutput((prev) => ({ ...prev, [fn.name]: formattedResponse }));
+    } catch (error) {
+      console.error('Error calling function:', error);
+      setOutput((prev) => ({
+        ...prev,
+        [fn.name]: `Error: ${error instanceof Error ? error.message : 'Failed to call function'}`,
+      }));
+    } finally {
       setLoading((prev) => ({ ...prev, [fn.name]: false }));
-    }, 1000);
+    }
   };
 
-  const handleSend = (fn: FunctionAbi) => {
+  const handleSend = async (fn: FunctionAbi) => {
     setLoading((prev) => ({ ...prev, [fn.name]: true }));
     setHighlightedAbiFunction(fn.name);
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
       const args = inputs[fn.name] || [];
       console.log(`Sending transaction to function ${fn.name} on ${address} with`, args);
 
-      const txHash =
-        '0x' +
-        Array(64)
-          .fill(0)
-          .map(() => Math.floor(Math.random() * 16).toString(16))
-          .join('');
+      if (onInteract) {
+        const result = await onInteract('1', address, fn.name, args);
+        setOutput((prev) => ({
+          ...prev,
+          [fn.name]: `Transaction sent! Result: ${JSON.stringify(result)}`,
+        }));
+      } else {
+        const txHash =
+          '0x' +
+          Array(64)
+            .fill(0)
+            .map(() => Math.floor(Math.random() * 16).toString(16))
+            .join('');
 
+        setOutput((prev) => ({
+          ...prev,
+          [fn.name]: `Transaction sent! Hash: ${txHash}`,
+        }));
+      }
+    } catch (error) {
+      console.error('Error sending transaction:', error);
       setOutput((prev) => ({
         ...prev,
-        [fn.name]: `Transaction sent! Hash: ${txHash}`,
+        [fn.name]: `Error: ${error instanceof Error ? error.message : 'Failed to send transaction'}`,
       }));
+    } finally {
       setLoading((prev) => ({ ...prev, [fn.name]: false }));
-    }, 1500);
+    }
   };
 
   const addToBatch = (fn: FunctionAbi) => {

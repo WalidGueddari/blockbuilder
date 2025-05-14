@@ -1,6 +1,8 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import { AdvancedMode } from './components/contract/creation/AdvancedMode';
@@ -18,9 +20,9 @@ const defaultConfig: ContractConfig = {
   contractType: 'ERC20',
   name: 'MyToken',
   symbol: 'MTK',
-  mintable: true,
-  burnable: true,
-  pausable: true,
+  mintable: false,
+  burnable: false,
+  pausable: false,
 };
 
 // Generate initial code for the default configuration
@@ -120,6 +122,13 @@ export const SmartContract = () => {
         <p className="text-muted-foreground mt-2">
           Create, customize, and deploy smart contracts with ease
         </p>
+        <div className="mt-4 flex justify-end">
+          <Link href="/drafts-page">
+            <Button variant="outline" size="sm">
+              View Saved Drafts
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <ModeSelector mode={mode} onModeChange={setMode} />
