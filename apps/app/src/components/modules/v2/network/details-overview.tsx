@@ -71,6 +71,21 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
   const [copied, setCopied] = useState<string | null>(null);
   const [networkHealth, setNetworkHealth] = useState<number>(0);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('user');
+    // console.log('Stored user:', stored);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed?.id) setUserRole(parsed.role);
+        // console.log('User role:', parsed.role);
+      } catch {
+        console.error('Invalid user in sessionStorage');
+      }
+    }
+  }, []);
 
   const mode = 'status';
   const { statusPayload } = useWebSocket({ mode, nodeId: nodes[0]?.id });
@@ -527,107 +542,108 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
           </Card>
 
           {/* Network Health and Quick Actions */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Network Health</CardTitle>
-                <CardDescription>Current status and performance</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-medium">Block Height</span>
+          {userRole !== 'DEMO' && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Network Health</CardTitle>
+                  <CardDescription>Current status and performance</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm font-medium">Block Height</span>
+                        </div>
+                        <span className="font-mono text-sm">{networkStats.blockHeight}</span>
                       </div>
-                      <span className="font-mono text-sm">{networkStats.blockHeight}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium">Gas Price</span>
+                        </div>
+                        <span className="font-mono text-sm">{networkStats.gasPrice}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-yellow-500" />
-                        <span className="text-sm font-medium">Gas Price</span>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-purple-500" />
+                          <span className="text-sm font-medium">Avg Block Time</span>
+                        </div>
+                        <span className="font-mono text-sm">{networkStats.avgBlockTime}</span>
                       </div>
-                      <span className="font-mono text-sm">{networkStats.gasPrice}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-medium">Peers</span>
+                        </div>
+                        <span className="font-mono text-sm">{networkStats.peers} connected</span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-purple-500" />
-                        <span className="text-sm font-medium">Avg Block Time</span>
+                      <span className="text-sm font-medium">Network Health</span>
+                      <span className="font-mono text-sm">{networkHealth}%</span>
+                    </div>
+                    <Progress value={networkHealth} className="h-2" />
+                    <div className="bg-muted rounded-md p-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                        <span className="text-sm font-medium">Network is healthy</span>
                       </div>
-                      <span className="font-mono text-sm">{networkStats.avgBlockTime}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium">Peers</span>
-                      </div>
-                      <span className="font-mono text-sm">{networkStats.peers} connected</span>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Last checked: {networkStats.lastChecked}
+                      </p>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Network Health</span>
-                    <span className="font-mono text-sm">{networkHealth}%</span>
-                  </div>
-                  <Progress value={networkHealth} className="h-2" />
-                  <div className="bg-muted rounded-md p-3">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                      <span className="text-sm font-medium">Network is healthy</span>
-                    </div>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      Last checked: {networkStats.lastChecked}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common network operations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  className="w-full justify-between"
-                  variant="outline"
-                  onClick={() =>
-                    window.open(
-                      networkData.blockscoutDns ? `https://${networkData.blockscoutDns}` : '#',
-                      '_blank',
-                    )
-                  }
-                  disabled={!networkData.blockscoutDns}
-                >
-                  <span>View Transactions</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button disabled className="w-full justify-between" variant="outline">
-                  <span>Monitor Gas Prices</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  disabled
-                  className="w-full justify-between"
-                  variant="outline"
-                  onClick={() => setActiveTab('nodes')}
-                >
-                  <span>Check Node Status</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button disabled className="w-full justify-between" variant="outline">
-                  <span>Network Analytics</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-              {/* <CardFooter>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Common network operations</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    className="w-full justify-between"
+                    variant="outline"
+                    onClick={() =>
+                      window.open(
+                        networkData.blockscoutDns ? `https://${networkData.blockscoutDns}` : '#',
+                        '_blank',
+                      )
+                    }
+                    disabled={!networkData.blockscoutDns}
+                  >
+                    <span>View Transactions</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button disabled className="w-full justify-between" variant="outline">
+                    <span>Monitor Gas Prices</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    disabled
+                    className="w-full justify-between"
+                    variant="outline"
+                    onClick={() => setActiveTab('nodes')}
+                  >
+                    <span>Check Node Status</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button disabled className="w-full justify-between" variant="outline">
+                    <span>Network Analytics</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+                {/* <CardFooter>
                 <div className="bg-muted/50 flex w-full items-center gap-2 rounded-md p-3">
                   <Info className="h-4 w-4 text-blue-500" />
                   <p className="text-muted-foreground text-xs">
@@ -635,8 +651,9 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                   </p>
                 </div>
               </CardFooter> */}
-            </Card>
-          </div>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         {/* Nodes Tab */}

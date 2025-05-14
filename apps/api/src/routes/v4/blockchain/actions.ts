@@ -65,17 +65,17 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
 
         console.log('Job created:', jobRow.id);
 
-        console.log('Starting Queue...');
-        await fastify.bull.deployQueue.add(
-          'deploy',
-          { payload: initNetPayload, networkId: initNetwork.id, jobId: jobRow.id },
-          {
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 60_000 },
-            removeOnComplete: { age: 86_400, count: 1000 },
-            removeOnFail: { age: 604_800 },
-          },
-        );
+        // console.log('Starting Queue...');
+        // await fastify.bull.deployQueue.add(
+        //   'deploy',
+        //   { payload: initNetPayload, networkId: initNetwork.id, jobId: jobRow.id },
+        //   {
+        //     attempts: 3,
+        //     backoff: { type: 'exponential', delay: 60_000 },
+        //     removeOnComplete: { age: 86_400, count: 1000 },
+        //     removeOnFail: { age: 604_800 },
+        //   },
+        // );
 
         return reply.send(initNetwork);
       } catch (error) {

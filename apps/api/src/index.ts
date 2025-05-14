@@ -23,7 +23,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
     verifyToken: () => Promise<void>;
-    verifyWsToken: () => Promise<void>;
+    limitDemoUserNetworks: () => Promise<void>;
     bull: {
       deployQueue: Queue;
       deployEvents: QueueEvents;

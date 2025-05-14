@@ -12,6 +12,7 @@ model User {
   name       String
   email      String     @unique
   password   String     @db.Text()
+  role       UserRole   @default(USER)
   create_at  DateTime   @default(now())
   updated_at DateTime   @default(now()) @updatedAt
   network    Network[]
@@ -136,4 +137,10 @@ enum Status {
   ACTIVE
   FAILED
   INACTIVE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  DEMO
 }

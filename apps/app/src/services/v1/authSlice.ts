@@ -12,6 +12,7 @@ interface AuthState {
     id: string;
     email: string;
     name: string;
+    role: string;
   } | null;
 }
 
@@ -32,6 +33,7 @@ export const login = createAsyncThunk(
       email,
       password,
     });
+    // console.log('login response', response);
     return response.data;
   },
 );

@@ -175,6 +175,8 @@ export class JobService {
       // Status 3: Deploying network
       await this._updateJobStatus(jobId, 'Deploying network');
       console.info('Step 4: Transferring network files');
+      if (!blockchainVm.dnsName) throw new Error('VM DNS name is missing');
+      await this.hardhatService.generateHardhatDockerCompose(networkId, blockchainVm.dnsName);
       await this.serverService.transferDirectoryByName(blockchainVm.id, network.id);
 
       console.info('Step 5: Starting blockchain nodes');
@@ -191,7 +193,6 @@ export class JobService {
       // Status 4: Setting up explorer
       await this._updateJobStatus(jobId, 'Setting up explorer');
       console.info('Step 6: Preparing explorer configuration');
-      if (!blockchainVm.dnsName) throw new Error('VM DNS name is missing');
       await this.blockscoutService._generateDockerComposeFile(
         network.chainId,
         blockchainVm.dnsName,

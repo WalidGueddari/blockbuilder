@@ -38,6 +38,7 @@ export class AuthenticationService {
           name: true,
           id: true,
           password: true,
+          role: true,
         },
       });
     } catch (err) {
@@ -52,7 +53,9 @@ export class AuthenticationService {
       id: user.id,
       email: user.email,
       name: user.email,
+      role: user.role,
     };
+    console.log('tokenPayload', tokenPayload);
     const accessToken = jwt.sign(tokenPayload, secret, signOptions);
     return {
       accessToken,

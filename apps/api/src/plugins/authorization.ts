@@ -35,23 +35,36 @@ async function authorization(fastify: FastifyInstance) {
     }
   }
 
-  async function verifyWsToken(request: FastifyRequest) {
-    let token: string | undefined = (request.headers['authorization'] as string | undefined)?.split(
-      ' ',
-    )[1];
+  async function limitDemoUserNetworks(request: FastifyRequest) {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: request.loggedUser.id,
+        role: 'DEMO',
+      },
+    });
 
-    if (!token && typeof request.query === 'object' && request.query !== null) {
-      token = (request.query as Record<string, string>).token;
+    console.info('user from auth plugin', user);
+
+    if (user) {
+      const networks = await prisma.network.count({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (networks >= 1) {
+        throw httpErrors.forbidden(
+          // @ts-ignore
+          request.t('entity-not-found', {
+            // @ts-ignore
+            entity: request.t('network'),
+          }) as string,
+        );
+      }
     }
-
-    if (!token) {
-      throw fastify.httpErrors.unauthorized('Missing access token');
-    }
-
-    request.loggedUser = await authorizationService.verifyAccessToken(token);
   }
 
-  fastify.decorate<any>('verifyWsToken', verifyWsToken);
+  fastify.decorate<any>('limitDemoUserNetworks', limitDemoUserNetworks);
   fastify.decorate<any>('verifyToken', verifyToken);
   fastify.decorateRequest<User | null>('loggedUser', null);
 }
