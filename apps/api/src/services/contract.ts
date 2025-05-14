@@ -1,4 +1,4 @@
-import { PrismaClient } from '@saas-monorepo/database';
+import { DraftContract, PrismaClient } from '@saas-monorepo/database';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { NodeSSH } from 'node-ssh';
@@ -246,5 +246,92 @@ export class ContractService {
     } finally {
       await this.disconnectFromServer();
     }
+  }
+}
+
+// apps/api/src/services/deployedContract.ts
+
+export class DeployedContractService {
+  prisma: PrismaClient;
+
+  constructor(options: AbstractServiceOptions) {
+    this.prisma = options.prisma;
+  }
+
+  async create(data: {
+    address: string;
+    name: string;
+    type: string;
+    description?: string;
+    tags: string[];
+    abi?: any;
+    networkId: string;
+  }) {
+    return this.prisma.deployedContract.create({
+      data,
+    });
+  }
+
+  async findAll() {
+    return this.prisma.deployedContract.findMany({
+      include: {
+        network: true,
+      },
+    });
+  }
+
+  async findById(id: string) {
+    return this.prisma.deployedContract.findUnique({
+      where: { id },
+      include: {
+        network: true,
+        interactions: true,
+      },
+    });
+  }
+}
+
+// apps/api/src/services/draftContract.ts
+export class DraftContractService {
+  prisma: PrismaClient;
+
+  constructor(options: AbstractServiceOptions) {
+    this.prisma = options.prisma;
+  }
+
+  async create(data: {
+    name: string;
+    content: string;
+    type?: string;
+    description?: string;
+    tags: string[];
+    networkId?: string;
+  }) {
+    return this.prisma.draftContract.create({
+      data,
+    });
+  }
+
+  async findAll() {
+    return this.prisma.draftContract.findMany();
+  }
+
+  async findById(id: string) {
+    return this.prisma.draftContract.findUnique({
+      where: { id },
+    });
+  }
+
+  async update(id: string, data: Partial<DraftContract>) {
+    return this.prisma.draftContract.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: string) {
+    return this.prisma.draftContract.delete({
+      where: { id },
+    });
   }
 }
