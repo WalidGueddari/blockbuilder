@@ -5,7 +5,7 @@ import { config } from '../../../config.js';
 import { blockchainSchema } from '../../../schemas/v2/blockchain.js';
 import { jobSchema } from '../../../schemas/v2/jobs.js';
 import { ContainerService } from '../../../services/containers.js';
-import { HardhatService } from '../../../services/hardhat.js';
+// import { HardhatService } from '../../../services/hardhat.js';
 import { JobService } from '../../../services/job.js';
 import { NewtorkSevice } from '../../../services/network.js';
 import { InitNetworkPayload } from '../../../types/network.js';
@@ -28,6 +28,14 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       const { initNetPayload } = request.body;
 
       try {
+        const isLimitReached = await jobService.limitDemoUserNetworks(initNetPayload.userId);
+
+        if (isLimitReached) {
+          return reply.send({
+            success: false,
+          });
+        }
+
         const initNetwork = await networkService.initNetwork(initNetPayload);
 
         const jobRow = await jobService.initJob(initNetwork.userId, initNetwork.id);
@@ -65,19 +73,19 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
 
         console.log('Job created:', jobRow.id);
 
-        // console.log('Starting Queue...');
-        // await fastify.bull.deployQueue.add(
-        //   'deploy',
-        //   { payload: initNetPayload, networkId: initNetwork.id, jobId: jobRow.id },
-        //   {
-        //     attempts: 3,
-        //     backoff: { type: 'exponential', delay: 60_000 },
-        //     removeOnComplete: { age: 86_400, count: 1000 },
-        //     removeOnFail: { age: 604_800 },
-        //   },
-        // );
+        console.log('Starting Queue...');
+        await fastify.bull.deployQueue.add(
+          'deploy',
+          { payload: initNetPayload, networkId: initNetwork.id, jobId: jobRow.id },
+          {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 60_000 },
+            removeOnComplete: { age: 86_400, count: 1000 },
+            removeOnFail: { age: 604_800 },
+          },
+        );
 
-        return reply.send(initNetwork);
+        return reply.send({ success: true, network: initNetwork });
       } catch (error) {
         console.error('Error starting network:', error);
         return reply.status(500).send({ error: 'Failed to start network' });

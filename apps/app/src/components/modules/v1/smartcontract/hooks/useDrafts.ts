@@ -26,7 +26,7 @@ export const useDrafts = () => {
       updatedAt: new Date().toISOString(),
       networkId: undefined,
       description: config.description,
-      tags: config.tags,
+      tags: config.tags || [],
     };
 
     dispatch(saveDraft(draft));

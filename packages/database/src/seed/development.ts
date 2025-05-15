@@ -4,14 +4,14 @@ import { UserRole, prisma } from '../client.js';
 
 export default async function seedDev() {
   await Promise.all([
-    // prisma.user.create({
-    //   data: {
-    //     password: bcrypt.hashSync('passer'),
-    //     email: 'max.mustermann@outlook.com'.toLowerCase(),
-    //     name: 'Max Mustermann',
-    //     role: UserRole.USER,
-    //   },
-    // }),
+    prisma.user.create({
+      data: {
+        password: bcrypt.hashSync('passer'),
+        email: 'max.mustermann@outlook.com'.toLowerCase(),
+        name: 'Max Mustermann',
+        role: UserRole.USER,
+      },
+    }),
     prisma.user.create({
       data: {
         password: bcrypt.hashSync('passer'),

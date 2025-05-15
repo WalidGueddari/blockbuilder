@@ -12,18 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import useWebSocket from '@/hooks/useWebSocket';
+import useJobsWebSocket from '@/hooks/useJobsWebSocket';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
 import { fetchJobsByUserId, updateNotification } from '@/services/v2/notificationSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { Bell, CheckCheck, Dot, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-//notifiction panel
-
-//notifiction panel
-
-//notifiction panel
 
 //notifiction panel
 
@@ -67,9 +61,7 @@ export function NotificationPanel() {
   const jobs = useAppSelector((state) => state.notifications.items);
   const jobIds = jobs.map((j) => j.id);
   // subscribe them all in one shot
-  jobIds.forEach((jobId) => {
-    useWebSocket({ mode: 'jobs', jobId });
-  });
+  useJobsWebSocket(jobIds);
   const loading = useAppSelector((state) => state.notifications.loading);
   const error = useAppSelector((state) => state.notifications.error);
 

@@ -14,9 +14,12 @@ export interface SetupNetworkParams {
 // The server returns an object that presumably has an `id`, `nodeCount`, etc.
 // Adjust these fields to match exactly what `initNetwork` actually returns.
 export interface SetupNetworkResponse {
-  id: string;
-  nodeCount: number;
-  serverId: string;
+  success: boolean;
+  network?: {
+    id: string;
+    nodeCount: number;
+    serverId: string;
+  };
 }
 
 // export interface SetupNetworkResponse {
