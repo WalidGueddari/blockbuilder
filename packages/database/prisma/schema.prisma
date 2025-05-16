@@ -147,32 +147,36 @@ enum UserRole {
 
 // Add new models for contract management
 model DeployedContract {
-  id           String                @id @default(cuid())
-  address      String                @unique
-  name         String
-  type         String
-  description  String?
-  tags         String[]
-  abi          Json? // Store ABI as JSON
-  deployedAt   DateTime              @default(now())
-  networkId    String
-  network      Network               @relation(fields: [networkId], references: [id])
-  interactions ContractInteraction[]
-  favorites    FavoriteContract[]
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  id              String                @id @default(cuid())
+  address         String                @unique
+  name            String
+  type            String
+  description     String?
+  tags            String[]
+  abi             Json? // Store ABI as JSON
+  transactionHash String // ✅ Add this line
+  deployedAt      DateTime              @default(now())
+  networkId       String
+  network         Network               @relation(fields: [networkId], references: [id])
+  interactions    ContractInteraction[]
+  favorites       FavoriteContract[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 }
 
 model DraftContract {
   id          String   @id @default(cuid())
   name        String
-  content     String // Store contract source code
-  type        String?
+  type        String? // Corresponds to ContractConfig.contractType
+  content     String   @db.Text // Solidity code or main content
   description String?
   tags        String[]
-  networkId   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  networkId   String? // Optional: if the draft is associated with a specific network context
+  config      Json? // Added: To store the ContractConfig object
+  isFavorite  Boolean  @default(false) // Added: To track favorite status
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ContractInteraction {
@@ -187,9 +191,4 @@ model ContractInteraction {
   createdAt    DateTime         @default(now())
 }
 
-model FavoriteContract {
-  id         String           @id @default(cuid())
-  contractId String
-  contract   DeployedContract @relation(fields: [contractId], references: [id])
-  createdAt  DateTime         @default(now())
-}
+

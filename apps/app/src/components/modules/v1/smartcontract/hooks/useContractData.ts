@@ -1,12 +1,8 @@
 'use client';
 
+import { useToast } from '@/components/ui/use-toast';
 import { useAppDispatch, useAppSelector } from '@/services/hooks';
-import {
-  addToFavorites,
-  fetchDeployedContracts,
-  fetchFavoriteContracts,
-  removeFromFavorites,
-} from '@/services/v1/smartContractSlice';
+import { fetchDeployedContracts, toggleFavorite } from '@/services/v1/smartContractSlice';
 import type { DeployedContract } from '@/types/smartContract';
 import { useEffect, useState } from 'react';
 
@@ -144,27 +140,35 @@ import { useEffect, useState } from 'react';
 
 export const useContractData = () => {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const { deployedContracts, loading, error } = useAppSelector((state) => state.smartContract);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [favoriteContracts, setFavoriteContracts] = useState<string[]>([]);
 
   useEffect(() => {
     dispatch(fetchDeployedContracts());
-    dispatch(fetchFavoriteContracts());
   }, [dispatch]);
 
-  const handleToggleFavorite = async (contractAddress: string) => {
+  const handleToggleFavorite = async (contractId: string) => {
     try {
-      if (favoriteContracts.includes(contractAddress)) {
-        await dispatch(removeFromFavorites(contractAddress)).unwrap();
-        setFavoriteContracts((prev) => prev.filter((addr) => addr !== contractAddress));
-      } else {
-        await dispatch(addToFavorites(contractAddress)).unwrap();
-        setFavoriteContracts((prev) => [...prev, contractAddress]);
+      const contract = deployedContracts.find((c) => c.id === contractId);
+      if (!contract) {
+        throw new Error('Contract not found');
       }
+
+      const response = await dispatch(toggleFavorite(contractId)).unwrap();
+
+      toast({
+        title: response.isFavorite ? 'Added to Favorites' : 'Removed from Favorites',
+        description: `Contract ${contract.name} has been ${response.isFavorite ? 'added to' : 'removed from'} your favorites.`,
+      });
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update favorite status',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -196,9 +200,7 @@ export const useContractData = () => {
     return matchesSearch && matchesFilters;
   });
 
-  const favoritedContracts = deployedContracts.filter((contract) =>
-    favoriteContracts.includes(contract.address),
-  );
+  const favoritedContracts = deployedContracts.filter((contract) => contract.favorites.length > 0);
 
   return {
     contracts: filteredContracts,
@@ -207,7 +209,6 @@ export const useContractData = () => {
     error,
     searchQuery,
     activeFilters,
-    favoriteContracts,
     uniqueTags: getUniqueTags(deployedContracts),
     handleSearch,
     handleFilterChange,

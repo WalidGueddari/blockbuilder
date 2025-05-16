@@ -7,12 +7,61 @@ import { promisify } from 'util';
 
 import { AbstractServiceOptions } from '../types/services.js';
 
+// Define ContractConfig locally, mirroring the frontend structure
+// This should ideally be a shared type if possible in your monorepo structure.
+export type ContractType =
+  | 'ERC20'
+  | 'ERC721'
+  | 'ERC1155'
+  | 'Stablecoin'
+  | 'RWA'
+  | 'Governor'
+  | 'Custom'
+  | 'Imported';
+
+export interface ContractConfig {
+  contractType: ContractType;
+  name: string;
+  symbol: string;
+  mintable: boolean;
+  burnable: boolean;
+  pausable: boolean;
+  decimals?: number;
+  initialSupply?: string;
+  maxSupply?: string;
+  royaltyFee?: number;
+  governanceSettings?: {
+    votingDelay: number;
+    votingPeriod: number;
+    proposalThreshold: number;
+  };
+  rwaSettings?: {
+    assetType: string;
+    jurisdiction: string;
+    complianceRequired: boolean;
+  };
+  stablecoinSettings?: {
+    pegCurrency: string;
+    oracleAddress?: string;
+  };
+  baseUri?: string;
+  governorName?: string;
+  votingDelay?: number; // Note: Duplicated from governanceSettings, check if intentional
+  votingPeriod?: number; // Note: Duplicated from governanceSettings, check if intentional
+  proposalThreshold?: number; // Note: Duplicated from governanceSettings, check if intentional
+  quorumNumerator?: number;
+  customCode?: string; // This is usually the main contract code, `content` in DraftContract seems to be this.
+  description?: string;
+  tags?: string[];
+}
+
 const execAsync = promisify(exec);
 
 export class ContractService {
   prisma: PrismaClient;
   private readonly CONTAINER_NAME = 'hardhat';
   private readonly ssh: NodeSSH;
+  private readonly deployedContractService: DeployedContractService;
   private readonly config = {
     sshKeyDir: process.env.SSH_KEY_DIR || '',
   };
@@ -20,6 +69,7 @@ export class ContractService {
   constructor(options: AbstractServiceOptions) {
     this.prisma = options.prisma;
     this.ssh = new NodeSSH();
+    this.deployedContractService = new DeployedContractService(options);
   }
 
   private async getSSHConnection(networkId: string) {
@@ -131,78 +181,103 @@ export class ContractService {
     networkId: string,
     contractFile: Buffer,
     contractName: string,
-  ): Promise<string> {
+    options: {
+      abi: any;
+      description?: string;
+      tags?: string[];
+      config?: ContractConfig;
+    },
+  ): Promise<{ contractAddress: string; transactionHash: string }> {
     console.log(`🚀 Starting contract deployment: ${contractName} on network: ${networkId}`);
 
+    // Build paths
     const tempFilePath = `/tmp/${contractName}.sol`;
     const destPath = `.containers/${networkId}/hardhat/contracts/${contractName}.sol`;
 
     try {
       await this.connectToServer(networkId);
 
-      // Step 1: Upload contract to temp file
-      const contractContent = contractFile.toString('utf-8');
-      const createFileCommand = `echo '${contractContent.replace(/'/g, "'\\''")}' > ${tempFilePath}`;
-      console.log(`📦 Uploading contract to: ${tempFilePath}`);
-      const createResult = await this.ssh.execCommand(createFileCommand);
-      if (createResult.stderr) {
-        console.error('❌ Error uploading contract:', createResult.stderr);
-        throw new Error(`Failed to create contract file: ${createResult.stderr}`);
-      }
+      // 1️⃣ Upload to temp file
+      const source = contractFile.toString('utf-8');
+      const safeContent = source.replace(/'/g, "'\\''");
+      await this.ssh.execCommand(`echo '${safeContent}' > ${tempFilePath}`);
 
-      // Step 2: Move to Hardhat container-mounted path
-      const moveCommand = `mv ${tempFilePath} ${destPath}`;
-      console.log(`📂 Moving contract to: ${destPath}`);
-      const moveResult = await this.ssh.execCommand(moveCommand);
-      if (moveResult.stderr) {
-        console.error('❌ Error moving contract:', moveResult.stderr);
-        throw new Error(`Failed to move contract file: ${moveResult.stderr}`);
-      }
+      // 2️⃣ Move into container-mounted dir
+      await this.ssh.execCommand(`mv ${tempFilePath} ${destPath}`);
 
-      // Step 3: Compile inside the container
-      const compileCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat compile`;
-      console.log(`🛠️ Compiling contract inside container: ${this.CONTAINER_NAME}`);
-      const compileResult = await this.ssh.execCommand(compileCommand);
-
-      // Filter out npm notices from stderr
-      const filteredStderr = compileResult.stderr
+      // 3️⃣ Compile
+      const compile = await this.ssh.execCommand(
+        `docker exec ${this.CONTAINER_NAME} npx hardhat compile`,
+      );
+      const compileErr = compile.stderr
         .split('\n')
-        .filter((line) => !line.includes('npm notice'))
+        .filter((l) => !l.includes('npm notice'))
         .join('\n');
+      if (compileErr) throw new Error(`Compilation failed: ${compileErr}`);
+      console.log('✅ Compilation succeeded');
 
-      if (filteredStderr) {
-        console.error('❌ Compilation error:', filteredStderr);
-        throw new Error(`Compilation failed: ${filteredStderr}`);
-      }
-      console.log('✅ Compilation output:\n', compileResult.stdout);
+      // 4️⃣ Deploy
+      const deploy = await this.ssh.execCommand(
+        `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`,
+      );
+      if (deploy.stderr) throw new Error(`Deployment failed: ${deploy.stderr}`);
+      console.log('✅ Raw deploy output:\n', deploy.stdout);
 
-      // Step 4: Deploy the contract
-      const deployCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`;
-      console.log('🚀 Deploying contract...');
-      const deployResult = await this.ssh.execCommand(deployCommand);
-      if (deployResult.stderr) {
-        console.error('❌ Deployment error:', deployResult.stderr);
-        throw new Error(`Deployment failed: ${deployResult.stderr}`);
-      }
-      console.log('✅ Deployment output:\n', deployResult.stdout);
-
-      return deployResult.stdout || 'Contract deployed successfully';
-    } catch (error: any) {
-      console.error('🛑 Deployment process failed:', error);
-      throw new Error(`Failed to deploy contract: ${error.message}`);
-    } finally {
+      // 5️⃣ Parse JSON result
+      let parsed: {
+        contractAddress: string;
+        transactionHash: string;
+        contractName?: string;
+        artifactPath?: string;
+      };
       try {
-        // Cleanup: Remove the uploaded contract file
-        const cleanupCommand = `rm ${destPath}`;
-        console.log(`🧹 Cleaning up contract file at: ${destPath}`);
-        const cleanupResult = await this.ssh.execCommand(cleanupCommand);
-        if (cleanupResult.stderr) {
-          console.warn('⚠️ Warning: Failed to remove contract file:', cleanupResult.stderr);
+        const stdout = deploy.stdout.trim();
+        // Attempt to find the JSON part of the output
+        // Assumes the JSON output is the last significant block of text that starts with { and ends with }
+        const jsonStartIndex = stdout.lastIndexOf('{');
+        const jsonEndIndex = stdout.lastIndexOf('}');
+
+        if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+          const jsonString = stdout.substring(jsonStartIndex, jsonEndIndex + 1);
+          console.log('Attempting to parse JSON:', jsonString);
+          parsed = JSON.parse(jsonString);
         } else {
-          console.log('🧼 Contract file removed successfully');
+          throw new Error('Could not find JSON in deployment output.');
         }
-      } catch (cleanupError) {
-        console.warn('⚠️ Warning: Failed to cleanup contract file:', cleanupError);
+      } catch (err) {
+        console.error('❌ Could not parse deployment output. stdout content was:', deploy.stdout);
+        throw new Error(
+          `Invalid deployment result format or JSON not found: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      const { contractAddress, transactionHash } = parsed;
+
+      // 6️⃣ Persist to database
+      await this.deployedContractService.create({
+        address: contractAddress,
+        name: contractName,
+        type: options.config?.contractType ?? 'Custom',
+        description: options.description,
+        tags: options.tags ?? [],
+        abi: options.abi,
+        networkId,
+        transactionHash,
+      });
+
+      console.log('✅ Deployment saved to database:', contractAddress);
+
+      return { contractAddress, transactionHash };
+    } catch (err: any) {
+      console.error('🛑 Deployment error:', err);
+      throw new Error(`Failed to deploy contract: ${err.message}`);
+    } finally {
+      // Cleanup file inside container workspace
+      try {
+        await this.ssh.execCommand(`rm ${destPath}`);
+        console.log('🧼 Cleaned up deployed contract file');
+      } catch {
+        console.warn('⚠️ Could not remove contract file');
       }
       await this.disconnectFromServer();
     }
@@ -249,7 +324,7 @@ export class ContractService {
   }
 }
 
-// apps/api/src/services/deployedContract.ts
+// deployedContract services
 
 export class DeployedContractService {
   prisma: PrismaClient;
@@ -266,6 +341,7 @@ export class DeployedContractService {
     tags: string[];
     abi?: any;
     networkId: string;
+    transactionHash: string;
   }) {
     return this.prisma.deployedContract.create({
       data,
@@ -276,6 +352,7 @@ export class DeployedContractService {
     return this.prisma.deployedContract.findMany({
       include: {
         network: true,
+        favorites: true,
       },
     });
   }
@@ -286,12 +363,41 @@ export class DeployedContractService {
       include: {
         network: true,
         interactions: true,
+        favorites: true,
       },
     });
   }
+
+  async toggleFavorite(contractId: string): Promise<{ isFavorite: boolean }> {
+    const contract = await this.prisma.deployedContract.findUnique({
+      where: { id: contractId },
+      include: { favorites: true },
+    });
+
+    if (!contract) {
+      throw new Error('Contract not found');
+    }
+
+    if (contract.favorites.length > 0) {
+      // Remove favorite
+      const favorite = contract.favorites[0]!;
+      await this.prisma.favoriteContract.delete({
+        where: { id: favorite.id },
+      });
+      return { isFavorite: false };
+    } else {
+      // Add favorite
+      await this.prisma.favoriteContract.create({
+        data: {
+          contractId,
+        },
+      });
+      return { isFavorite: true };
+    }
+  }
 }
 
-// apps/api/src/services/draftContract.ts
+// draftContract services
 export class DraftContractService {
   prisma: PrismaClient;
 
@@ -301,14 +407,19 @@ export class DraftContractService {
 
   async create(data: {
     name: string;
-    content: string;
     type?: string;
+    content: string;
     description?: string;
     tags: string[];
     networkId?: string;
+    config: ContractConfig;
   }) {
     return this.prisma.draftContract.create({
-      data,
+      data: {
+        ...data,
+        type: data.config.contractType,
+        config: JSON.parse(JSON.stringify(data.config)),
+      },
     });
   }
 
@@ -322,10 +433,14 @@ export class DraftContractService {
     });
   }
 
-  async update(id: string, data: Partial<DraftContract>) {
+  async update(id: string, data: Partial<DraftContract & { config?: ContractConfig }>) {
+    const updateData: any = { ...data };
+    if (data.config && data.config.contractType) {
+      updateData.type = data.config.contractType;
+    }
     return this.prisma.draftContract.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

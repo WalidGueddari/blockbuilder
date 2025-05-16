@@ -24,7 +24,6 @@ export default function DeployedContractsPage() {
     error,
     searchQuery,
     activeFilters,
-    favoriteContracts,
     uniqueTags,
     handleSearch,
     handleFilterChange,
@@ -146,7 +145,6 @@ export default function DeployedContractsPage() {
         <TabsContent value="all">
           <ContractList
             contracts={contracts}
-            favoriteContracts={favoriteContracts}
             toggleFavorite={handleToggleFavorite}
             openContractModal={openContractModal}
             type="all"
@@ -157,7 +155,6 @@ export default function DeployedContractsPage() {
         <TabsContent value="favorites">
           <ContractList
             contracts={favoritedContracts}
-            favoriteContracts={favoriteContracts}
             toggleFavorite={handleToggleFavorite}
             openContractModal={openContractModal}
             type="favorites"

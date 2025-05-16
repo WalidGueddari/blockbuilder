@@ -13,6 +13,11 @@ class SmartContractService {
     contractName,
     contractContent,
     networkId,
+    description,
+    tags,
+    abi,
+    type,
+    config,
   }: DeployContractPayload): Promise<DeployContractResponse> {
     try {
       const response = await axios.post(
@@ -20,6 +25,11 @@ class SmartContractService {
         {
           contractName,
           contractContent,
+          description,
+          tags,
+          abi,
+          type,
+          config,
         },
       );
       return response.data;
@@ -63,37 +73,15 @@ class SmartContractService {
     }
   }
 
-  async addToFavorites(contractAddress: string): Promise<void> {
+  async toggleFavorite(contractId: string): Promise<{ isFavorite: boolean }> {
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/favorites`, {
-        contractAddress,
-      });
-    } catch (error: any) {
-      console.error('Add to favorites error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || 'Failed to add contract to favorites');
-    }
-  }
-
-  async removeFromFavorites(contractAddress: string): Promise<void> {
-    try {
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/favorites/${contractAddress}`,
-      );
-    } catch (error: any) {
-      console.error('Remove from favorites error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || 'Failed to remove contract from favorites');
-    }
-  }
-
-  async getFavoriteContracts(): Promise<string[]> {
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/favorites`,
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/deployed/${contractId}/favorite`,
       );
       return response.data;
     } catch (error: any) {
-      console.error('Get favorite contracts error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.error || 'Failed to get favorite contracts');
+      console.error('Toggle favorite error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Failed to toggle favorite');
     }
   }
 
