@@ -38,6 +38,27 @@ export class JobService {
     this.hardhatService = new HardhatService(options);
   }
 
+  async limitDemoUserNetworks(userId: string): Promise<boolean> {
+    try {
+      const demoUser = await this.prisma.user.findUnique({
+        where: { id: userId, role: 'DEMO' },
+      });
+
+      if (!demoUser) {
+        return false;
+      }
+
+      const networksCount = await this.prisma.network.count({
+        where: { userId: demoUser.id },
+      });
+
+      return networksCount >= 1;
+    } catch (error) {
+      console.error('Error checking demo user network limit:', error);
+      throw error;
+    }
+  }
+
   /** Patch one job record with the latest status & (optionally) error */
   private async _updateJobStatus(jobId: string, status: string, errorMessage?: string) {
     try {

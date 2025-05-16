@@ -5,7 +5,7 @@ import { config } from '../../../config.js';
 import { blockchainSchema } from '../../../schemas/v2/blockchain.js';
 import { jobSchema } from '../../../schemas/v2/jobs.js';
 import { ContainerService } from '../../../services/containers.js';
-import { HardhatService } from '../../../services/hardhat.js';
+// import { HardhatService } from '../../../services/hardhat.js';
 import { JobService } from '../../../services/job.js';
 import { NewtorkSevice } from '../../../services/network.js';
 import { InitNetworkPayload } from '../../../types/network.js';
@@ -28,6 +28,14 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       const { initNetPayload } = request.body;
 
       try {
+        const isLimitReached = await jobService.limitDemoUserNetworks(initNetPayload.userId);
+
+        if (isLimitReached) {
+          return reply.send({
+            success: false,
+          });
+        }
+
         const initNetwork = await networkService.initNetwork(initNetPayload);
 
         const jobRow = await jobService.initJob(initNetwork.userId, initNetwork.id);
@@ -77,7 +85,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
           },
         );
 
-        return reply.send(initNetwork);
+        return reply.send({ success: true, network: initNetwork });
       } catch (error) {
         console.error('Error starting network:', error);
         return reply.status(500).send({ error: 'Failed to start network' });

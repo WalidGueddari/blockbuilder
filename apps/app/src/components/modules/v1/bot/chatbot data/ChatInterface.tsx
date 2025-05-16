@@ -70,7 +70,7 @@ export default function Chat() {
         }),
       ).unwrap();
 
-      if (!networkRes?.id) throw new Error('Network setup failed');
+      if (!networkRes?.network?.id) throw new Error('Network setup failed');
 
       // Step 4: Start network
       // await dispatch(
@@ -95,7 +95,7 @@ export default function Chat() {
       ]);
 
       // Redirect after delay
-      router.push(`/network/${networkRes.id}`);
+      router.push(`/network/${networkRes.network.id}`);
     } catch (error) {
       const errorMessage = (error as Error).message;
       setMessages((prev) => [

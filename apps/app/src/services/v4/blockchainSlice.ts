@@ -29,7 +29,7 @@ export const startNetwork = createAsyncThunk<
         initNetPayload,
       },
     );
-    return res.data; // typed as SetupNetworkResponse
+    return res.data;
   } catch (err: any) {
     return rejectWithValue(err.response?.data || err.message);
   }
