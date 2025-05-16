@@ -200,7 +200,7 @@ export const useContractData = () => {
     return matchesSearch && matchesFilters;
   });
 
-  const favoritedContracts = deployedContracts.filter((contract) => contract.favorites.length > 0);
+  const favoritedContracts = filteredContracts.filter((contract) => contract.favorites.length > 0);
 
   return {
     contracts: filteredContracts,
