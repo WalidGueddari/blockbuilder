@@ -35,7 +35,7 @@ export const SearchBar = ({ searchQuery, setSearchQuery, onImportClick }: Search
         <Button
           variant="default"
           className="gap-2"
-          onClick={() => router.push('/create-smartcontract')}
+          onClick={() => router.push('/smartcontract/create')}
         >
           <Plus className="h-4 w-4" />
           <span>Create New</span>
