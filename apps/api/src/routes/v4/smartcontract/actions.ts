@@ -194,7 +194,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   );
 
   // Route to verify a deployed contract
-  fastify.post(
+  /*   fastify.post(
     '/:networkId/verify',
     {
       schema: {
@@ -268,7 +268,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         reply.code(500).send({ error: error.message });
       }
     },
-  );
+  ); */
 
   // New routes for Deployed Contracts
 

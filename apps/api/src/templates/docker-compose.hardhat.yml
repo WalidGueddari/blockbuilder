@@ -1,6 +1,6 @@
 services:
   hardhat:
-    image: DOCKER_USER/HARDHAT_CONTAINER_NAME:v1
+    image: DOCKER_USER/HARDHAT_CONTAINER_NAME:latest
     container_name: hardhat
     ports:
       - "8540:8540"

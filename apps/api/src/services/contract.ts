@@ -187,7 +187,7 @@ export class ContractService {
       tags?: string[];
       config?: ContractConfig;
     },
-  ): Promise<{ contractAddress: string; transactionHash: string }> {
+  ): Promise<{ contractAddress: string; transactionHash: string; abi: any }> {
     console.log(`🚀 Starting contract deployment: ${contractName} on network: ${networkId}`);
 
     // Build paths
@@ -229,21 +229,16 @@ export class ContractService {
         transactionHash: string;
         contractName?: string;
         artifactPath?: string;
+        abi: any;
       };
       try {
         const stdout = deploy.stdout.trim();
-        // Attempt to find the JSON part of the output
-        // Assumes the JSON output is the last significant block of text that starts with { and ends with }
-        const jsonStartIndex = stdout.lastIndexOf('{');
-        const jsonEndIndex = stdout.lastIndexOf('}');
-
-        if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
-          const jsonString = stdout.substring(jsonStartIndex, jsonEndIndex + 1);
-          console.log('Attempting to parse JSON:', jsonString);
-          parsed = JSON.parse(jsonString);
-        } else {
+        // Find the last complete JSON object in the output
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
           throw new Error('Could not find JSON in deployment output.');
         }
+        parsed = JSON.parse(jsonMatch[0]);
       } catch (err) {
         console.error('❌ Could not parse deployment output. stdout content was:', deploy.stdout);
         throw new Error(
@@ -251,7 +246,7 @@ export class ContractService {
         );
       }
 
-      const { contractAddress, transactionHash } = parsed;
+      const { contractAddress, transactionHash, abi } = parsed; // Extract ABI from parsed result
 
       // 6️⃣ Persist to database
       await this.deployedContractService.create({
@@ -260,14 +255,14 @@ export class ContractService {
         type: options.config?.contractType ?? 'Custom',
         description: options.description,
         tags: options.tags ?? [],
-        abi: options.abi,
+        abi: abi, // Use the ABI from deployment if available, fallback to options.abi
         networkId,
         transactionHash,
       });
 
       console.log('✅ Deployment saved to database:', contractAddress);
 
-      return { contractAddress, transactionHash };
+      return { contractAddress, transactionHash, abi };
     } catch (err: any) {
       console.error('🛑 Deployment error:', err);
       throw new Error(`Failed to deploy contract: ${err.message}`);
@@ -283,7 +278,7 @@ export class ContractService {
     }
   }
 
-  async verifyContract(networkId: string, address: string, contractName: string): Promise<string> {
+  /* async verifyContract(networkId: string, address: string, contractName: string): Promise<string> {
     try {
       this.validateAddress(address);
       await this.connectToServer(networkId);
@@ -301,27 +296,7 @@ export class ContractService {
     } finally {
       await this.disconnectFromServer();
     }
-  }
-
-  async getContractABI(networkId: string, address: string): Promise<string> {
-    try {
-      this.validateAddress(address);
-      await this.connectToServer(networkId);
-
-      const abiCommand = `docker exec ${this.CONTAINER_NAME} npx hardhat get-abi ${address}`;
-      const result = await this.ssh.execCommand(abiCommand);
-
-      if (result.stderr) {
-        throw new Error(result.stderr);
-      }
-
-      return result.stdout;
-    } catch (error: any) {
-      throw new Error(`Failed to get contract ABI: ${error.message}`);
-    } finally {
-      await this.disconnectFromServer();
-    }
-  }
+  } */
 }
 
 // deployedContract services

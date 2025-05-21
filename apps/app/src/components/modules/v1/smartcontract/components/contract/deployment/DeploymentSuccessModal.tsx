@@ -109,7 +109,7 @@ export const DeploymentSuccessModal = ({
             className="w-full gap-2 sm:w-auto"
             onClick={() => {
               setDeploymentSuccess({ ...deploymentSuccess, open: false });
-              router.push('/deployedcontracts');
+              router.push('/smartcontract/deployed');
             }}
           >
             <ListChecks className="h-4 w-4" />

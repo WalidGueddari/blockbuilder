@@ -56,7 +56,7 @@ export const fetchDeployedContracts = createAsyncThunk<
   }
 });
 
-export const addToFavorites = createAsyncThunk<void, string, { rejectValue: string }>(
+/* export const addToFavorites = createAsyncThunk<void, string, { rejectValue: string }>(
   'smartContract/addToFavorites',
   async (contractAddress, { rejectWithValue }) => {
     try {
@@ -87,7 +87,7 @@ export const fetchFavoriteContracts = createAsyncThunk<string[], void, { rejectV
       return rejectWithValue(error.message);
     }
   },
-);
+); */
 
 export const saveDraft = createAsyncThunk<DraftContract, DraftContract>(
   'smartContract/saveDraft',

@@ -170,6 +170,7 @@ export default function DeployedContractsPage() {
           abi={selectedContract.abi || []}
           address={selectedContract.address}
           name={selectedContract.name}
+          networkId={selectedContract.networkId}
           onInteract={handleContractInteraction}
           isInteracting={isInteracting}
         />
