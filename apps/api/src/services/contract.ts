@@ -278,6 +278,65 @@ export class ContractService {
     }
   }
 
+  async addExternalContract(
+    networkId: string,
+    address: string,
+    contractName: string,
+    abi: any,
+    options: {
+      description?: string;
+      tags?: string[];
+    } = {},
+  ): Promise<{ contractAddress: string; abi: any }> {
+    console.log(
+      `🔍 Adding external contract: ${contractName} at ${address} on network: ${networkId}`,
+    );
+
+    try {
+      await this.connectToServer(networkId);
+
+      // 1️⃣ Create temporary ABI file
+      const tempAbiPath = `/tmp/${contractName}_abi.json`;
+      await this.ssh.execCommand(`echo '${JSON.stringify(abi)}' > ${tempAbiPath}`);
+
+      // 2️⃣ Run the addExternalContract script
+      const command = `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/addExternalContract.ts "${address}" "${tempAbiPath}"`;
+      const result = await this.ssh.execCommand(command);
+
+      if (result.stderr) {
+        throw new Error(`Failed to add external contract: ${result.stderr}`);
+      }
+
+      console.log('✅ External contract added successfully');
+
+      // 3️⃣ Persist to database
+      await this.deployedContractService.create({
+        address,
+        name: contractName,
+        type: 'Imported',
+        description: options.description,
+        tags: options.tags ?? [],
+        abi,
+        networkId,
+        transactionHash: '0x', // No transaction hash for external contracts
+      });
+
+      return { contractAddress: address, abi };
+    } catch (err: any) {
+      console.error('🛑 Error adding external contract:', err);
+      throw new Error(`Failed to add external contract: ${err.message}`);
+    } finally {
+      // Cleanup temporary files
+      try {
+        await this.ssh.execCommand(`rm /tmp/${contractName}_abi.json`);
+        console.log('🧼 Cleaned up temporary files');
+      } catch {
+        console.warn('⚠️ Could not remove temporary files');
+      }
+      await this.disconnectFromServer();
+    }
+  }
+
   /* async verifyContract(networkId: string, address: string, contractName: string): Promise<string> {
     try {
       this.validateAddress(address);

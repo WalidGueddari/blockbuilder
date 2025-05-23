@@ -193,6 +193,60 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
     },
   );
 
+  // Route to add an external contract
+  fastify.post(
+    '/:networkId/add-external-contract',
+    {
+      schema: {
+        tags: ['smartcontract'],
+        description: 'Add an external contract to a specified network',
+        params: Type.Object({
+          networkId: Type.String(),
+        }),
+        body: Type.Object({
+          contractName: Type.String(),
+          contractAddress: Type.String(),
+          description: Type.Optional(Type.String()),
+          tags: Type.Optional(Type.Array(Type.String())),
+        }),
+        response: {
+          200: Type.Object({
+            contractAddress: Type.String(),
+          }),
+          500: Type.Object({
+            error: Type.String(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { networkId } = request.params as { networkId: string };
+        const { contractName, contractAddress, description, tags } = request.body as {
+          contractName: string;
+          contractAddress: string;
+          description?: string;
+          tags?: string[];
+          abi?: any;
+        };
+
+        const deploymentResult = await contractService.addExternalContract(
+          networkId,
+          contractAddress,
+          contractName,
+          {
+            description,
+            tags,
+          },
+        );
+
+        return deploymentResult;
+      } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500).send({ error: error.message });
+      }
+    },
+  );
   // Route to verify a deployed contract
   /*   fastify.post(
     '/:networkId/verify',
