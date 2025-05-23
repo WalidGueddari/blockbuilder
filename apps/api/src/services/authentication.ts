@@ -39,6 +39,7 @@ export class AuthenticationService {
           id: true,
           password: true,
           role: true,
+          isActive: true,
         },
       });
     } catch (err) {
@@ -54,6 +55,7 @@ export class AuthenticationService {
       email: user.email,
       name: user.email,
       role: user.role,
+      isActive: user.isActive,
     };
     console.log('tokenPayload', tokenPayload);
     const accessToken = jwt.sign(tokenPayload, secret, signOptions);

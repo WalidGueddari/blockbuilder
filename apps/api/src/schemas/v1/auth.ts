@@ -21,6 +21,7 @@ export const loginSchema = {
             id: { type: 'string' },
             name: { type: 'string' },
             role: { type: 'string' },
+            isActive: { type: 'boolean' },
           },
         },
       },
@@ -87,14 +88,16 @@ export const authCheckSchema = {
 };
 
 export const registerSchema = {
-  tags: ['auth'],
+  tags: ['admin'],
   body: {
     type: 'object',
     properties: {
       email: { type: 'string', format: 'email' },
       password: { type: 'string', format: 'password' },
+      name: { type: 'string' },
+      role: { type: 'string' },
     },
-    required: ['email', 'password'],
+    required: ['email', 'password', 'name', 'role'],
   },
   response: {
     200: {
