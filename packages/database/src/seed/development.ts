@@ -10,6 +10,7 @@ export default async function seedDev() {
         email: 'max.mustermann@outlook.com'.toLowerCase(),
         name: 'Max Mustermann',
         role: UserRole.USER,
+        code: '123456',
       },
     }),
     prisma.user.create({
@@ -18,6 +19,7 @@ export default async function seedDev() {
         email: 'demo@demo.com'.toLowerCase(),
         name: 'Demo User',
         role: UserRole.DEMO,
+        code: '123457',
       },
     }),
     prisma.user.create({
@@ -26,6 +28,7 @@ export default async function seedDev() {
         email: 'admin@admin.pro'.toLowerCase(),
         name: 'Admin',
         role: UserRole.ADMIN,
+        code: '123458',
       },
     }),
   ]);

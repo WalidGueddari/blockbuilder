@@ -13,6 +13,7 @@ interface AuthState {
     email: string;
     name: string;
     role: string;
+    isActive: boolean;
   } | null;
 }
 

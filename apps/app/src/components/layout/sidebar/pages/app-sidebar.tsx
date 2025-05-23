@@ -7,21 +7,11 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import {
-  Activity,
-  Blocks,
-  BookOpen,
-  Code,
-  Database,
-  GitBranch,
-  Settings2,
-  Shield,
-  Wallet,
-} from 'lucide-react';
+import { useUserRole } from '@/hooks/use-user-role';
+import { Activity, Code, Database, Settings2, Shield, Wallet } from 'lucide-react';
 import type * as React from 'react';
 
 import { NavMain } from './nav-main';
-import { NavProjects } from './nav-project';
 import { NavUser } from './nav-user';
 import { TeamSwitcher } from './team-switcher';
 
@@ -106,6 +96,37 @@ const data = {
       ],
     },
   ],
+  adminNav: [
+    {
+      title: 'Administration',
+      url: '#',
+      icon: Shield,
+      isActive: true,
+      items: [
+        {
+          title: 'Overview',
+          url: '/admin',
+          disabled: false,
+        },
+
+        {
+          title: 'Demo Accounts',
+          url: '/admin/demo-accounts',
+          disabled: true,
+        },
+        {
+          title: 'User Management',
+          url: '/admin/users',
+          disabled: true,
+        },
+        {
+          title: 'System Settings',
+          url: '/admin/settings',
+          disabled: true,
+        },
+      ],
+    },
+  ],
   projects: [
     {
       name: 'Demo Project',
@@ -116,13 +137,18 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { isAdmin } = useUserRole();
+
+  // Combine regular nav items with admin items if user is admin
+  const navItems = isAdmin ? [...data.navMain, ...data.adminNav] : data.navMain;
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>

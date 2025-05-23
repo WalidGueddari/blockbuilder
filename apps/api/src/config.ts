@@ -133,4 +133,12 @@ export const config = {
   redisPort: requiredIntVar('REDIS_PORT'),
   redisPassword: requiredVar('REDIS_PASSWORD'),
   redisFamily: requiredIntVar('REDIS_FAMILY'),
+
+  /**
+   * email Configuration
+   */
+
+  smtpHost: requiredVar('SMTP_HOST'),
+  smtpUser: requiredVar('SMTP_USER'),
+  smtpPass: requiredVar('SMTP_PASS'),
 };

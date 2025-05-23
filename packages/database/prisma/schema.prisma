@@ -13,6 +13,8 @@ model User {
   email      String     @unique
   password   String     @db.Text()
   role       UserRole   @default(USER)
+  isActive   Boolean    @default(false)
+  code       String?    @unique
   create_at  DateTime   @default(now())
   updated_at DateTime   @default(now()) @updatedAt
   network    Network[]
