@@ -16,7 +16,7 @@ import {
   User,
   XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ContractStatus {
   successCount: number;
@@ -38,7 +38,7 @@ interface Props {
   accounts?: ContractAccount[];
   tags?: string[];
   onInteract: () => void;
-  onToggleFavorite?: () => void;
+  onToggleFavorite?: () => Promise<void>;
   isFavorite?: boolean;
 }
 
@@ -56,6 +56,24 @@ export default function ContractListItem({
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(isFavorite);
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    setIsFavorited(isFavorite);
+  }, [isFavorite]);
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onToggleFavorite || isToggling) return;
+
+    setIsToggling(true);
+    try {
+      await onToggleFavorite();
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   const shortenAddress = (addr: string) => {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
@@ -78,15 +96,15 @@ export default function ContractListItem({
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite();
-                }}
+                onClick={handleToggleFavorite}
+                disabled={isToggling}
               >
                 <Star
-                  className={`h-4 w-4 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  className={`h-4 w-4 ${isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                 />
-                <span className="sr-only">{isFavorite ? 'Unpin favorite' : 'Pin as favorite'}</span>
+                <span className="sr-only">
+                  {isFavorited ? 'Unpin favorite' : 'Pin as favorite'}
+                </span>
               </Button>
             )}
           </div>

@@ -7,8 +7,7 @@ import { EmptyState } from './EmptyState';
 
 interface ContractListProps {
   contracts: DeployedContract[];
-  favoriteContracts: string[];
-  toggleFavorite: (contractId: string) => void;
+  toggleFavorite: (contractId: string) => Promise<void>;
   openContractModal: (contract: DeployedContract) => void;
   type: 'all' | 'favorites';
   hasFilters: boolean;
@@ -16,7 +15,6 @@ interface ContractListProps {
 
 export const ContractList = ({
   contracts,
-  favoriteContracts,
   toggleFavorite,
   openContractModal,
   type,
@@ -30,7 +28,7 @@ export const ContractList = ({
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {contracts.map((contract) => (
         <ContractListItem
-          key={contract.address}
+          key={contract.id}
           name={contract.name}
           type={contract.type}
           address={contract.address}
@@ -43,8 +41,8 @@ export const ContractList = ({
           accounts={[]}
           tags={contract.tags}
           onInteract={() => openContractModal(contract)}
-          onToggleFavorite={() => toggleFavorite(contract.address)}
-          isFavorite={favoriteContracts.includes(contract.address)}
+          onToggleFavorite={() => toggleFavorite(contract.id)}
+          isFavorite={contract.favorites.length > 0}
         />
       ))}
     </div>

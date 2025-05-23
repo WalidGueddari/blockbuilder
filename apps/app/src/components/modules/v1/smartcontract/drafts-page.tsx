@@ -20,10 +20,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import type { DraftContract } from '@/types/smartContract';
 import { formatDistanceToNow } from 'date-fns';
-import { Clock, Code, FileEdit, Rocket, Trash2 } from 'lucide-react';
+import { Clock, Code, Eye, FileEdit, Rocket, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -32,14 +43,13 @@ import { useDrafts } from './hooks/useDrafts';
 export default function DraftsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { savedDrafts, loading, error, loadDraft, deleteDraft } = useDrafts();
+  const { savedDrafts, loading, error, loadDraftForEditing, deleteDraft } = useDrafts();
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
+  const [viewDraftDetails, setViewDraftDetails] = useState<DraftContract | null>(null);
 
   const handleEditDraft = (draft: DraftContract) => {
-    const config = loadDraft(draft.id);
-    if (config) {
-      router.push('/smartcontract/create');
-    }
+    loadDraftForEditing(draft.id);
+    router.push('/smartcontract/create');
   };
 
   const handleDeleteDraft = (draftId: string) => {
@@ -52,12 +62,8 @@ export default function DraftsPage() {
   };
 
   const handleDeployDraft = (draft: DraftContract) => {
-    loadDraft(draft.id);
+    loadDraftForEditing(draft.id);
     router.push('/smartcontract/create');
-    toast({
-      title: 'Draft Loaded',
-      description: 'Draft loaded and ready for deployment.',
-    });
   };
 
   if (loading) {
@@ -142,24 +148,109 @@ export default function DraftsPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between pt-3">
-                <Button variant="outline" size="sm" onClick={() => setDraftToDelete(draft.id)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-red-700"
+                  onClick={() => setDraftToDelete(draft.id)}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </Button>
                 <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewDraftDetails(draft)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
                   <Button variant="outline" size="sm" onClick={() => handleEditDraft(draft)}>
                     <FileEdit className="mr-2 h-4 w-4" />
                     Edit
-                  </Button>
-                  <Button size="sm" onClick={() => handleDeployDraft(draft)}>
-                    <Rocket className="mr-2 h-4 w-4" />
-                    Deploy
                   </Button>
                 </div>
               </CardFooter>
             </Card>
           ))}
         </div>
+      )}
+
+      {viewDraftDetails && (
+        <Dialog
+          open={!!viewDraftDetails}
+          onOpenChange={(isOpen) => !isOpen && setViewDraftDetails(null)}
+        >
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Draft: {viewDraftDetails.name}</DialogTitle>
+              <DialogDescription>Details of your saved contract draft.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] p-4">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="mb-1 font-semibold">Description:</h4>
+                  <p className="text-muted-foreground text-sm">
+                    {viewDraftDetails.description || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="mb-1 font-semibold">Type:</h4>
+                  <p className="text-muted-foreground text-sm">
+                    {viewDraftDetails.config?.contractType || viewDraftDetails.type || 'N/A'}
+                  </p>
+                </div>
+                {viewDraftDetails.config?.symbol && (
+                  <div>
+                    <h4 className="mb-1 font-semibold">Symbol:</h4>
+                    <p className="text-muted-foreground text-sm">
+                      {viewDraftDetails.config.symbol}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <h4 className="mb-1 font-semibold">Features:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewDraftDetails.config?.mintable && <Badge variant="outline">Mintable</Badge>}
+                    {viewDraftDetails.config?.burnable && <Badge variant="outline">Burnable</Badge>}
+                    {viewDraftDetails.config?.pausable && <Badge variant="outline">Pausable</Badge>}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="mb-1 font-semibold">Tags:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {viewDraftDetails.tags?.map((tag) => (
+                      <Badge key={tag} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {(!viewDraftDetails.tags || viewDraftDetails.tags.length === 0) && (
+                      <p className="text-muted-foreground text-sm">N/A</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="mb-2 font-semibold">Contract Code:</h4>
+                  <pre className="bg-muted max-h-60 overflow-auto rounded-md p-3 text-sm">
+                    <code>{viewDraftDetails.content}</code>
+                  </pre>
+                </div>
+              </div>
+            </ScrollArea>
+            <DialogFooter className="sm:justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Close
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       <AlertDialog open={!!draftToDelete} onOpenChange={(open) => !open && setDraftToDelete(null)}>

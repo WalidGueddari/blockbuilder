@@ -1,11 +1,25 @@
+import type { ContractTransaction } from 'ethers';
+
+import { ContractConfig } from '../components/modules/v1/smartcontract/types/contract';
+
 export interface DeployedContract {
+  id: string;
   address: string;
   name: string;
   type: string;
-  deployedAt: string;
   description?: string;
-  tags?: string[];
-  abi?: any[];
+  tags: string[];
+  abi?: any;
+  config?: ContractConfig;
+  networkId: string;
+  transactionHash: string;
+  deployedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  favorites: Array<{
+    id: string;
+    createdAt: string;
+  }>;
 }
 
 export interface DraftContract {
@@ -16,26 +30,35 @@ export interface DraftContract {
   updatedAt: string;
   networkId?: string;
   description?: string;
-  tags?: string[];
+  tags: string[];
   type?: string;
+  config: ContractConfig;
 }
 
 export interface SmartContractState {
   deployedContracts: DeployedContract[];
   drafts: DraftContract[];
   loading: boolean;
-  error: string | null;
+  error: null | string;
+  draftToEditId?: string | null;
 }
 
 export interface DeployContractPayload {
   contractName: string;
   contractContent: string;
   networkId: string;
+  description?: string;
+  tags?: string[];
+  abi?: any;
+  type?: string;
+  config?: ContractConfig;
 }
 
 export interface DeployContractResponse {
-  result: string;
-  error?: string;
+  id: string;
+  contractAddress: string;
+  transactionHash: string;
+  networkId: string;
 }
 
 export interface InteractContractPayload {

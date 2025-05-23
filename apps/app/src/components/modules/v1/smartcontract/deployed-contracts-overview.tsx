@@ -24,7 +24,6 @@ export default function DeployedContractsPage() {
     error,
     searchQuery,
     activeFilters,
-    favoriteContracts,
     uniqueTags,
     handleSearch,
     handleFilterChange,
@@ -146,7 +145,6 @@ export default function DeployedContractsPage() {
         <TabsContent value="all">
           <ContractList
             contracts={contracts}
-            favoriteContracts={favoriteContracts}
             toggleFavorite={handleToggleFavorite}
             openContractModal={openContractModal}
             type="all"
@@ -157,7 +155,6 @@ export default function DeployedContractsPage() {
         <TabsContent value="favorites">
           <ContractList
             contracts={favoritedContracts}
-            favoriteContracts={favoriteContracts}
             toggleFavorite={handleToggleFavorite}
             openContractModal={openContractModal}
             type="favorites"
@@ -173,6 +170,7 @@ export default function DeployedContractsPage() {
           abi={selectedContract.abi || []}
           address={selectedContract.address}
           name={selectedContract.name}
+          networkId={selectedContract.networkId}
           onInteract={handleContractInteraction}
           isInteracting={isInteracting}
         />

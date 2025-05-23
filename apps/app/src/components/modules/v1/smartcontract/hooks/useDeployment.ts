@@ -5,31 +5,42 @@ import { useAppDispatch } from '@/services/hooks';
 import { deployContract } from '@/services/v1/smartContractSlice';
 import { useState } from 'react';
 
-import type { ContractConfig } from '../types';
-
-interface DeploymentResult {
-  contractAddress: string;
-  transactionHash: string;
-}
+import type { ContractConfig } from '../types/contract';
+import type {
+  DeployContractResponse,
+  DeploymentPayload,
+  DeploymentResult,
+  DeploymentSuccess,
+} from '../types/deployment';
 
 export const useDeployment = () => {
   const [loading, setLoading] = useState(false);
-  const [deploymentSuccess, setDeploymentSuccess] = useState<{
-    open: boolean;
-    address: string;
-  }>({
+  const [deploymentSuccess, setDeploymentSuccess] = useState<DeploymentSuccess>({
     open: false,
     address: '',
   });
   const dispatch = useAppDispatch();
   const { toast } = useToast();
 
-  const handleDeployContract = async (
-    contractName: string,
-    contractCode: string,
-    networkId: string,
-    config?: ContractConfig,
-  ): Promise<DeploymentResult | null> => {
+  const handleDeployContract = async ({
+    name,
+    content,
+    networkId,
+    description,
+    tags = [],
+    abi,
+    type = 'default',
+    config,
+  }: {
+    name: string;
+    content: string;
+    networkId: string;
+    description?: string;
+    tags?: string[];
+    abi?: any;
+    type?: string;
+    config?: ContractConfig;
+  }): Promise<DeploymentResult | null> => {
     setLoading(true);
     try {
       if (!networkId) {
@@ -41,23 +52,39 @@ export const useDeployment = () => {
         return null;
       }
 
-      const result = await dispatch(
+      const response = await dispatch(
         deployContract({
-          contractName,
-          contractContent: contractCode,
+          contractName: name,
+          contractContent: content,
           networkId,
-        }),
+          description,
+          tags,
+          abi,
+          type,
+          config,
+        } as DeploymentPayload),
       ).unwrap();
 
-      const deploymentResult: DeploymentResult = {
-        contractAddress: result.result,
-        transactionHash: result.result, // In a real implementation, we would get the transaction hash from the deployment result
-      };
+      // Type assertion to ensure response matches DeployContractResponse
+      const result = response as unknown as DeployContractResponse;
 
       toast({
         title: 'Success',
-        description: `Contract ${contractName} deployed successfully!`,
+        description: `Contract ${name} deployment initiated successfully!`,
       });
+
+      setDeploymentSuccess({
+        open: true,
+        address: result.contractAddress, // Match the property name from DeployContractResponse
+      });
+
+      // Transform the response to match DeploymentResult interface
+      const deploymentResult: DeploymentResult = {
+        id: result.id,
+        contractAddress: result.contractAddress,
+        transactionHash: result.transactionHash,
+        networkId: result.networkId,
+      };
 
       return deploymentResult;
     } catch (error) {

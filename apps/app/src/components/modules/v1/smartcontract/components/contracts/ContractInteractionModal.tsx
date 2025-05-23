@@ -39,7 +39,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { Highlight, themes } from 'prism-react-renderer';
-import defaultProps from 'prism-react-renderer';
 import { useState } from 'react';
 
 interface FunctionInput {
@@ -75,6 +74,7 @@ interface Props {
   abi?: any[];
   address: string;
   name: string;
+  networkId: string;
   onInteract: (
     networkId: string,
     address: string,
@@ -120,6 +120,7 @@ export default function ContractInteractionModal({
   abi = [],
   address,
   name,
+  networkId,
   onInteract,
   isInteracting = false,
 }: Props) {
@@ -167,7 +168,7 @@ export default function ContractInteractionModal({
       console.log(`Calling function ${fn.name} on ${address} with`, args);
 
       if (onInteract) {
-        const result = await onInteract('1', address, fn.name, args);
+        const result = await onInteract(networkId, address, fn.name, args);
         setOutput((prev) => ({ ...prev, [fn.name]: JSON.stringify(result) }));
       } else {
         // Mock responses based on function name for better demo
@@ -222,7 +223,7 @@ export default function ContractInteractionModal({
       console.log(`Sending transaction to function ${fn.name} on ${address} with`, args);
 
       if (onInteract) {
-        const result = await onInteract('1', address, fn.name, args);
+        const result = await onInteract(networkId, address, fn.name, args);
         setOutput((prev) => ({
           ...prev,
           [fn.name]: `Transaction sent! Result: ${JSON.stringify(result)}`,
@@ -727,7 +728,6 @@ export default function ContractInteractionModal({
                     </div>
                     <div className="mt-1 max-h-40 overflow-auto rounded border">
                       <Highlight
-                        {...defaultProps}
                         code={JSON.stringify(abi, null, 2)}
                         language="json"
                         theme={themes.nightOwl}
