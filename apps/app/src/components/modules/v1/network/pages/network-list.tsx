@@ -30,18 +30,18 @@ export default function NetworkList() {
     <div>
       {/* Handle Loading and Error States */}
       {loading && <p>Loading networks...</p>}
-      {error && (
+      {/* {error && (
         <div className="mb-4 rounded bg-red-100 p-4 text-red-700">
           <p>Error: {error}</p>
           <Button variant="outline" onClick={() => dispatch(clearNetworkError())}>
             Dismiss
           </Button>
         </div>
-      )}
+      )} */}
 
       {/* Display Networks */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {!loading && !error && networks.length === 0 && <p>No networks found.</p>}
+        {!loading && networks.length === 0 && <p>No Networks Created Yet.</p>}
         {networks.map((network) => (
           <Card key={network.id}>
             <CardHeader>
