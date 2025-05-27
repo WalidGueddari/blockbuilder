@@ -88,42 +88,43 @@ export class UsersService {
   }
 
   async getAllUsers(
-    isActive: boolean,
     page: number,
     limit: number,
-    filters: { date?: string; search?: string },
+    filters: { date?: string; search?: string; isActive?: boolean },
   ) {
     if (page < 1 || limit < 1) {
       throw new Error('Invalid page or limit');
     }
 
-    const { date, search } = filters;
+    const { date, search, isActive } = filters;
 
-    // Build where clause based on status, date, and search criteria
-    const where: Prisma.UserWhereInput = { isActive };
+    const where: Prisma.UserWhereInput = {};
+
+    if (typeof isActive === 'boolean') {
+      where.isActive = isActive;
+    }
 
     if (date) {
       const startDate = new Date(date);
-      // Set the time of startDate to 00:00:00
       startDate.setHours(0, 0, 0, 0);
 
       const endDate = new Date(startDate);
-      // Set the time of endDate to 23:59:59
       endDate.setHours(23, 59, 59, 999);
 
-      where.create_at = { gte: startDate, lte: endDate };
+      where.create_at = {
+        gte: startDate,
+        lte: endDate,
+      };
     }
 
     if (search) {
       where.OR = [
-        // { username: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
         { name: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     try {
-      // Fetch users with the specified filters
       const users = await this.prisma.user.findMany({
         where,
         orderBy: { create_at: 'desc' },
@@ -131,10 +132,8 @@ export class UsersService {
         take: limit,
       });
 
-      // Count the total number of users matching the criteria (with filters applied)
       const total = await this.prisma.user.count({ where });
 
-      // Calculate the total pages, check for next/previous page
       const pages = Math.ceil(total / limit);
       const hasNextPage = page < pages;
       const hasPreviousPage = page > 1;

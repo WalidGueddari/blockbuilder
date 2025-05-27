@@ -67,7 +67,7 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 
   fastify.get<{
     Querystring: {
-      isActive: boolean;
+      isActive?: boolean | null;
       page?: number;
       limit?: number;
       date?: string;
@@ -80,10 +80,28 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     },
     async (request, reply) => {
       try {
-        const { isActive, page = 1, limit = 10, date, search } = request.query;
+        const { isActive, page, limit, date, search } = request.query;
 
-        const filters = { date, search };
-        const data = await usersService.getAllUsers(isActive, page, limit, filters);
+        // Ensure page and limit are provided and valid
+        if (typeof page !== 'number' || page < 1) {
+          return reply.code(400).send({
+            status: 400,
+            message: 'Invalid page number. It must be a positive integer.',
+          });
+        }
+
+        if (typeof limit !== 'number' || limit < 1) {
+          return reply.code(400).send({
+            status: 400,
+            message: 'Invalid limit value. It must be a positive integer.',
+          });
+        }
+
+        // Filter out null isActive values, pass undefined if it's null
+        const filters = { date, search, isActive: isActive === null ? undefined : isActive };
+
+        // Pass page and limit dynamically
+        const data = await usersService.getAllUsers(page, limit, filters);
 
         return reply.code(200).send(data);
       } catch (err: any) {

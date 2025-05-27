@@ -1,35 +1,24 @@
+import { faker } from '@faker-js/faker';
 import bcrypt from 'bcryptjs';
 
 import { UserRole, prisma } from '../client.js';
 
 export default async function seedDev() {
-  await Promise.all([
-    prisma.user.create({
-      data: {
-        password: bcrypt.hashSync('passer'),
-        email: 'max.mustermann@outlook.com'.toLowerCase(),
-        name: 'Max Mustermann',
-        role: UserRole.USER,
-        code: '123456',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        password: bcrypt.hashSync('passer'),
-        email: 'demo@demo.com'.toLowerCase(),
-        name: 'Demo User',
-        role: UserRole.DEMO,
-        code: '123457',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        password: bcrypt.hashSync('passer'),
-        email: 'admin@admin.pro'.toLowerCase(),
-        name: 'Admin',
-        role: UserRole.ADMIN,
-        code: '123458',
-      },
-    }),
-  ]);
+  // Create 20 test users with realistic fake data
+  const users = Array.from({ length: 20 }, (_, index) => ({
+    password: bcrypt.hashSync('passer'), // Same password for all test users
+    email: faker.internet.email().toLowerCase(),
+    name: faker.person.fullName(),
+    role:
+      index === 0
+        ? UserRole.ADMIN // First user is admin
+        : index === 1
+          ? UserRole.DEMO // Second user is demo
+          : UserRole.USER, // Remaining are regular users
+    code: (100000 + index).toString(), // Sequential 6-digit codes
+  }));
+
+  await prisma.user.createMany({
+    data: users,
+  });
 }

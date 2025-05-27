@@ -35,19 +35,24 @@ export type User = {
 export type GetAllUsersResponse = {
   data: User[];
   total: number;
+  pages: number;
   page: number;
   limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  nextPage: number | null;
+  previousPage: number | null;
+};
+
+export type FetchUsersParams = {
+  isActive?: boolean | null; // Nullable to match the API schema
+  page?: number; // Optional, for dynamic pagination
+  limit?: number; // Optional, for dynamic page size
+  date?: string;
+  search?: string;
 };
 
 export type UpdateUserStatusPayload = {
   userId: string;
   status: boolean;
-};
-
-export type FetchUsersParams = {
-  isActive: boolean;
-  page?: number;
-  limit?: number;
-  date?: string;
-  search?: string;
 };

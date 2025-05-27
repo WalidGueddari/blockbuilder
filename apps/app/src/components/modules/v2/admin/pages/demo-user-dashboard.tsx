@@ -1,6 +1,6 @@
-//DemoUserDashboard
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,22 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   activateUser,
   deactivateUser,
@@ -34,14 +49,11 @@ import {
 } from '@/services/v1/adminSlice';
 import type { User } from '@/types/v1/admin';
 import { format } from 'date-fns';
-import { Calendar, Search } from 'lucide-react';
+import { Calendar, Check, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { CreateDemoUserForm } from './create-demo-user-form';
-import { DemoUserTable } from './demo-user-table';
-
-//DemoUserDashboard
 
 export type DemoUser = User;
 
@@ -52,26 +64,26 @@ export default function DemoUserDashboard() {
   const currentPage = useSelector(selectAdminPage);
   const limit = useSelector(selectAdminLimit);
 
-  const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   const totalPages = Math.ceil(total / limit);
 
   useEffect(() => {
     loadUsers();
-  }, [activeTab, currentPage]);
+  }, [currentPage, searchQuery, date, limit, statusFilter]);
 
   const loadUsers = () => {
     dispatch(
       fetchAllUsers({
-        isActive: activeTab === 'active' ? true : activeTab === 'inactive' ? false : true,
         page: currentPage,
         limit,
         search: searchQuery,
         date: date ? format(date, 'yyyy-MM-dd') : undefined,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
       }) as any,
     );
   };
@@ -92,6 +104,7 @@ export default function DemoUserDashboard() {
   const clearFilters = () => {
     setSearchQuery('');
     setDate(undefined);
+    setStatusFilter('all');
     loadUsers();
   };
 
@@ -109,6 +122,15 @@ export default function DemoUserDashboard() {
   const handleCreateSuccess = (name: string, email: string) => {
     setDialogOpen(false);
     loadUsers();
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
   };
 
   return (
@@ -157,6 +179,22 @@ export default function DemoUserDashboard() {
               </div>
 
               <div className="flex gap-2">
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value: 'all' | 'active' | 'inactive') => {
+                    setStatusFilter(value);
+                  }}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="gap-2">
@@ -180,24 +218,73 @@ export default function DemoUserDashboard() {
               </div>
             </div>
 
-            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                {/* <TabsTrigger value="all">All Users</TabsTrigger> */}
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="inactive">Inactive</TabsTrigger>
-              </TabsList>
-              <TabsContent value="all" className="mt-4">
-                <DemoUserTable users={users} toggleUserStatus={toggleUserStatus} />
-              </TabsContent>
-              <TabsContent value="active" className="mt-4">
-                <DemoUserTable users={users} toggleUserStatus={toggleUserStatus} />
-              </TabsContent>
-              <TabsContent value="inactive" className="mt-4">
-                <DemoUserTable users={users} toggleUserStatus={toggleUserStatus} />
-              </TabsContent>
-            </Tabs>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        No users found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.create_at ? formatDate(user.create_at) : 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {user.role.toLowerCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={user.isActive ? 'outline' : 'destructive'}
+                            className="gap-1"
+                          >
+                            {user.isActive ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                <span>Active</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-3 w-3" />
+                                <span>Inactive</span>
+                              </>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Switch
+                              checked={user.isActive}
+                              onCheckedChange={() => toggleUserStatus(user.id)}
+                            />
+                            <span className="text-muted-foreground text-xs">
+                              {user.isActive ? 'Deactivate' : 'Activate'}
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-            {totalPages > 1 && (
+            {totalPages && (
               <div className="mt-4 flex justify-center">
                 <Pagination>
                   <PaginationContent>
@@ -209,16 +296,12 @@ export default function DemoUserDashboard() {
                           if (currentPage > 1) {
                             dispatch(
                               fetchAllUsers({
-                                isActive:
-                                  activeTab === 'active'
-                                    ? true
-                                    : activeTab === 'inactive'
-                                      ? false
-                                      : true,
                                 page: currentPage - 1,
                                 limit,
                                 search: searchQuery,
                                 date: date ? format(date, 'yyyy-MM-dd') : undefined,
+                                isActive:
+                                  statusFilter === 'all' ? undefined : statusFilter === 'active',
                               }) as any,
                             );
                           }
@@ -238,16 +321,12 @@ export default function DemoUserDashboard() {
                               e.preventDefault();
                               dispatch(
                                 fetchAllUsers({
-                                  isActive:
-                                    activeTab === 'active'
-                                      ? true
-                                      : activeTab === 'inactive'
-                                        ? false
-                                        : true,
                                   page: pageNumber,
                                   limit,
                                   search: searchQuery,
                                   date: date ? format(date, 'yyyy-MM-dd') : undefined,
+                                  isActive:
+                                    statusFilter === 'all' ? undefined : statusFilter === 'active',
                                 }) as any,
                               );
                             }}
@@ -266,16 +345,12 @@ export default function DemoUserDashboard() {
                           if (currentPage < totalPages) {
                             dispatch(
                               fetchAllUsers({
-                                isActive:
-                                  activeTab === 'active'
-                                    ? true
-                                    : activeTab === 'inactive'
-                                      ? false
-                                      : true,
                                 page: currentPage + 1,
                                 limit,
                                 search: searchQuery,
                                 date: date ? format(date, 'yyyy-MM-dd') : undefined,
+                                isActive:
+                                  statusFilter === 'all' ? undefined : statusFilter === 'active',
                               }) as any,
                             );
                           }

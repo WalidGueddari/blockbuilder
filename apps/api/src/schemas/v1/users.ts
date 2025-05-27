@@ -93,13 +93,22 @@ export const UserSchema = {
     querystring: {
       type: 'object',
       properties: {
-        isActive: { type: 'boolean' },
-        page: { type: 'integer', minimum: 1, default: 1 }, // Page number
-        limit: { type: 'integer', minimum: 1, default: 10 }, // Page size
+        isActive: { type: 'boolean', nullable: true }, // Optional status filter - null means all users
+        page: {
+          type: 'integer',
+          minimum: 1,
+          description: 'Page number, must be a positive integer',
+        }, // Page number
+        limit: {
+          type: 'integer',
+          minimum: 1,
+          description: 'Page size, must be a positive integer',
+        }, // Page size
         date: { type: 'string', format: 'date', nullable: true },
-        search: { type: 'string' }, // Optional search filter
+        search: { type: 'string', nullable: true }, // Optional search filter
       },
-      // required: ['status'], // Ensure status is always provided
+      required: [], // No required properties, since they are optional
+      additionalProperties: false, // Disallow other properties not defined in the schema
     },
   },
 };

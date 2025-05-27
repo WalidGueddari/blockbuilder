@@ -29,7 +29,7 @@ const initialState: AdminState = {
   users: [],
   total: 0,
   page: 1,
-  limit: 10,
+  limit: 5,
 };
 
 /* ──────────────────────────── ASYNC THUNKS ──────────────────────────── */
