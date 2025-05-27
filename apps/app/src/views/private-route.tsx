@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isActive } = useAuth(); // Make sure AuthContext provides this
+  const { isAuthenticated, isActive } = useAuth();
   const router = useRouter();
 
   const [checking, setChecking] = useState(true);

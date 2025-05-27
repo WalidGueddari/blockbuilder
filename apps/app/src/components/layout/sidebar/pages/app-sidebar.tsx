@@ -7,15 +7,13 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { useUserRole } from '@/hooks/use-user-role';
+import { useAuth } from '@/context/AuthContext';
 import { Activity, Code, Database, Settings2, Shield, Wallet } from 'lucide-react';
 import type * as React from 'react';
 
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 import { TeamSwitcher } from './team-switcher';
-
-const networkId = '1';
 
 const data = {
   navMain: [
@@ -137,9 +135,9 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { isAdmin, isLoading } = useUserRole();
+  const { userRole } = useAuth();
 
-  if (isLoading) return null;
+  const isAdmin = userRole === 'ADMIN';
 
   // Combine regular nav items with admin items if user is admin
   const navItems = isAdmin ? [...data.navMain, ...data.adminNav] : data.navMain;
