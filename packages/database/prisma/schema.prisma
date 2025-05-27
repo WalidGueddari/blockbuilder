@@ -192,6 +192,7 @@ model ContractInteraction {
   error        String?
   createdAt    DateTime         @default(now())
 }
+
 model FavoriteContract {
   id         String           @id @default(cuid())
   contractId String

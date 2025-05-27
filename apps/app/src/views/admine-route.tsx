@@ -1,33 +1,45 @@
-// components/AdminRoute.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUserRole } from '@/hooks/use-user-role';
-
-// components/AdminRoute.tsx
+// Or use Redux if preferred
+import { SideBar } from '@/components/layout/sidebar';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAdmin, isLoading } = useUserRole();
+  const { isAuthenticated, isActive, userRole } = useAuth();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-  // still checking sessionStorage…
-  if (isLoading) {
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/home');
+      return;
+    }
+
+    if (isAuthenticated && isActive === false) {
+      router.push('/activation');
+      return;
+    }
+
+    if (userRole !== 'ADMIN') {
+      router.push('/unauthorized'); // Optional: create this page
+      return;
+    }
+
+    setChecking(false);
+  }, [isAuthenticated, isActive, userRole, router]);
+
+  if (checking || !isAuthenticated || isActive === false || userRole !== 'ADMIN') {
     return null;
   }
 
-  // not an admin → show unauthorized card
-  if (!isAdmin) {
-    return (
-      <Card className="mx-auto mt-10 max-w-md">
-        <CardHeader>
-          <CardTitle>Unauthorized</CardTitle>
-        </CardHeader>
-        <CardContent>You do not have permission to view this page.</CardContent>
-      </Card>
-    );
-  }
-
-  // admin → show chatbot + protected content
-  return <>{children}</>;
+  return (
+    <SideBar>
+      {/* <ChatBubble /> */}
+      {children}
+    </SideBar>
+  );
 };
 
 export default AdminRoute;

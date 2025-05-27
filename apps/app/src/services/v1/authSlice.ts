@@ -4,17 +4,19 @@ import { createSelector } from 'reselect';
 
 import { RootState } from '../store';
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+}
+
 interface AuthState {
   loading: boolean;
   error: string | null;
   accessToken: string | null;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    isActive: boolean;
-  } | null;
+  user: User | null;
 }
 
 const isClient = typeof window !== 'undefined';
@@ -27,6 +29,8 @@ const initialState: AuthState = {
     isClient && sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')!) : null,
 };
 
+// ------------------- ASYNC ACTIONS -------------------
+
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
@@ -34,7 +38,6 @@ export const login = createAsyncThunk(
       email,
       password,
     });
-    // console.log('login response', response);
     return response.data;
   },
 );
@@ -50,6 +53,8 @@ export const register = createAsyncThunk(
   },
 );
 
+// ------------------- SLICE -------------------
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -60,6 +65,14 @@ const authSlice = createSlice({
       if (isClient) {
         sessionStorage.removeItem('access_token');
         sessionStorage.removeItem('user');
+      }
+    },
+    updateUser(state, action: PayloadAction<Partial<User>>) {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        if (isClient) {
+          sessionStorage.setItem('user', JSON.stringify(state.user));
+        }
       }
     },
   },
@@ -76,7 +89,6 @@ const authSlice = createSlice({
         if (isClient) {
           sessionStorage.setItem('access_token', action.payload.access_token);
           sessionStorage.setItem('user', JSON.stringify(action.payload.user));
-          // console.log('Saved user:', JSON.parse(sessionStorage.getItem('user')!));
         }
       })
       .addCase(login.rejected, (state, action) => {
@@ -86,13 +98,17 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+// ------------------- EXPORTS -------------------
+
+export const { logout, updateUser } = authSlice.actions;
 
 export const selectAuthState = (state: RootState) => state.auth;
 
 export const selectAuth = createSelector([selectAuthState], (auth) => ({
   ...auth,
   isAuthenticated: !!auth.accessToken,
+  userRole: auth.user?.role || null,
+  isActive: auth.user?.isActive ?? null,
 }));
 
 export default authSlice.reducer;

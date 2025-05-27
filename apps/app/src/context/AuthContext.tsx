@@ -7,32 +7,47 @@ import { useSelector } from 'react-redux';
 
 interface AuthContextProps {
   isAuthenticated: boolean | null;
-  setAuthenticated: (isAuthenticated: boolean) => void;
+  setAuthenticated: (value: boolean) => void;
+  userRole: string | null;
+  setUserRole: (role: string | null) => void;
+  isActive: boolean | null;
+  setIsActive: (value: boolean | null) => void;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useSelector(selectAuth);
-  const [localAuth, setLocalAuth] = useState<boolean | null>(null);
+  const { accessToken, user } = useSelector(selectAuth);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isActive, setIsActive] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const token = sessionStorage.getItem('access_token');
-      setLocalAuth(!!token);
+      const storedUser = sessionStorage.getItem('user');
+
+      setIsAuthenticated(!!token);
+
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUserRole(parsedUser.role || null);
+        setIsActive(parsedUser.isActive ?? null);
+      }
     }
-  }, [isAuthenticated]);
+  }, [accessToken, user]);
 
   const setAuthenticated = (value: boolean) => {
-    setLocalAuth(value);
-    if (value && typeof window !== 'undefined') {
-      sessionStorage.setItem('access_token', 'your_token_value_here');
-    } else if (typeof window !== 'undefined') {
+    setIsAuthenticated(value);
+    if (!value && typeof window !== 'undefined') {
       sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
+      setUserRole(null);
+      setIsActive(null);
     }
   };
 
-  if (localAuth === null) {
+  if (isAuthenticated === null) {
     return (
       <div className="bg-background flex h-screen items-center justify-center">
         <Spinner />
@@ -41,7 +56,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: localAuth, setAuthenticated }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        setAuthenticated,
+        userRole,
+        setUserRole,
+        isActive,
+        setIsActive,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

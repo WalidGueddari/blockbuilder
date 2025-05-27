@@ -7,24 +7,25 @@ export function useUserRole() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Get user data from session storage
     const stored = sessionStorage.getItem('user');
-    // console.log('Stored user:', stored);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed?.id) setRole(parsed.role);
-        // console.log('User role:', parsed.role);
+        if (parsed?.id && parsed?.role) {
+          setRole(parsed.role);
+        }
       } catch {
-        console.error('Invalid user in sessionStorage');
+        console.error('Invalid user object in sessionStorage');
       }
+    } else {
+      console.warn('No user data in sessionStorage');
     }
+
+    setIsLoading(false);
   }, []);
 
-  // setIsLoading(false);
   const isAdmin = role === 'ADMIN';
-
-  console.log('User role:', role);
+  console.log('User role:', role, 'Is admin:', isAdmin);
 
   return { role, isAdmin, isLoading };
 }

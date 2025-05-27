@@ -3,39 +3,36 @@
 import { SideBar } from '@/components/layout/sidebar';
 import ChatBubble from '@/components/modules/v1/bot/chatBubble-overview';
 import { useAuth } from '@/context/AuthContext';
-import { useUserActive } from '@/hooks/use-activation';
+// Update if you're switching to Redux
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  const { userIsActive, isLoading } = useUserActive();
+  const { isAuthenticated, isActive } = useAuth(); // Make sure AuthContext provides this
   const router = useRouter();
 
-  useEffect(() => {
-    // 1) If we're still checking activation, do nothing.
-    if (isLoading) {
-      return;
-    }
+  const [checking, setChecking] = useState(true);
 
-    // 2) Not logged in? → /home
+  useEffect(() => {
     if (!isAuthenticated) {
       router.push('/home');
       return;
     }
 
-    // 3) Logged in but not active? → /activation
-    if (!userIsActive) {
+    if (isAuthenticated && isActive === false) {
       router.push('/activation');
+      return;
     }
-  }, [isAuthenticated, isLoading, userIsActive, router]);
 
-  // While auth or activation is being checked, don't flash protected content
-  if (!isAuthenticated || isLoading) {
+    // All good — allow rendering
+    setChecking(false);
+  }, [isAuthenticated, isActive, router]);
+
+  // Don't flash protected content while auth is being validated
+  if (checking || !isAuthenticated || isActive === false) {
     return null;
   }
 
-  // Authenticated & active → render protected UI
   return (
     <SideBar>
       <ChatBubble />

@@ -5,11 +5,9 @@ import ProtectedRoute from '@/views/private-route';
 export default function Home() {
   return (
     <div>
-      <ProtectedRoute>
-        {/* <AdminRoute> */}
+      <AdminRoute>
         <DashboardPage />
-        {/* </AdminRoute> */}
-      </ProtectedRoute>
+      </AdminRoute>
     </div>
   );
 }
