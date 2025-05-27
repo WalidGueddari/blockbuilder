@@ -139,6 +139,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const isAdmin = userRole === 'ADMIN';
 
+  console.log('User role:', userRole, 'Is admin:', isAdmin);
+
   // Combine regular nav items with admin items if user is admin
   const navItems = isAdmin ? [...data.navMain, ...data.adminNav] : data.navMain;
 
