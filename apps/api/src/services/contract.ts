@@ -54,6 +54,21 @@ export interface ContractConfig {
   description?: string;
   tags?: string[];
 }
+interface BackendInteractionResult {
+  success: boolean;
+  contractAddress: string;
+  functionName: string;
+  network: string;
+  timestamp: string;
+  functionType: 'view' | 'transaction';
+  result?: any;
+  transactionHash?: string;
+  gasUsed?: string;
+  blockNumber?: number;
+  logs?: any[];
+  signerAddress?: string;
+  error?: string;
+}
 
 const execAsync = promisify(exec);
 
@@ -153,23 +168,43 @@ export class ContractService {
     address: string,
     functionName: string,
     args: string[] = [],
-  ): Promise<string> {
+  ): Promise<BackendInteractionResult> {
     try {
       this.validateAddress(address);
       this.validateFunctionName(functionName);
 
       await this.connectToServer(networkId);
 
-      // Quote each argument to handle spaces/special chars
       const quotedArgs = args.map((arg) => `"${arg}"`).join(' ');
-      const command = `docker exec ${this.CONTAINER_NAME} npx ts-node --transpile-only scripts/interact.ts "${address}" "${functionName}" ${quotedArgs}`;
+      const command = `docker exec ${this.CONTAINER_NAME} CONTRACT_ADDRESS=${address} CONTRACT_FUNCTION=${functionName} CONTRACT_ARGS='[${quotedArgs}]' npx hardhat run scripts/interact.ts --network localhost`;
+
       const result = await this.ssh.execCommand(command);
 
       if (result.stderr) {
         throw new Error(result.stderr);
       }
 
-      return result.stdout;
+      const outputLines = result.stdout.split('\n');
+      const lastJsonLine = outputLines.reverse().find((line) => {
+        try {
+          const parsed = JSON.parse(line);
+          return parsed && typeof parsed === 'object' && 'success' in parsed;
+        } catch {
+          return false;
+        }
+      });
+
+      if (!lastJsonLine) {
+        throw new Error('Failed to parse backend interaction result.');
+      }
+
+      const parsedResult: BackendInteractionResult = JSON.parse(lastJsonLine);
+
+      if (!parsedResult.success) {
+        throw new Error(parsedResult.error || 'Contract interaction failed.');
+      }
+
+      return parsedResult;
     } catch (error: any) {
       throw new Error(`Failed to interact with contract: ${error.message}`);
     } finally {
@@ -218,7 +253,7 @@ export class ContractService {
 
       // 4️⃣ Deploy
       const deploy = await this.ssh.execCommand(
-        `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`,
+        `docker exec -e CONTRACT_PATH=${destPath} -e CONTRACT_NAME=${contractName} ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`,
       );
       if (deploy.stderr) throw new Error(`Deployment failed: ${deploy.stderr}`);
       console.log('✅ Raw deploy output:\n', deploy.stdout);
@@ -278,60 +313,186 @@ export class ContractService {
     }
   }
 
-  async addExternalContract(
+  async addExternalContractUsingCode(
+    networkId: string,
+    address: string,
+    contractFile: Buffer,
+    contractName: string,
+    options: {
+      abi: any;
+      description?: string;
+      tags?: string[];
+      config?: ContractConfig;
+    },
+  ): Promise<{ contractAddress: string; abi: any }> {
+    console.log(`🚀 Starting contract adding: ${contractName} on network: ${networkId}`);
+
+    // Build paths
+    const tempFilePath = `/tmp/${contractName}.sol`;
+    const destPath = `.containers/${networkId}/hardhat/contracts/${contractName}.sol`;
+
+    try {
+      await this.connectToServer(networkId);
+
+      // 1️⃣ Upload to temp file
+      const source = contractFile.toString('utf-8');
+      const safeContent = source.replace(/'/g, "'\\''");
+      await this.ssh.execCommand(`echo '${safeContent}' > ${tempFilePath}`);
+
+      // 2️⃣ Move into container-mounted dir
+      await this.ssh.execCommand(`mv ${tempFilePath} ${destPath}`);
+
+      // 3️⃣ Compile
+      const compile = await this.ssh.execCommand(
+        `docker exec ${this.CONTAINER_NAME} npx hardhat compile`,
+      );
+      const compileErr = compile.stderr
+        .split('\n')
+        .filter((l) => !l.includes('npm notice'))
+        .join('\n');
+      if (compileErr) throw new Error(`Compilation failed: ${compileErr}`);
+      console.log('✅ Compilation succeeded');
+
+      // 4️⃣ Deploy
+      const add = await this.ssh.execCommand(
+        `docker exec ${this.CONTAINER_NAME} CONTRACT_ADDRESS=${address} CONTRACT_NAME=${contractName} SOURCE_FILE=${destPath}  NETWORK_DEPLOYED=localhost npx hardhat run scripts/addUsingCode.ts --network localhost `,
+      );
+      if (add.stderr) throw new Error(`Deployment failed: ${add.stderr}`);
+      console.log('✅ Raw deploy output:\n', add.stdout);
+
+      // 5️⃣ Parse JSON result
+      let parsed: {
+        contractAddress: string;
+        transactionHash: string;
+        contractName?: string;
+        artifactPath?: string;
+        abi: any;
+      };
+      try {
+        const stdout = add.stdout.trim();
+        // Find the last complete JSON object in the output
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Could not find JSON in deployment output.');
+        }
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (err) {
+        console.error('❌ Could not parse deployment output. stdout content was:', add.stdout);
+        throw new Error(
+          `Invalid deployment result format or JSON not found: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      const { contractAddress, transactionHash, abi } = parsed; // Extract ABI from parsed result
+
+      // 6️⃣ Persist to database
+      await this.deployedContractService.create({
+        address: contractAddress,
+        name: contractName,
+        type: options.config?.contractType ?? 'Custom',
+        description: options.description,
+        tags: options.tags ?? [],
+        abi: abi, // Use the ABI from deployment if available, fallback to options.abi
+        networkId,
+        transactionHash,
+      });
+
+      console.log('✅ Deployment saved to database:', contractAddress);
+
+      return { contractAddress, abi };
+    } catch (err: any) {
+      console.error('🛑 Deployment error:', err);
+      throw new Error(`Failed to deploy contract: ${err.message}`);
+    } finally {
+      // Cleanup file inside container workspace
+      try {
+        await this.ssh.execCommand(`rm ${destPath}`);
+        console.log('🧼 Cleaned up deployed contract file');
+      } catch {
+        console.warn('⚠️ Could not remove contract file');
+      }
+      await this.disconnectFromServer();
+    }
+  }
+
+  async addExternalContractUsingABI(
     networkId: string,
     address: string,
     contractName: string,
-    abi: any,
     options: {
+      abi: any;
       description?: string;
       tags?: string[];
-    } = {},
+      config?: ContractConfig;
+    },
   ): Promise<{ contractAddress: string; abi: any }> {
-    console.log(
-      `🔍 Adding external contract: ${contractName} at ${address} on network: ${networkId}`,
-    );
+    console.log(`🚀 Starting contract adding using ABI: ${contractName} on network: ${networkId}`);
 
     try {
       await this.connectToServer(networkId);
 
       // 1️⃣ Create temporary ABI file
       const tempAbiPath = `/tmp/${contractName}_abi.json`;
-      await this.ssh.execCommand(`echo '${JSON.stringify(abi)}' > ${tempAbiPath}`);
+      const safeAbiContent = JSON.stringify(options.abi).replace(/'/g, "'\\''");
+      await this.ssh.execCommand(`echo '${safeAbiContent}' > ${tempAbiPath}`);
 
-      // 2️⃣ Run the addExternalContract script
-      const command = `docker exec ${this.CONTAINER_NAME} npx hardhat run scripts/addExternalContract.ts "${address}" "${tempAbiPath}"`;
-      const result = await this.ssh.execCommand(command);
+      // 2️⃣ Add contract using ABI
+      const add = await this.ssh.execCommand(
+        `docker exec ${this.CONTAINER_NAME} CONTRACT_ADDRESS=${address} CONTRACT_NAME=${contractName} ABI_FILE=${tempAbiPath} NETWORK_DEPLOYED=localhost npx hardhat run scripts/addUsingABI.ts --network localhost`,
+      );
+      if (add.stderr) throw new Error(`Adding contract failed: ${add.stderr}`);
+      console.log('✅ Raw add output:\n', add.stdout);
 
-      if (result.stderr) {
-        throw new Error(`Failed to add external contract: ${result.stderr}`);
+      // 3️⃣ Parse JSON result
+      let parsed: {
+        contractAddress: string;
+        transactionHash: string;
+        contractName?: string;
+        artifactPath?: string;
+        abi: any;
+      };
+      try {
+        const stdout = add.stdout.trim();
+        // Find the last complete JSON object in the output
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Could not find JSON in add output.');
+        }
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (err) {
+        console.error('❌ Could not parse add output. stdout content was:', add.stdout);
+        throw new Error(
+          `Invalid add result format or JSON not found: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
 
-      console.log('✅ External contract added successfully');
+      const { contractAddress, transactionHash, abi } = parsed;
 
-      // 3️⃣ Persist to database
+      // 4️⃣ Persist to database
       await this.deployedContractService.create({
-        address,
+        address: contractAddress,
         name: contractName,
-        type: 'Imported',
+        type: options.config?.contractType ?? 'Custom',
         description: options.description,
         tags: options.tags ?? [],
-        abi,
+        abi: abi,
         networkId,
-        transactionHash: '0x', // No transaction hash for external contracts
+        transactionHash,
       });
 
-      return { contractAddress: address, abi };
+      console.log('✅ Contract added to database:', contractAddress);
+
+      return { contractAddress, abi };
     } catch (err: any) {
-      console.error('🛑 Error adding external contract:', err);
-      throw new Error(`Failed to add external contract: ${err.message}`);
+      console.error('🛑 Add contract error:', err);
+      throw new Error(`Failed to add contract: ${err.message}`);
     } finally {
-      // Cleanup temporary files
+      // Cleanup temporary ABI file
       try {
         await this.ssh.execCommand(`rm /tmp/${contractName}_abi.json`);
-        console.log('🧼 Cleaned up temporary files');
+        console.log('🧼 Cleaned up temporary ABI file');
       } catch {
-        console.warn('⚠️ Could not remove temporary files');
+        console.warn('⚠️ Could not remove temporary ABI file');
       }
       await this.disconnectFromServer();
     }

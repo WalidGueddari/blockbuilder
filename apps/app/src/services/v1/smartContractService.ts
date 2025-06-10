@@ -1,3 +1,4 @@
+import { Contract } from '@/components/modules/v1/smartcontract/types/contract';
 import {
   DeployContractPayload,
   DeployContractResponse,
@@ -116,6 +117,54 @@ class SmartContractService {
     } catch (error: any) {
       console.error('Delete draft error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.error || 'Failed to delete draft');
+    }
+  }
+
+  async importContractByAbi(
+    networkId: string,
+    payload: {
+      contractName: string;
+      contractAddress: string;
+      abi: any;
+      description: string;
+      tags: string[];
+      type: string;
+      config: any;
+    },
+  ): Promise<Contract> {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/${networkId}/add-external-contract`,
+        payload,
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Import contract by ABI error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Failed to import contract by ABI');
+    }
+  }
+
+  async importContractByCode(
+    networkId: string,
+    payload: {
+      contractName: string;
+      contractAddress: string;
+      contractContent: string;
+      description: string;
+      tags: string[];
+      type: string;
+      config: any;
+    },
+  ): Promise<Contract> {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL_V4}/smartcontract/${networkId}/add-external-contract-code`,
+        payload,
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Import contract by code error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error || 'Failed to import contract by code');
     }
   }
 }

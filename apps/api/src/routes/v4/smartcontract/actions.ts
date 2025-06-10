@@ -206,12 +206,15 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
         body: Type.Object({
           contractName: Type.String(),
           contractAddress: Type.String(),
+          abi: Type.Any(),
           description: Type.Optional(Type.String()),
           tags: Type.Optional(Type.Array(Type.String())),
+          config: Type.Optional(ContractConfigSchema),
         }),
         response: {
           200: Type.Object({
             contractAddress: Type.String(),
+            abi: Type.Any(),
           }),
           500: Type.Object({
             error: Type.String(),
@@ -222,109 +225,163 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
     async (request, reply) => {
       try {
         const { networkId } = request.params as { networkId: string };
-        const { contractName, contractAddress, description, tags } = request.body as {
+        const {
+          contractName,
+          contractAddress,
+          abi,
+          description,
+          tags = [],
+          config,
+        } = request.body as {
           contractName: string;
           contractAddress: string;
+          abi: any;
           description?: string;
           tags?: string[];
-          abi?: any;
+          config?: ContractConfig;
         };
 
-        const deploymentResult = await contractService.addExternalContract(
+        // Add 'external' tag to distinguish external contracts
+        const updatedTags = [...tags, 'external'];
+
+        const result = await contractService.addExternalContractUsingABI(
           networkId,
           contractAddress,
           contractName,
           {
+            abi,
             description,
-            tags,
+            tags: updatedTags,
+            config,
           },
         );
 
-        return deploymentResult;
+        return result;
       } catch (error: any) {
         fastify.log.error(error);
         reply.code(500).send({ error: error.message });
       }
     },
   );
-  // Route to verify a deployed contract
-  /*   fastify.post(
-    '/:networkId/verify',
+
+  // Route to add an external contract using source code
+  fastify.post(
+    '/:networkId/add-external-contract-code',
     {
       schema: {
         tags: ['smartcontract'],
-        description: 'Verify a deployed smart contract on the network',
+        description: 'Add an external contract using its source code',
         params: Type.Object({
-          networkId: Type.String({
-            description: 'The ID of the network where the contract is deployed',
-          }),
+          networkId: Type.String(),
         }),
         body: Type.Object({
-          address: Type.String({ description: 'The address of the deployed contract' }),
-          contractName: Type.String({ description: 'The name of the contract to verify' }),
+          contractName: Type.String(),
+          contractAddress: Type.String(),
+          contractContent: Type.String(),
+          description: Type.Optional(Type.String()),
+          tags: Type.Optional(Type.Array(Type.String())),
+          config: Type.Optional(ContractConfigSchema),
         }),
         response: {
           200: Type.Object({
-            result: Type.String({ description: 'The verification result' }),
+            contractAddress: Type.String(),
+            abi: Type.Any(),
           }),
           500: Type.Object({
-            error: Type.String({ description: 'Error message if the verification fails' }),
+            error: Type.String(),
           }),
         },
       },
     },
     async (request, reply) => {
-      const { networkId } = request.params as { networkId: string };
-      const { address, contractName } = request.body as {
-        address: string;
-        contractName: string;
-      };
-
       try {
-        const result = await contractService.verifyContract(networkId, address, contractName);
-        return { result };
+        const { networkId } = request.params as { networkId: string };
+        const {
+          contractName,
+          contractAddress,
+          contractContent,
+          description,
+          tags = [],
+          config,
+        } = request.body as {
+          contractName: string;
+          contractAddress: string;
+          contractContent: string;
+          description?: string;
+          tags?: string[];
+          config?: ContractConfig;
+        };
+
+        // Add 'external' and 'source-code' tags
+        const updatedTags = [...tags, 'external', 'source-code'];
+
+        const contractFile = Buffer.from(contractContent, 'utf-8');
+
+        const result = await contractService.addExternalContractUsingCode(
+          networkId,
+          contractAddress,
+          contractFile,
+          contractName,
+          {
+            abi: [], // Will be populated from compilation
+            description,
+            tags: updatedTags,
+            config,
+          },
+        );
+
+        return result;
       } catch (error: any) {
+        fastify.log.error(error);
         reply.code(500).send({ error: error.message });
       }
     },
   );
 
-  // Route to get contract ABI
+  // Route to get contract interactions
   fastify.get(
-    '/:networkId/abi/:address',
+    '/:networkId/interactions/:address',
     {
       schema: {
         tags: ['smartcontract'],
-        description: 'Get the ABI of a deployed smart contract',
+        description: 'Get interaction history for a contract',
         params: Type.Object({
-          networkId: Type.String({
-            description: 'The ID of the network where the contract is deployed',
-          }),
-          address: Type.String({ description: 'The address of the deployed contract' }),
+          networkId: Type.String(),
+          address: Type.String(),
         }),
         response: {
-          200: Type.Object({
-            result: Type.String({ description: 'The contract ABI in JSON format' }),
-          }),
+          200: Type.Array(
+            Type.Object({
+              id: Type.String(),
+              functionName: Type.String(),
+              functionType: Type.Union([Type.Literal('view'), Type.Literal('transaction')]),
+              result: Type.Optional(Type.Any()),
+              transactionHash: Type.Optional(Type.String()),
+              gasUsed: Type.Optional(Type.String()),
+              blockNumber: Type.Optional(Type.Number()),
+              timestamp: Type.String(),
+              signerAddress: Type.Optional(Type.String()),
+            }),
+          ),
           500: Type.Object({
-            error: Type.String({ description: 'Error message if retrieving the ABI fails' }),
+            error: Type.String(),
           }),
         },
       },
     },
     async (request, reply) => {
-      const { networkId, address } = request.params as { networkId: string; address: string };
-
       try {
-        const result = await contractService.getContractABI(networkId, address);
-        return { result };
+        const { networkId, address } = request.params as { networkId: string; address: string };
+        const contract = await deployedContractService.findById(address);
+        if (!contract) {
+          return reply.code(404).send({ error: 'Contract not found' });
+        }
+        return contract.interactions || [];
       } catch (error: any) {
         reply.code(500).send({ error: error.message });
       }
     },
-  ); */
-
-  // New routes for Deployed Contracts
+  );
 
   // GET /smartcontract/deployed - List all deployed contracts
   fastify.get(
@@ -366,6 +423,161 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       try {
         const contracts = await deployedContractService.findAll();
         return contracts;
+      } catch (error: any) {
+        reply.code(500).send({ error: error.message });
+      }
+    },
+  );
+
+  // Route to get contract details
+  fastify.get(
+    '/:networkId/contract/:address',
+    {
+      schema: {
+        tags: ['smartcontract'],
+        description: 'Get detailed information about a deployed contract',
+        params: Type.Object({
+          networkId: Type.String(),
+          address: Type.String(),
+        }),
+        response: {
+          200: Type.Object({
+            id: Type.String(),
+            address: Type.String(),
+            name: Type.String(),
+            type: Type.String(),
+            description: Type.Optional(Type.String()),
+            tags: Type.Array(Type.String()),
+            abi: Type.Optional(Type.Any()),
+            transactionHash: Type.String(),
+            deployedAt: Type.String(),
+            networkId: Type.String(),
+            createdAt: Type.String(),
+            updatedAt: Type.String(),
+            favorites: Type.Array(
+              Type.Object({
+                id: Type.String(),
+                createdAt: Type.String(),
+              }),
+            ),
+            interactions: Type.Array(
+              Type.Object({
+                id: Type.String(),
+                functionName: Type.String(),
+                functionType: Type.Union([Type.Literal('view'), Type.Literal('transaction')]),
+                result: Type.Optional(Type.Any()),
+                transactionHash: Type.Optional(Type.String()),
+                gasUsed: Type.Optional(Type.String()),
+                blockNumber: Type.Optional(Type.Number()),
+                timestamp: Type.String(),
+                signerAddress: Type.Optional(Type.String()),
+              }),
+            ),
+          }),
+          404: Type.Object({ error: Type.String() }),
+          500: Type.Object({
+            error: Type.String(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { networkId, address } = request.params as { networkId: string; address: string };
+        const contract = await deployedContractService.findById(address);
+        if (!contract) {
+          return reply.code(404).send({ error: 'Contract not found' });
+        }
+        return contract;
+      } catch (error: any) {
+        reply.code(500).send({ error: error.message });
+      }
+    },
+  );
+
+  // Route to search deployed contracts
+  fastify.get(
+    '/deployed/search',
+    {
+      schema: {
+        tags: ['smartcontract'],
+        description: 'Search deployed contracts by various criteria',
+        querystring: Type.Object({
+          query: Type.Optional(Type.String()),
+          type: Type.Optional(ContractTypeSchema),
+          tags: Type.Optional(Type.Array(Type.String())),
+          networkId: Type.Optional(Type.String()),
+          isFavorite: Type.Optional(Type.Boolean()),
+        }),
+        response: {
+          200: Type.Array(
+            Type.Object({
+              id: Type.String(),
+              address: Type.String(),
+              name: Type.String(),
+              type: Type.String(),
+              description: Type.Optional(Type.String()),
+              tags: Type.Array(Type.String()),
+              abi: Type.Optional(Type.Any()),
+              transactionHash: Type.String(),
+              deployedAt: Type.String(),
+              networkId: Type.String(),
+              createdAt: Type.String(),
+              updatedAt: Type.String(),
+              favorites: Type.Array(
+                Type.Object({
+                  id: Type.String(),
+                  createdAt: Type.String(),
+                }),
+              ),
+            }),
+          ),
+          500: Type.Object({
+            error: Type.String(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { query, type, tags, networkId, isFavorite } = request.query as {
+          query?: string;
+          type?: ContractType;
+          tags?: string[];
+          networkId?: string;
+          isFavorite?: boolean;
+        };
+
+        const contracts = await deployedContractService.findAll();
+
+        // Filter contracts based on search criteria
+        const filteredContracts = contracts.filter((contract) => {
+          if (
+            query &&
+            !contract.name.toLowerCase().includes(query.toLowerCase()) &&
+            !contract.description?.toLowerCase().includes(query.toLowerCase())
+          ) {
+            return false;
+          }
+          if (type && contract.type !== type) {
+            return false;
+          }
+          if (tags && tags.length > 0 && !tags.every((tag) => contract.tags.includes(tag))) {
+            return false;
+          }
+          if (networkId && contract.networkId !== networkId) {
+            return false;
+          }
+          if (
+            isFavorite !== undefined &&
+            (isFavorite ? contract.favorites.length === 0 : contract.favorites.length > 0)
+          ) {
+            return false;
+          }
+          return true;
+        });
+
+        return filteredContracts;
       } catch (error: any) {
         reply.code(500).send({ error: error.message });
       }

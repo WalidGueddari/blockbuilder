@@ -1,3 +1,4 @@
+import { Contract } from '@/components/modules/v1/smartcontract/types/contract';
 import {
   DeployContractPayload,
   DeployContractResponse,
@@ -17,6 +18,7 @@ const initialState: SmartContractState = {
   loading: false,
   error: null,
   draftToEditId: null,
+  importedContracts: [],
 };
 
 export const deployContract = createAsyncThunk<
@@ -126,6 +128,50 @@ export const toggleFavorite = createAsyncThunk<
   }
 });
 
+export const importContractByAbi = createAsyncThunk<
+  Contract,
+  {
+    networkId: string;
+    contractName: string;
+    contractAddress: string;
+    abi: any;
+    description: string;
+    tags: string[];
+    type: string;
+    config: any;
+  },
+  { rejectValue: string }
+>('smartContract/importByAbi', async (payload, { rejectWithValue }) => {
+  try {
+    const { networkId, ...contractData } = payload;
+    return await smartContractService.importContractByAbi(networkId, contractData);
+  } catch (error: any) {
+    return rejectWithValue(error.message);
+  }
+});
+
+export const importContractByCode = createAsyncThunk<
+  Contract,
+  {
+    networkId: string;
+    contractName: string;
+    contractAddress: string;
+    contractContent: string;
+    description: string;
+    tags: string[];
+    type: string;
+    config: any;
+  },
+  { rejectValue: string }
+>('smartContract/importByCode', async (payload, { rejectWithValue }) => {
+  try {
+    const { networkId, ...contractData } = payload;
+    return await smartContractService.importContractByCode(networkId, contractData);
+  } catch (error: any) {
+    return rejectWithValue(error.message);
+  }
+});
+
 const smartContractSlice = createSlice({
   name: 'smartContract',
   initialState,
@@ -185,9 +231,40 @@ const smartContractSlice = createSlice({
       // Delete draft cases
       .addCase(deleteDraft.fulfilled, (state, action) => {
         state.drafts = state.drafts.filter((draft) => draft.id !== action.payload);
+      })
+      // Import by ABI
+      .addCase(importContractByAbi.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(importContractByAbi.fulfilled, (state, action) => {
+        state.loading = false;
+        state.importedContracts.push(action.payload);
+      })
+      .addCase(importContractByAbi.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to import contract by ABI';
+      })
+      // Import by Code
+      .addCase(importContractByCode.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(importContractByCode.fulfilled, (state, action) => {
+        state.loading = false;
+        state.importedContracts.push(action.payload);
+      })
+      .addCase(importContractByCode.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to import contract by code';
       });
   },
 });
 
 export const { clearError, setDraftToEditId } = smartContractSlice.actions;
+
+// Add new selectors
+export const selectImportedContracts = (state: { smartContract: SmartContractState }) =>
+  state.smartContract.importedContracts;
+
 export default smartContractSlice.reducer;

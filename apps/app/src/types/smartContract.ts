@@ -1,5 +1,6 @@
 import type { ContractTransaction } from 'ethers';
 
+import { Contract } from '../components/modules/v1/smartcontract/types/contract';
 import { ContractConfig } from '../components/modules/v1/smartcontract/types/contract';
 
 export interface DeployedContract {
@@ -39,8 +40,9 @@ export interface SmartContractState {
   deployedContracts: DeployedContract[];
   drafts: DraftContract[];
   loading: boolean;
-  error: null | string;
-  draftToEditId?: string | null;
+  error: string | null;
+  draftToEditId: string | null;
+  importedContracts: Contract[];
 }
 
 export interface DeployContractPayload {
