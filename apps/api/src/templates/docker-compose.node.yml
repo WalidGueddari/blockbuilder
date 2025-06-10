@@ -1,7 +1,7 @@
 # node docker compose file template
 services:
   node:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:24.10.0
     container_name: NET_ID-NODE_INDEX
     volumes:
       - ./data:/data

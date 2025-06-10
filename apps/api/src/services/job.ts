@@ -225,9 +225,9 @@ export class JobService {
       await this.blockscoutService.runBlockscout(network.id, blockscoutVm.id);
 
       // Status 5: Finalizing deployment
-      await this._updateJobStatus(jobId, 'Finalizing deployment');
-      console.info('Cleaning up stray Besu nodes');
-      await this.containerService.killBesuNode();
+      // await this._updateJobStatus(jobId, 'Finalizing deployment');
+      // console.info('Cleaning up stray Besu nodes');
+      // await this.containerService.killBesuNode();
 
       console.info('Deployment finished ✔');
       await this._updateJobStatus(jobId, 'Blockchain ready');

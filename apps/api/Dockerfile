@@ -71,12 +71,12 @@ RUN curl -fSL https://download.oracle.com/java/24/latest/jdk-24_linux-x64_bin.ta
 ENV JAVA_HOME=/opt/jdk-24
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-RUN curl -L https://github.com/hyperledger/besu/releases/download/25.1.0/besu-25.1.0.tar.gz -o /tmp/besu.tar.gz \
+RUN curl -L https://github.com/hyperledger/besu/releases/download/24.10.0/besu-24.10.0.tar.gz -o /tmp/besu.tar.gz \
     && tar -xzf /tmp/besu.tar.gz -C /opt \
     && rm /tmp/besu.tar.gz
 
 # 3) Make Besu available in PATH
-ENV BESU_HOME=/opt/besu-25.1.0
+ENV BESU_HOME=/opt/besu-24.10.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
 
 RUN curl -L https://s01.oss.sonatype.org/service/local/repositories/releases/content/net/consensys/quorum/tessera/tessera-dist/24.4.2/tessera-dist-24.4.2.tar -o /tmp/tessera.tar \

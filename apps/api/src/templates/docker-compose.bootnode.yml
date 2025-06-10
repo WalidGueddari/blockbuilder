@@ -1,6 +1,6 @@
 services:
   bootnode:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:24.10.0
     container_name: NET_ID-1
     volumes:
       - ./data:/data
@@ -53,10 +53,10 @@ services:
       - ./Tessera:/Tessera
       - ./Tessera/data:/Tessera/data
     ports:
-      - "TESS_THIRD_PARTY_PORT:TESS_THIRD_PARTY_PORT" # ThirdParty service
-      - "TESS_Q2T_PORT:TESS_Q2T_PORT" # Q2T service
-      - "TESS_P2P:TESS_P2P" # P2P service
-      - "TESS_HEALTH_PORT:TESS_HEALTH_PORT" # Optional admin/health port
+      - "TESS_THIRD_PARTY_PORT:TESS_THIRD_PARTY_PORT" 
+      - "TESS_Q2T_PORT:TESS_Q2T_PORT" 
+      - "TESS_P2P:TESS_P2P" 
+      - "TESS_HEALTH_PORT:TESS_HEALTH_PORT" 
     command: [ "-configfile", "/Tessera/tessera.conf" ]
     networks:
       NET_ID:
