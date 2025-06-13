@@ -26,12 +26,16 @@ import { X } from 'lucide-react';
 
 import { useContractImport } from '../../hooks/useContractImport';
 import type { Contract } from '../../types';
+import { NetworkSelect } from '../contract/deployment/NetworkSelect';
 
 interface ImportContractDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (contract: Contract) => void;
   networkId: string;
+  networks: any[];
+  networksLoading: boolean;
+  setSelectedNetworkId: (value: string) => void;
 }
 
 const CONTRACT_TYPES = [
@@ -50,6 +54,9 @@ export const ImportContractDialog = ({
   onOpenChange,
   onImport,
   networkId,
+  networks,
+  networksLoading,
+  setSelectedNetworkId,
 }: ImportContractDialogProps) => {
   const {
     isLoading,
@@ -93,7 +100,14 @@ export const ImportContractDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import External Contract</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <NetworkSelect
+              selectedNetworkId={networkId}
+              setSelectedNetworkId={setSelectedNetworkId}
+              networks={networks}
+              networksLoading={networksLoading}
+            />
+          </DialogTitle>
           <DialogDescription>
             Add a contract that wasn't deployed through this interface
           </DialogDescription>

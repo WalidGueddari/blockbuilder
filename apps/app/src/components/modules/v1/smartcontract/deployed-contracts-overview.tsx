@@ -14,6 +14,7 @@ import { FilterTags } from './components/contracts/FilterTags';
 import { ImportContractDialog } from './components/contracts/ImportContractDialog';
 import { SearchBar } from './components/contracts/SearchBar';
 import { useContractData } from './hooks/useContractData';
+import { useNetwork } from './hooks/useNetwork';
 
 export default function DeployedContractsPage() {
   const dispatch = useAppDispatch();
@@ -29,6 +30,8 @@ export default function DeployedContractsPage() {
     handleFilterChange,
     handleToggleFavorite,
   } = useContractData();
+
+  const { networks, networksLoading, selectedNetworkId, setSelectedNetworkId } = useNetwork();
 
   const { toast } = useToast();
   const [selectedContract, setSelectedContract] = useState<DeployedContract | null>(null);
@@ -185,6 +188,10 @@ export default function DeployedContractsPage() {
             description: `Contract ${contract.name} has been imported successfully.`,
           });
         }}
+        networkId={selectedNetworkId}
+        networks={networks}
+        networksLoading={networksLoading}
+        setSelectedNetworkId={setSelectedNetworkId}
       />
     </div>
   );

@@ -10,3 +10,4 @@ export { FaqSection } from './sections/faq-section';
 export { Footer } from './footer';
 export { Header } from './header';
 export { HeroSection } from './sections/hero-section';
+export { YoutubePlaylistCarousel } from './sections/youtube-playlist-carousel';

@@ -13,6 +13,7 @@ import {
   TestimonialsSection,
   TrustedBySection,
   UseCasesSection,
+  YoutubePlaylistCarousel,
 } from '@/components/modules/v1/home/index';
 
 export default function LandingPage() {
@@ -25,6 +26,9 @@ export default function LandingPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <DemoSection />
+        <div className="mx-auto px-20">
+          <YoutubePlaylistCarousel />
+        </div>
         <UseCasesSection />
         <PricingSection />
         <TestimonialsSection />
