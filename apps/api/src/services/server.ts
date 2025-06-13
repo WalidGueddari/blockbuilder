@@ -308,9 +308,9 @@ export class ServerService {
       );
       console.log('Certbot obtain SSL:', result.stdout, result.stderr);
 
-      // console.log('Testing automatic renewal...');
-      // result = await ssh.execCommand('sudo certbot renew --dry-run');
-      // console.log('Certbot test:', result.stdout, result.stderr);
+      console.log('Testing automatic renewal...');
+      result = await ssh.execCommand('sudo certbot renew --dry-run');
+      console.log('Certbot test:', result.stdout, result.stderr);
 
       console.log(
         'Setup complete: Docker, Docker Compose, Nginx, Certbot, and additional packages have been installed and configured.',

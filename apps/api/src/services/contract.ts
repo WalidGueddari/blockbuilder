@@ -168,15 +168,15 @@ export class ContractService {
     address: string,
     functionName: string,
     args: string[] = [],
-  ): Promise<BackendInteractionResult> {
+  ): Promise<any> {
     try {
       this.validateAddress(address);
       this.validateFunctionName(functionName);
 
       await this.connectToServer(networkId);
-
+      console.log('🚀 Starting contract interaction: ${functionName} on network: ${networkId}');
       const quotedArgs = args.map((arg) => `"${arg}"`).join(' ');
-      const command = `docker exec ${this.CONTAINER_NAME} CONTRACT_ADDRESS=${address} CONTRACT_FUNCTION=${functionName} CONTRACT_ARGS='[${quotedArgs}]' npx hardhat run scripts/interact.ts --network localhost`;
+      const command = `docker exec -e CONTRACT_ADDRESS=${address} -e CONTRACT_FUNCTION=${functionName} -e CONTRACT_ARGS='[${quotedArgs}]' ${this.CONTAINER_NAME} npx hardhat run scripts/interact.ts --network localhost`;
 
       const result = await this.ssh.execCommand(command);
 
@@ -204,7 +204,7 @@ export class ContractService {
         throw new Error(parsedResult.error || 'Contract interaction failed.');
       }
 
-      return parsedResult;
+      return parsedResult.result;
     } catch (error: any) {
       throw new Error(`Failed to interact with contract: ${error.message}`);
     } finally {
@@ -253,7 +253,7 @@ export class ContractService {
 
       // 4️⃣ Deploy
       const deploy = await this.ssh.execCommand(
-        `docker exec -e CONTRACT_PATH=${destPath} -e CONTRACT_NAME=${contractName} ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`,
+        `docker exec -e CONTRACT_PATH=contracts/${contractName}.sol -e CONTRACT_NAME=${contractName} ${this.CONTAINER_NAME} npx hardhat run scripts/deploy.ts --network localhost`,
       );
       if (deploy.stderr) throw new Error(`Deployment failed: ${deploy.stderr}`);
       console.log('✅ Raw deploy output:\n', deploy.stdout);
@@ -290,7 +290,7 @@ export class ContractService {
         type: options.config?.contractType ?? 'Custom',
         description: options.description,
         tags: options.tags ?? [],
-        abi: abi, // Use the ABI from deployment if available, fallback to options.abi
+        abi: abi,
         networkId,
         transactionHash,
       });
@@ -304,7 +304,7 @@ export class ContractService {
     } finally {
       // Cleanup file inside container workspace
       try {
-        await this.ssh.execCommand(`rm ${destPath}`);
+        //await this.ssh.execCommand(`rm ${destPath}`);
         console.log('🧼 Cleaned up deployed contract file');
       } catch {
         console.warn('⚠️ Could not remove contract file');
