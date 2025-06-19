@@ -31,43 +31,43 @@ export function Footer() {
       links: [
         { name: 'Features', href: '#features' },
         { name: 'Pricing', href: '#pricing' },
-        { name: 'Integrations', href: '/integrations' },
-        { name: 'Changelog', href: '/changelog' },
+        { name: 'Integrations', href: '/home' },
+        { name: 'Changelog', href: '/home' },
       ],
     },
     {
       title: 'Resources',
       links: [
-        { name: 'Documentation', href: '/docs' },
-        { name: 'Guides', href: '/guides' },
-        { name: 'Blog', href: '/blog' },
-        { name: 'Support', href: '/support' },
+        { name: 'Documentation', href: '/home' },
+        { name: 'Guides', href: '/home' },
+        { name: 'Blog', href: '/home' },
+        { name: 'Support', href: '/home' },
       ],
     },
     {
       title: 'Company',
       links: [
-        { name: 'About', href: '/about' },
-        { name: 'Careers', href: '/careers' },
-        { name: 'Contact', href: '/contact' },
-        { name: 'Partners', href: '/partners' },
+        { name: 'About', href: '/home' },
+        { name: 'Careers', href: '/home' },
+        { name: 'Contact', href: '/home' },
+        { name: 'Partners', href: '/home' },
       ],
     },
     {
       title: 'Legal',
       links: [
-        { name: 'Privacy', href: '/privacy' },
-        { name: 'Terms', href: '/terms' },
-        { name: 'Security', href: '/security' },
-        { name: 'Cookies', href: '/cookies' },
+        { name: 'Privacy', href: '/home' },
+        { name: 'Terms', href: '/home' },
+        { name: 'Security', href: '/home' },
+        { name: 'Imprint', href: '/imprint' },
       ],
     },
   ];
 
   const socialLinks = [
-    { icon: 'twitter', href: '#' },
-    { icon: 'linkedin', href: '#' },
-    { icon: 'discord', href: '#' },
+    { icon: 'twitter', href: 'https://x.com/Block_Builder_' },
+    { icon: 'linkedin', href: 'https://www.linkedin.com/company/blockchainbuilder/' },
+    { icon: 'youtube', href: 'https://www.youtube.com/@BlockBuilder.network' },
   ];
 
   return (
@@ -128,20 +128,16 @@ export function Footer() {
                       <circle cx="4" cy="4" r="2"></circle>
                     </svg>
                   )}
-                  {social.icon === 'discord' && (
+                  {social.icon === 'youtube' && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"
                       height="24"
                       viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      fill="currentColor"
                       className="h-5 w-5"
                     >
-                      <path d="M12 2H2v10h10V2zM22 2h-8v10h8V2zM12 14H2v8h10v-8zM22 14h-8v8h8v-8z"></path>
+                      <path d="M21.8 8s-.2-1.5-.8-2.2c-.8-.9-1.7-.9-2.2-1C15.6 4.5 12 4.5 12 4.5h-.1s-3.6 0-6.8.3c-.5 0-1.4.1-2.2 1C2.3 6.5 2 8 2 8S1.7 9.5 1.7 11v2c0 1.5.3 3 .3 3s.2 1.5.8 2.2c.8.9 1.9.9 2.4 1 1.8.2 7.6.3 7.6.3s3.6 0 6.8-.3c.5 0 1.4-.1 2.2-1 .6-.7.8-2.2.8-2.2s.3-1.5.3-3v-2c0-1.5-.3-3-.3-3zM9.8 14.5v-5l5.2 2.5-5.2 2.5z" />
                     </svg>
                   )}
                   <span className="sr-only">{social.icon}</span>

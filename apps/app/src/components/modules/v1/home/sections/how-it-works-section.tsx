@@ -59,7 +59,7 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="bg-muted/50 relative w-full py-12 md:py-24 lg:py-32">
+    <section id="how-it-works" className=" relative w-full py-12 md:py-24 lg:py-32">
       <div className="to-background/10 pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent"></div>
       <div className="container px-4 md:px-6">
         <motion.div

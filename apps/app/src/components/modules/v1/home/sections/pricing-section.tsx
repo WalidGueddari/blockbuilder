@@ -250,9 +250,7 @@ export function PricingSection() {
                             variant={plan.popular ? 'default' : 'outline'}
                             asChild
                           >
-                            <Link href={plan.name === 'Visionary' ? '/consultation' : '/signup'}>
-                              {plan.cta}
-                            </Link>
+                            <Link href="/consultation">{plan.cta}</Link>
                           </Button>
                         </motion.div>
                       </CardFooter>
@@ -347,9 +345,7 @@ export function PricingSection() {
                             variant={plan.popular ? 'default' : 'outline'}
                             asChild
                           >
-                            <Link href={plan.name === 'Visionary' ? '/consultation' : '/signup'}>
-                              {plan.cta}
-                            </Link>
+                            <Link href="/consultation">{plan.cta}</Link>
                           </Button>
                         </motion.div>
                       </CardFooter>

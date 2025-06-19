@@ -13,3 +13,7 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+export async function sendContactEmail(email: string) {
+  return api.post('/api/v1/common/contact', { email });
+}

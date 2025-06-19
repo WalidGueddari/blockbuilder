@@ -22,7 +22,7 @@ export default function LandingPage() {
       <Header />
       <main className="relative z-10 flex-1">
         <HeroSection />
-        <TrustedBySection />
+        {/*<TrustedBySection />*/}
         <FeaturesSection />
         <HowItWorksSection />
         <DemoSection />
@@ -31,7 +31,7 @@ export default function LandingPage() {
         </div>
         <UseCasesSection />
         <PricingSection />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <FaqSection />
         <CtaSection />
       </main>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -9,6 +10,9 @@ import { useEffect, useState } from 'react';
 export function CtaSection() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -54,6 +58,35 @@ export function CtaSection() {
       repeat: Infinity,
       repeatType: 'reverse' as const,
     },
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/contact` : '/api/v1/contact';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('Thank you! We have received your email.');
+        setEmail('');
+        toast && toast({ title: 'Success', description: 'Contact email sent!' });
+      } else {
+        setMessage(data.message || 'Failed to send. Please try again.');
+        toast && toast({ title: 'Error', description: data.message || 'Failed to send.' });
+      }
+    } catch (err: any) {
+      setMessage('Something went wrong. Please try again.');
+      toast && toast({ title: 'Error', description: 'Something went wrong.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,24 +142,26 @@ export function CtaSection() {
             </p>
           </div>
           <motion.div className="mx-auto w-full max-w-sm space-y-2" variants={scaleUp}>
-            <form className="flex flex-col gap-2 sm:flex-row">
+            <form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleSubmit}>
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="border-input bg-background/80 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm backdrop-blur-sm transition-all duration-300 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                className="border-input bg-background/80 ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm text-white backdrop-blur-sm transition-all duration-300 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:text-black"
               />
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button type="submit" variant="secondary" className="shrink-0">
-                  Get Started
+                <Button type="submit" variant="secondary" className="shrink-0" disabled={loading}>
+                  {loading ? 'Sending...' : 'Get Started'}
                 </Button>
               </motion.div>
             </form>
+            {message && <p className="text-primary-foreground/80 mt-2 text-xs">{message}</p>}
             <p className="text-primary-foreground/80 text-xs">
               By signing up, you agree to our{' '}
-              <Link
-                href="/terms"
-                className="hover:text-primary-foreground underline underline-offset-2"
-              >
+              <Link href="/" className="hover:text-primary-foreground underline underline-offset-2">
                 Terms & Conditions
               </Link>
             </p>
@@ -139,7 +174,7 @@ export function CtaSection() {
               animate={pulseAnimation}
             >
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/signup">Start Free Trial</Link>
+                <Link href="/">Start Free Trial</Link>
               </Button>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} variants={scaleUp}>

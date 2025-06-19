@@ -1,11 +1,19 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 export function FaqSection() {
-  // Animation variants
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleIndex = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -15,46 +23,91 @@ export function FaqSection() {
     },
   };
 
-  const staggerContainer = {
-    hidden: { opacity: 0 },
+  const scaleUp = {
+    hidden: { scale: 0.95, opacity: 0 },
     visible: {
+      scale: 1,
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { duration: 0.4 },
+    },
+    exit: {
+      scale: 0.95,
+      opacity: 0,
+      transition: { duration: 0.2 },
     },
   };
 
   const faqs = [
     {
-      question: 'Do I need coding experience to create my own blockchain?',
+      question: 'What is BlockBuilder no-code blockchain platform?',
       answer:
-        'No, BlockBuilder is designed to let anyone create their own blockchain network without writing a single line of code. Our visual interface handles all the complexity for you.',
+        'BlockBuilder is a no-code platform that lets anyone create, customize, and launch their own blockchain network without writing code. It’s ideal for startups, enterprises, developers, and non-tech users looking to build private or public blockchains fast.',
     },
     {
-      question: 'How customizable are the blockchain networks I create?',
+      question: 'Can I build a blockchain without coding skills?',
       answer:
-        'Extremely customizable. You can define your own consensus mechanism, block parameters, gas economics, governance structure, and more. If you can imagine it, you can build it with BlockBuilder.',
+        'Yes. BlockBuilder is 100% no-code. You don’t need any technical background—just use our drag-and-drop interface to configure your blockchain and go live in minutes.',
     },
     {
-      question: 'Can I migrate my existing blockchain project to BlockBuilder?',
-      answer:
-        'Yes, we offer tools to help you import existing blockchain networks and smart contracts into BlockBuilder. Our support team can assist with complex migrations.',
+      question: 'How customizable is a BlockBuilder blockchain?',
+      answer: `Highly customizable. You can fully configure your network with:\n- Consensus mechanisms (PoS, PoA, etc.)\n- Custom tokenomics and governance rules\n- Adjustable block time and size\n- Role-based access and permissioning\n- Native token support\nBuild a blockchain tailored to your business, industry, or community.`,
     },
     {
-      question: 'How scalable are the blockchain networks created with BlockBuilder?',
+      question: 'Can I migrate my existing blockchain or smart contracts to BlockBuilder?',
       answer:
-        'Networks built with BlockBuilder are designed for scalability. You can start small and scale up as your user base grows, with options for sharding, Layer 2 solutions, and other scaling technologies.',
+        'Yes. BlockBuilder supports migration from existing blockchains. Easily import smart contracts and network settings using our migration tools.\nFor complex migrations, our expert support team is available to assist.',
     },
     {
-      question: 'What kind of performance can I expect from my blockchain network?',
-      answer:
-        'BlockBuilder-created networks can achieve thousands of transactions per second depending on your configuration. Our optimization tools help you balance security, decentralization, and performance.',
+      question: 'How scalable is a blockchain built with BlockBuilder?',
+      answer: `Scalable by design. BlockBuilder supports:\n- Layer 2 integration\n- Sharding and parallel processing\n- Modular infrastructure for large user bases\nWhether you're building for 100 or 1 million users, your network can grow seamlessly.`,
     },
     {
-      question: 'Can I monetize my blockchain network?',
+      question: 'What’s the transaction speed (TPS) on BlockBuilder?',
       answer:
-        'Absolutely. You can create native tokens, set up transaction fees, implement staking rewards, and establish other economic models to monetize your blockchain network.',
+        'BlockBuilder blockchains can process thousands of transactions per second (TPS) depending on your setup. You’ll also get tools to fine-tune performance, decentralization, and security.',
+    },
+    {
+      question: 'Can I monetize my blockchain?',
+      answer: `Absolutely. You can generate revenue by:\n- Creating and selling native tokens\n- Charging transaction fees\n- Offering staking and validator rewards\n- Designing your own token economy\nMonetize your blockchain however you choose.`,
+    },
+    {
+      question: 'Is BlockBuilder secure?',
+      answer: `Yes. Security is built in. Features include:\n- Enterprise-grade encryption\n- Role-based access control\n- Network permissioning\n- Compliance-ready infrastructure\n- Real-time monitoring and updates`,
+    },
+    {
+      question: 'Can I build private or public blockchains with BlockBuilder?',
+      answer: `Yes. Choose your deployment:\n- Private blockchains for internal use, consortiums, or regulated environments\n- Public blockchains for open, decentralized applications\nYou control who can access, read, and validate the network.`,
+    },
+    {
+      question: 'How fast can I launch a blockchain?',
+      answer:
+        'Launch your blockchain in under 30 minutes. With no-code setup and pre-built modules, most users go live in minutes—no long development cycles, no delays.',
+    },
+    {
+      question: 'Does BlockBuilder offer customer support and updates?',
+      answer: `Yes. Every BlockBuilder plan includes:\n- Ongoing support via email and chat\n- Regular feature updates and improvements\n- Security patches and performance enhancements\nWe help you launch—and scale—with confidence.`,
+    },
+    {
+      question: 'How much does it cost to use BlockBuilder?',
+      answer: `Pricing depends on your needs. We offer flexible plans for:\n- Individuals and startups\n- Enterprises and government use\n- Educational and research projects`,
+    },
+    {
+      question: 'What industries use BlockBuilder?',
+      answer: `BlockBuilder supports use cases in:\n- DeFi and Web3\n- Supply chain and logistics\n- Gaming and NFTs\n- Healthcare and identity\n- Government and education\nAny sector needing secure, custom blockchain solutions can use BlockBuilder.`,
+    },
+    {
+      question: 'Does BlockBuilder support ERC-20 and other token standards?',
+      answer:
+        'Yes. BlockBuilder supports major token standards including ERC-20, ERC-721, and custom token models. Ideal for DeFi, NFTs, and enterprise tokenization.',
+    },
+    {
+      question: 'Can I integrate BlockBuilder with Web3 tools?',
+      answer:
+        'Yes. BlockBuilder is Web3-ready and supports integration with wallets, explorers, bridges, APIs, and other dApps through built-in modules or external APIs.',
+    },
+    {
+      question: 'How does BlockBuilder compare to other no-code blockchain platforms?',
+      answer: `BlockBuilder offers:\n- Greater customizability\n- Faster launch time\n- Enterprise-grade security\n- Integrated migration tools\n- Better support`,
     },
   ];
 
@@ -78,34 +131,41 @@ export function FaqSection() {
             </p>
           </div>
         </motion.div>
-        <motion.div
-          className="mx-auto max-w-3xl space-y-4 py-12"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
+        <div className="mx-auto mt-12 max-w-3xl space-y-4">
           {faqs.map((faq, i) => (
-            <motion.div key={i} variants={fadeIn} custom={i} transition={{ delay: i * 0.1 }}>
-              <motion.div
-                whileHover={{
-                  y: -2,
-                  boxShadow: '0 5px 20px -5px rgba(0, 0, 0, 0.1)',
-                  transition: { duration: 0.2 },
-                }}
-              >
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle>{faq.question}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{faq.answer}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+            <motion.div
+              key={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={scaleUp}
+            >
+              <Card onClick={() => toggleIndex(i)} className="cursor-pointer px-6 py-4 text-left">
+                <div className="flex items-start justify-between">
+                  <h3 className="text-lg font-semibold">{faq.question}</h3>
+                  <ChevronDown
+                    className={cn('mt-1 h-5 w-5 transition-transform', {
+                      'rotate-180': openIndex === i,
+                    })}
+                  />
+                </div>
+                <AnimatePresence>
+                  {openIndex === i && (
+                    <motion.pre
+                      className="text-muted-foreground mt-2 whitespace-pre-wrap text-sm"
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      variants={scaleUp}
+                    >
+                      {faq.answer}
+                    </motion.pre>
+                  )}
+                </AnimatePresence>
+              </Card>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

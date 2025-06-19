@@ -9,8 +9,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'BlockChain Builder bete',
-  description: 'A blockChain Builder To Create A Customized Block Chain Network',
+  title: 'BlockBuilder beta',
+  description: 'A BlockChain Builder To Create A Customized BlockChain Network',
   icons: '../../public/logo icon white.png',
 };
 

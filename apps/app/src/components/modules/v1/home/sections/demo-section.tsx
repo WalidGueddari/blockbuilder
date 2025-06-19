@@ -3,21 +3,19 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Pause, Play, Volume2, VolumeX, X } from 'lucide-react';
+import { Play, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 export function DemoSection() {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
-  const videoRef = useRef<HTMLVideoElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [thumbnailRect, setThumbnailRect] = useState({ top: 0, left: 0, width: 0, height: 0 });
+
+  // YouTube video ID extracted from https://www.youtube.com/watch?v=NXrJQsnJfi4
+  const youtubeVideoId = 'NXrJQsnJfi4';
 
   // Animation variants
   const fadeIn = {
@@ -73,52 +71,6 @@ export function DemoSection() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
-  // Handle video play/pause
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.play().catch((error) => {
-          console.error('Error playing video:', error);
-          setIsPlaying(false);
-        });
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  // Handle video mute/unmute
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
-
-  // Get video dimensions when it's loaded
-  useEffect(() => {
-    const handleVideoMetadata = () => {
-      if (videoRef.current) {
-        const { videoWidth, videoHeight } = videoRef.current;
-        setVideoSize({ width: videoWidth, height: videoHeight });
-      }
-    };
-
-    if (videoRef.current) {
-      videoRef.current.addEventListener('loadedmetadata', handleVideoMetadata);
-
-      // If the video is already loaded, get dimensions now
-      if (videoRef.current.readyState >= 1) {
-        handleVideoMetadata();
-      }
-    }
-
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.removeEventListener('loadedmetadata', handleVideoMetadata);
-      }
-    };
-  }, [videoRef.current]);
-
   const openFullscreen = () => {
     if (thumbnailRef.current) {
       const rect = thumbnailRef.current.getBoundingClientRect();
@@ -130,35 +82,18 @@ export function DemoSection() {
       });
     }
     setIsFullscreen(true);
-    setIsPlaying(true);
     document.body.style.overflow = 'hidden'; // Prevent scrolling when fullscreen
   };
 
   const closeFullscreen = () => {
     setIsFullscreen(false);
-    setIsPlaying(false);
     document.body.style.overflow = ''; // Re-enable scrolling
   };
 
-  const togglePlayPause = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsPlaying(!isPlaying);
-  };
-
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsMuted(!isMuted);
-  };
-
-  // Calculate video dimensions to maintain aspect ratio and take 50% of viewport height
+  // Calculate video dimensions to maintain 16:9 aspect ratio and take 60% of viewport height
   const calculateVideoDimensions = () => {
-    if (videoSize.width === 0 || videoSize.height === 0) {
-      return { width: '90%', height: '50vh' };
-    }
-
-    const aspectRatio = videoSize.width / videoSize.height;
-    const height = '50vh';
-    const width = `calc(50vh * ${aspectRatio})`;
+    const height = '60vh';
+    const width = `calc(60vh * 16 / 9)`; // 16:9 aspect ratio
 
     return { width, height };
   };
@@ -166,7 +101,7 @@ export function DemoSection() {
   const videoDimensions = calculateVideoDimensions();
 
   return (
-    <section id="demo" className="relative w-full py-12 md:py-24 lg:py-32">
+    <section id="demo" className="bg-muted/50 relative w-full py-12 md:py-24 lg:py-32">
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
           <motion.div
@@ -201,7 +136,7 @@ export function DemoSection() {
                   asChild
                   className="from-primary hover:from-primary/90 bg-gradient-to-r to-purple-600 hover:to-purple-600/90"
                 >
-                  <Link href="/signup">Try It Yourself</Link>
+                  <Link href="/">Try It Yourself</Link>
                 </Button>
               </motion.div>
               <motion.div
@@ -251,7 +186,7 @@ export function DemoSection() {
                 </motion.div>
               </div>
               <Image
-                src="placeholder.svg"
+                src={`https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`}
                 alt="BlockBuilder Demo Video"
                 fill
                 className="object-cover"
@@ -304,41 +239,21 @@ export function DemoSection() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <video
-                ref={videoRef}
-                className="h-full w-full rounded-lg object-contain"
-                src="/demo.mp4" // Replace with your actual video
-                poster="/placeholder.svg"
-                controls={false}
-                playsInline
+              <iframe
+                className="h-full w-full rounded-lg"
+                src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`}
+                title="BlockBuilder Demo Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
               />
 
-              {/* Video Controls */}
-              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                    onClick={togglePlayPause}
-                  >
-                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                    onClick={toggleMute}
-                  >
-                    {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-                  </Button>
-                </div>
-
+              {/* Close Button */}
+              <div className="absolute right-4 top-4">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-white/20"
+                  className="bg-black/50 text-white hover:bg-white/20"
                   onClick={closeFullscreen}
                 >
                   <X className="h-6 w-6" />

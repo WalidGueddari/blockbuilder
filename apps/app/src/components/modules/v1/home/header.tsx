@@ -91,7 +91,7 @@ export function Header() {
           </Link>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button asChild>
-              <Link href="/signup">Get Started</Link>
+              <Link href="/">Get Started</Link>
             </Button>
           </motion.div>
         </motion.div>

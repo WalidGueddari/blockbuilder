@@ -140,7 +140,7 @@ export function HeroSection() {
                 asChild
                 className="from-primary hover:from-primary/90 bg-gradient-to-r to-purple-600 px-8 text-lg hover:to-purple-600/90"
               >
-                <Link href="/signup">
+                <Link href="/">
                   Create Your Blockchain <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>

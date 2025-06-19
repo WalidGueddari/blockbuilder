@@ -8,6 +8,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ExternalLink, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,6 +29,35 @@ export function YoutubePlaylistCarousel() {
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+
+  // Animation variants - following the hero section pattern
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 },
+    },
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const scaleUp = {
+    hidden: { scale: 0.8, opacity: 0 },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      transition: { duration: 0.5 },
+    },
+  };
 
   useEffect(() => {
     async function fetchYouTubePlaylist() {
@@ -109,84 +139,120 @@ export function YoutubePlaylistCarousel() {
   }
 
   return (
-    <div className="w-full">
-      <div className="space-y-2">
-        <h2 className="py-8 text-3xl font-bold tracking-tighter sm:text-5xl">Video Tutorials</h2>
-      </div>
-
-      <div className="group relative">
-        <Carousel
-          setApi={setApi}
-          className="w-full"
-          opts={{
-            align: 'start',
-            loop: true,
-          }}
+    <section className="w-full py-12 md:py-24 lg:py-32">
+      <div className=" px-4 md:px-6">
+        {/* Title Section */}
+        <motion.div
+          className="space-y-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeIn}
         >
-          <CarouselContent className="-ml-4">
-            {videos.map((video) => (
-              <CarouselItem key={video.id} className="pl-4 sm:basis-1/2 md:basis-1/3">
-                <Link
-                  href={`https://www.youtube.com/watch?v=${video.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/item block"
-                >
-                  <Card className="overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-md">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-video overflow-hidden">
-                        <Image
-                          src={video.thumbnail || '/placeholder.svg?height=720&width=1280'}
-                          alt={video.title}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover/item:scale-105"
-                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover/item:opacity-100">
-                          <ExternalLink
-                            className="text-white opacity-0 transition-opacity group-hover/item:opacity-100"
-                            size={32}
-                          />
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="group-hover/item:text-primary line-clamp-2 font-medium transition-colors">
-                          {video.title}
-                        </h3>
-                        <p className="text-muted-foreground mt-1 text-sm">{video.channelTitle}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
+          <h2 className="py-8 text-3xl font-bold tracking-tighter sm:text-5xl">Video Tutorials</h2>
+        </motion.div>
 
-          {/* Custom navigation buttons positioned on left and right sides */}
-          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
-            <CarouselPrevious
-              className="bg-primary/90 hover:bg-primary h-10 w-10 border-2 text-black shadow-md"
-              variant="outline"
-            >
-              <ChevronLeft className="h-6 w-6 text-black" />
-            </CarouselPrevious>
-          </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
-            <CarouselNext
-              className="bg-primary/90 hover:bg-primary h-10 w-10 border-2 text-black shadow-md"
-              variant="outline"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </CarouselNext>
-          </div>
-        </Carousel>
+        {/* Carousel Section */}
+        <motion.div
+          className="group relative"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          <Carousel
+            setApi={setApi}
+            className="w-full"
+            opts={{
+              align: 'start',
+              loop: true,
+            }}
+          >
+            <CarouselContent className="-ml-4">
+              {videos.map((video, index) => (
+                <CarouselItem key={video.id} className="pl-4 sm:basis-1/2 md:basis-1/3">
+                  <motion.div
+                    variants={scaleUp}
+                    whileHover={{
+                      scale: 1.02,
+                      transition: { duration: 0.2 },
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link
+                      href={`https://www.youtube.com/watch?v=${video.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/item block"
+                    >
+                      <Card className="overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-md">
+                        <CardContent className="p-0">
+                          <div className="relative aspect-video overflow-hidden">
+                            <Image
+                              src={video.thumbnail || '/placeholder.svg?height=720&width=1280'}
+                              alt={video.title}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover/item:scale-105"
+                              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover/item:opacity-100">
+                              <ExternalLink className="text-white" size={32} />
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="group-hover/item:text-primary line-clamp-2 font-medium transition-colors">
+                              {video.title}
+                            </h3>
+                            <p className="text-muted-foreground mt-1 text-sm">
+                              {video.channelTitle}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+
+            {/* Custom navigation buttons */}
+            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <CarouselPrevious
+                  className="bg-primary/90 hover:bg-primary h-10 w-10 border-2 text-black shadow-md"
+                  variant="outline"
+                >
+                  <ChevronLeft className="h-6 w-6 text-black" />
+                </CarouselPrevious>
+              </motion.div>
+            </div>
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <CarouselNext
+                  className="bg-primary/90 hover:bg-primary h-10 w-10 border-2 text-black shadow-md"
+                  variant="outline"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </CarouselNext>
+              </motion.div>
+            </div>
+          </Carousel>
+        </motion.div>
+
+        {/* Counter Section */}
+        <motion.div
+          className="my-4 flex items-center justify-between justify-self-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeIn}
+        >
+          <span className="text-muted-foreground text-sm">
+            {current} / {count}
+          </span>
+        </motion.div>
       </div>
-      <div className="my-4 flex items-center justify-between justify-self-center">
-        <span className="text-muted-foreground text-sm">
-          {current} / {count}
-        </span>
-      </div>
-    </div>
+    </section>
   );
 }
 
