@@ -96,7 +96,7 @@ export default function ConsultationPage() {
               {/* Calendly inline widget */}
               <div
                 className="calendly-inline-widget"
-                data-url="https://calendly.com/peaksoft/peakchain"
+                data-url="https://calendly.com/peaksoft/peaksoft"
                 style={{
                   minWidth: '320px',
                   height: '700px',
