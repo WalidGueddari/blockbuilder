@@ -1,20 +1,24 @@
 'use client';
 
+import SubscriptionPopUp from '@/components/common/subscription-alert';
 import { NetworkList } from '@/components/modules/v1/network/pages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/context/AuthContext';
 import { useAppDispatch } from '@/services/hooks';
 import { fetchNetworksByUserId } from '@/services/v1/networkSlice';
-import { PlusCircle } from 'lucide-react';
-// Import NetworkList component
-import { Activity, Clock } from 'lucide-react';
-import Link from 'next/link';
+import { Activity, PlusCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function CreateNetworkPage() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { userRole } = useAuth();
+  const isDemo = userRole === 'DEMO';
 
   // Retrieve userId from sessionStorage when component mounts
   useEffect(() => {
@@ -36,6 +40,14 @@ export default function CreateNetworkPage() {
     }
   }, [dispatch, userId]);
 
+  const handleCreateClick = () => {
+    if (isDemo) {
+      setShowPopup(true);
+    } else {
+      router.push('/create-network');
+    }
+  };
+
   return (
     <div className="container mx-auto h-full space-y-12 px-4 py-8">
       {/* Top Section */}
@@ -47,16 +59,17 @@ export default function CreateNetworkPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Link href="/create-network">
-            <Button
-              size="lg"
-              className="bg-primary text-primary-foreground text-md hover:bg-primary/90 flex items-center justify-center"
-            >
-              <PlusCircle strokeWidth={3} className="mr-2 h-5 w-5" /> Create Network
-            </Button>
-          </Link>
+          <Button
+            onClick={handleCreateClick}
+            size="lg"
+            className="bg-primary text-primary-foreground text-md hover:bg-primary/90 flex items-center justify-center"
+          >
+            <PlusCircle strokeWidth={3} className="mr-2 h-5 w-5" /> Create Network
+          </Button>
         </CardContent>
       </Card>
+
+      {showPopup && <SubscriptionPopUp onClose={() => setShowPopup(false)} />}
 
       <Separator className="my-8" />
 

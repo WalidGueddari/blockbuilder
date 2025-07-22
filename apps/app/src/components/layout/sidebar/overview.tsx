@@ -1,11 +1,13 @@
 'use client';
 
+import SubscriptionPopUp from '@/components/common/subscription-alert';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { PlusCircleIcon } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from 'next-themes';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import type React from 'react';
 
 import { AppSidebar } from './pages/app-sidebar';
@@ -18,6 +20,19 @@ interface SidebarProps {
 }
 
 export default function Page({ children }: SidebarProps) {
+  const { userRole } = useAuth();
+  const isDemo = userRole === 'DEMO';
+  const [showPopup, setShowPopup] = useState(false);
+  const router = useRouter();
+
+  const handleCreateClick = () => {
+    if (isDemo) {
+      setShowPopup(true);
+    } else {
+      router.push('/create-network');
+    }
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
@@ -30,19 +45,22 @@ export default function Page({ children }: SidebarProps) {
               <DynamicBreadcrumb />
             </div>
             <div className="flex items-center gap-4 pr-4">
-              {' '}
-              {/* Increased gap for better separation */}
-              <Link href="/create-network">
-                <Button size="sm" className="flex items-center justify-center gap-1">
-                  Create new Network
-                </Button>
-              </Link>
+              <Button
+                size="sm"
+                onClick={handleCreateClick}
+                className="flex items-center justify-center gap-1"
+              >
+                Create new Network
+              </Button>
               <div className="flex items-center gap-2">
                 <NotificationPanel />
                 <SettingsDropdown />
               </div>
             </div>
           </header>
+
+          {showPopup && <SubscriptionPopUp />}
+
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
