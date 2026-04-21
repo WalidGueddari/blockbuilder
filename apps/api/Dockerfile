@@ -63,12 +63,12 @@ WORKDIR /server
 RUN apt-get update && apt-get install -y openssl openssh-client bash curl python3 python3-pip ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
 # Install Oracle JDK x64 Compressed Archive
-RUN curl -fSL https://download.oracle.com/java/24/latest/jdk-24_linux-x64_bin.tar.gz -o /tmp/jdk.tgz \
-    && mkdir -p /opt/jdk-24 \
-    && tar -xzf /tmp/jdk.tgz -C /opt/jdk-24 --strip-components=1 \
+RUN curl -fSL https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz -o /tmp/jdk.tgz \
+    && mkdir -p /opt/jdk-21 \
+    && tar -xzf /tmp/jdk.tgz -C /opt/jdk-21 --strip-components=1 \
     && rm /tmp/jdk.tgz
 
-ENV JAVA_HOME=/opt/jdk-24
+ENV JAVA_HOME=/opt/jdk-21
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 RUN curl -L https://github.com/hyperledger/besu/releases/download/24.10.0/besu-24.10.0.tar.gz -o /tmp/besu.tar.gz \
@@ -79,7 +79,7 @@ RUN curl -L https://github.com/hyperledger/besu/releases/download/24.10.0/besu-2
 ENV BESU_HOME=/opt/besu-24.10.0
 ENV PATH="$BESU_HOME/bin:${PATH}"
 
-RUN curl -L https://s01.oss.sonatype.org/service/local/repositories/releases/content/net/consensys/quorum/tessera/tessera-dist/24.4.2/tessera-dist-24.4.2.tar -o /tmp/tessera.tar \
+RUN curl -L "https://repo1.maven.org/maven2/net/consensys/quorum/tessera/tessera-dist/24.4.2/tessera-dist-24.4.2.tar" -o /tmp/tessera.tar \
     && mkdir -p /opt/tessera-24.4.2 \
     && tar -xf /tmp/tessera.tar -C /opt/tessera-24.4.2 --strip-components=1 \
     && rm /tmp/tessera.tar
