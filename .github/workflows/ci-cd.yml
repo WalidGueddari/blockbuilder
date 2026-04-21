@@ -28,29 +28,29 @@ jobs:
           docker build -t ${{ secrets.DOCKER_REGISTRY_USER }}/blockchainbuilder_staging:api -f apps/api/Dockerfile .
           docker push ${{ secrets.DOCKER_REGISTRY_USER }}/blockchainbuilder_staging:api
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: build
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.TEST_KEY }}
+  #     - name: Set up SSH
+  #       uses: webfactory/ssh-agent@v0.7.0
+  #       with:
+  #         ssh-private-key: ${{ secrets.TEST_KEY }}
 
-      - name: Deploy to Azure
-        run: |
-          echo "Deploying to Azure..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.TEST_VM_IP }} "
-            docker-compose down &&
-            docker system prune -a -f &&
-            docker-compose up -d &&
-            docker-compose exec -T api sh -c \"
-              cd packages/database && 
-              npx prisma migrate deploy &&
-              echo 'Logging into Azure...' &&
-            az login --service-principal -u ${{ secrets.TEST_AZURE_CLIENT_ID }} -p ${{ secrets.TEST_AZURE_CLIENT_SECRET }} --tenant ${{ secrets.TEST_AZURE_TENANT_ID }}
-            \""
+  #     - name: Deploy to Azure
+  #       run: |
+  #         echo "Deploying to Azure..."
+  #         ssh -o StrictHostKeyChecking=no ${{ secrets.VM_SSH_USER }}@${{ secrets.TEST_VM_IP }} "
+  #           docker-compose down &&
+  #           docker system prune -a -f &&
+  #           docker-compose up -d &&
+  #           docker-compose exec -T api sh -c \"
+  #             cd packages/database && 
+  #             npx prisma migrate deploy &&
+  #             echo 'Logging into Azure...' &&
+  #           az login --service-principal -u ${{ secrets.TEST_AZURE_CLIENT_ID }} -p ${{ secrets.TEST_AZURE_CLIENT_SECRET }} --tenant ${{ secrets.TEST_AZURE_TENANT_ID }}
+  #           \""
