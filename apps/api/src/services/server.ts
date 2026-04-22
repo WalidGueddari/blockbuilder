@@ -68,14 +68,17 @@ export class ServerService {
       const newVmId = nextIdStdout.trim();
       console.log(`Next available VM ID is ${newVmId}`);
 
+      // Sanitize the VM name for DNS compatibility (Proxmox requirements: no spaces, only alphanumeric and hyphens)
+      const sanitizedVmName = vmName.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+
       // 2. Clone the template
       console.log(
-        `Cloning template ${proxmoxTemplateId} to VM ${newVmId} (${vmName}) on node ${targetNode}`,
+        `Cloning template ${proxmoxTemplateId} to VM ${newVmId} (${sanitizedVmName}) on node ${targetNode}`,
       );
-      const cloneCmd = `qm clone ${proxmoxTemplateId} ${newVmId} --name "${vmName}" --full 1`;
+      const cloneCmd = `qm clone ${proxmoxTemplateId} ${newVmId} --name "${sanitizedVmName}" --full 1`;
       const cloneRes = await ssh.execCommand(cloneCmd);
-      if (cloneRes.stderr && !cloneRes.stderr.includes('Formatting')) {
-        console.warn('Clone stderr (might be warning):', cloneRes.stderr);
+      if (cloneRes.code !== 0) {
+        throw new Error(`Failed to clone template: ${cloneRes.stderr}`);
       }
 
       // 3. Inject SSH Key (assuming cloud-init is used on the template)
