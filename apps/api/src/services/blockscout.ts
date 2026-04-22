@@ -12,7 +12,7 @@ import { promisify } from 'util';
 import { config } from '../config.js';
 import { ContainerService } from '../services/containers.js';
 import { NodeService } from '../services/nodes.js';
-import { CreateAzureVMParams } from '../types/server.js';
+import { CreateProxmoxVMParams } from '../types/server.js';
 import { AbstractServiceOptions } from '../types/services.js';
 import { ServerService } from './server.js';
 
@@ -136,20 +136,18 @@ export class BlockscoutService {
       }
 
       // Create a payload with the input userId
-      const azurePayload: CreateAzureVMParams = {
-        // Merge or override any properties from the original azureParams if needed
-        resourceGroup: `${network.name}-blockscout`,
+      const proxmoxPayload: CreateProxmoxVMParams = {
         userId: userId, // now set from the function input
         vmName: `${network.name}-blockscout`,
         sshKeyName: `${network.name}-blockscout`,
       };
 
-      // Create the Azure VM server using the updated payload
-      const serverInit = await this.serverService.createAzureVMServer(azurePayload);
+      // Create the Proxmox VM server using the updated payload
+      const serverInit = await this.serverService.createProxmoxVMServer(proxmoxPayload);
       if (!serverInit) {
-        throw new Error(`Failed to create Azure VM server`);
+        throw new Error(`Failed to create Proxmox VM server`);
       }
-      console.log('Azure VM server created:', serverInit);
+      console.log('Proxmox VM server created:', serverInit);
 
       // Set up Docker and Nginx on the created server
       await this.serverService.setupDockerAndNginx(serverInit.id, true);

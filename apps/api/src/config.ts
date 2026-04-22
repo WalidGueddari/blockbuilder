@@ -100,13 +100,11 @@ export const config = {
   /**
    * Deployement Configuration
    */
-  subscriptionId: requiredVar('SUBSCRIPTION_ID'),
-  location: requiredVar('LOCATION'),
-  size: requiredVar('SIZE'),
-  image: requiredVar('IMAGE'),
-  osDiskSize: requiredIntVar('OS_DISK_SIZE_GB'),
-  storageType: requiredVar('STORAGE_TYPE'),
-  securityType: requiredVar('SECURITY_TYPE'),
+  proxmoxHost: requiredVar('PROXMOX_HOST'),
+  proxmoxUser: requiredVar('PROXMOX_USER'),
+  proxmoxPassword: requiredVar('PROXMOX_PASSWORD'),
+  proxmoxNode: requiredVar('PROXMOX_NODE'),
+  proxmoxTemplateId: requiredIntVar('PROXMOX_TEMPLATE_ID'),
   remoteBaseDir: requiredVar('REMOTE_BASE_DIR'),
 
   /**

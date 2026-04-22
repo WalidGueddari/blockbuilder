@@ -1,14 +1,14 @@
 // types/server.ts
 
-export interface CreateAzureVMParams {
+export interface CreateProxmoxVMParams {
   userId: string;
   vmName: string;
-  resourceGroup: string;
+  proxmoxNode?: string;
   sshKeyName: string;
 }
 
 // createServer returns this
-export interface CreateServerResponse extends CreateAzureVMParams {
+export interface CreateServerResponse extends CreateProxmoxVMParams {
   id: string; // the newly created server's ID
 }
 // setupServer request/response

@@ -1,11 +1,10 @@
 // store/serverSlice.ts
 import api from '@/lib/api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import axios from 'axios';
 
 // Assuming you have a custom API utility
 import {
-  CreateAzureVMParams,
+  CreateProxmoxVMParams,
   CreateServerResponse,
   ServerState,
   SetupServerParams,
@@ -22,7 +21,7 @@ const initialState: ServerState = {
 };
 
 // Create a thunk that returns CreateServerResponse
-export const createServer = createAsyncThunk<CreateServerResponse, CreateAzureVMParams>(
+export const createServer = createAsyncThunk<CreateServerResponse, CreateProxmoxVMParams>(
   'server/create',
   async (params, { rejectWithValue }) => {
     try {

@@ -2,13 +2,13 @@ import { FastifyPluginAsync } from 'fastify';
 
 import { ServerShcema } from '../../../schemas/v1/server.js';
 import { ServerService } from '../../../services/server.js';
-import { CreateAzureVMParams } from '../../../types/server.js';
+import { CreateProxmoxVMParams } from '../../../types/server.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
   const { prisma } = fastify;
   const serverService = new ServerService({ prisma });
 
-  fastify.post<{ Body: { payload: CreateAzureVMParams } }>(
+  fastify.post<{ Body: { payload: CreateProxmoxVMParams } }>(
     '/create',
     {
       schema: ServerShcema.createServer,
@@ -16,7 +16,7 @@ const routes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
     async (request, reply) => {
       const { payload } = request.body;
       try {
-        const result = await serverService.createAzureVMServer(payload);
+        const result = await serverService.createProxmoxVMServer(payload);
         reply.send(result);
       } catch (error) {
         reply.status(500).send(error);

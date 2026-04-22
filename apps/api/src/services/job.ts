@@ -164,16 +164,14 @@ export class JobService {
       // Status 1: Provisioning servers
       await this._updateJobStatus(jobId, 'Provisioning servers');
       console.info('Step 1: Creating blockchain VM');
-      const blockchainVm = await this.serverService.createAzureVMServer({
-        resourceGroup: payload.name,
+      const blockchainVm = await this.serverService.createProxmoxVMServer({
         userId: payload.userId,
         vmName: payload.name,
         sshKeyName: payload.name,
       });
 
       console.info('Step 7: Deploying explorer VM');
-      const blockscoutVm = await this.serverService.createAzureVMServer({
-        resourceGroup: `${payload.name}-blockscout`,
+      const blockscoutVm = await this.serverService.createProxmoxVMServer({
         userId: payload.userId,
         vmName: `${payload.name}-blockscout`,
         sshKeyName: `${payload.name}-blockscout`,
@@ -227,7 +225,7 @@ export class JobService {
       // Status 5: Finalizing deployment
       await this._updateJobStatus(jobId, 'Finalizing deployment');
       console.info('Cleaning up stray Besu nodes');
-      //await this.containerService.killBesuNode();
+      await this.containerService.killBesuNode();
 
       console.info('Deployment finished ✔');
       await this._updateJobStatus(jobId, 'Blockchain ready');

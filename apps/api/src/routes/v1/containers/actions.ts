@@ -7,7 +7,7 @@ import { ContainerService } from '../../../services/containers.js';
 import { NewtorkSevice } from '../../../services/network.js';
 import { ServerService } from '../../../services/server.js';
 import { InitNetworkPayload } from '../../../types/network.js';
-import { CreateAzureVMParams } from '../../../types/server.js';
+import { CreateProxmoxVMParams } from '../../../types/server.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {
   const { prisma } = fastify;
@@ -18,7 +18,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   const { bootnodeIndex } = config;
 
   // fastify.post<{
-  //   Body: { initNetPayload: InitNetworkPayload; payload: CreateAzureVMParams };
+  //   Body: { initNetPayload: InitNetworkPayload; payload: CreateProxmoxVMParams };
   // }>(
   //   '/build-network',
   //   {
@@ -30,9 +30,9 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
   //       const { initNetPayload, payload } = request.body;
   //       console.log('/***** Received initNetPayload and payload from request.body *****/');
 
-  //       /***** Creating Azure VM Server *****/
-  //       const VM = await serverService.createAzureVMServer(payload);
-  //       console.log('/***** Azure VM created with id: ' + VM.id + ' *****/');
+  //       /***** Creating Proxmox VM Server *****/
+  //       const VM = await serverService.createProxmoxVMServer(payload);
+  //       console.log('/***** Proxmox VM created with id: ' + VM.id + ' *****/');
 
   //       /***** Setting up Docker and Nginx on the VM *****/
   //       const setupVm = await serverService.setupDockerAndNginx(VM.id);

@@ -10,7 +10,7 @@ import { NewtorkSevice } from '../../../services/network.js';
 import { ServerService } from '../../../services/server.js';
 import { InitNetworkPayload } from '../../../types/network.js';
 import { StartNodePayload } from '../../../types/node.js';
-import { CreateAzureVMParams } from '../../../types/server.js';
+import { CreateProxmoxVMParams } from '../../../types/server.js';
 
 const routes: FastifyPluginAsync = async (fastify, opts) => {
   const { prisma } = fastify;
@@ -29,17 +29,16 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
       try {
         const { initNetPayload } = request.body;
 
-        const azurePayload: CreateAzureVMParams = {
-          resourceGroup: initNetPayload.name,
+        const proxmoxPayload: CreateProxmoxVMParams = {
           userId: initNetPayload.userId,
           vmName: initNetPayload.name,
           sshKeyName: initNetPayload.name,
         };
 
         fastify.log.info('Received /setup-network request');
-        console.log('Creating Azure VM...');
-        const server = await serverService.createAzureVMServer(azurePayload);
-        fastify.log.info(`Azure VM created with ID: ${server.id}`);
+        console.log('Creating Proxmox VM...');
+        const server = await serverService.createProxmoxVMServer(proxmoxPayload);
+        fastify.log.info(`Proxmox VM created with ID: ${server.id}`);
 
         console.log('Initializing network...');
         const initNetwork = await networkService.initNetwork(initNetPayload, server.id);
@@ -81,7 +80,7 @@ const routes: FastifyPluginAsync = async (fastify, opts) => {
           throw new Error('Network initialization failed');
         }
 
-        // Add serverId under initNetwork to include the Azure VM server ID in the response.
+        // Add serverId under initNetwork to include the Proxmox VM server ID in the response.
         initNetwork.serverId = server.id;
 
         fastify.log.info(

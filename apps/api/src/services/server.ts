@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { config } from '../config.js';
 import { azureAdminUsername } from '../constants.js';
-import { CreateAzureVMParams } from '../types/server.js';
+import { CreateProxmoxVMParams } from '../types/server.js';
 import { AbstractServiceOptions } from '../types/services.js';
 
 const execAsync = promisify(exec);
@@ -20,20 +20,9 @@ export class ServerService {
     this.prisma = options.prisma;
   }
 
-  async createAzureVMServer(params: CreateAzureVMParams) {
-    // Extract Azure parameters from your configuration file (loaded from .env variables)
-    const {
-      subscriptionId,
-      location,
-      image,
-      size,
-      osDiskSize,
-      storageType,
-      securityType,
-      sshKeyDir,
-    } = config;
-
-    const adminUsername = azureAdminUsername;
+  async createProxmoxVMServer(params: CreateProxmoxVMParams) {
+    const { proxmoxHost, proxmoxUser, proxmoxPassword, proxmoxNode, proxmoxTemplateId, sshKeyDir } =
+      config;
 
     const user = await this.prisma.user.findUnique({
       where: { id: params.userId },
@@ -43,18 +32,14 @@ export class ServerService {
       throw new Error(`User with ID ${params.userId} not found.`);
     }
 
-    // Destructure the additional parameters
-    const { vmName, resourceGroup, sshKeyName } = params;
+    const { vmName, sshKeyName } = params;
+    const targetNode = params.proxmoxNode || proxmoxNode;
 
-    const dnsLabel = 'd' + uuidv4().replace(/-/g, '').slice(0, 9);
-
-    // Determine the directory for the SSH key: use provided sshKeyDir or fall back to HOME/USERPROFILE
+    // Determine the directory for the SSH key
     if (!sshKeyDir) {
       throw new Error('Cannot determine home directory for SSH key.');
     }
-    // Construct the full path to the SSH key (without the .pub extension)
     const sshKeyPath = path.join(sshKeyDir, sshKeyName);
-
     const sshEmail = user.email;
 
     try {
@@ -68,97 +53,104 @@ export class ServerService {
         console.log(`Using existing SSH key: ${sshKeyPath}.pub`);
       }
 
-      // Create the Azure resource group (if it doesn't exist)
-      console.log(`Creating resource group "${resourceGroup}" in location "${location}"`);
-      await execAsync(`az group create --name "${resourceGroup}" --location "${location}"`);
+      // Connect to Proxmox node via SSH
+      console.log(`Connecting to Proxmox Host ${proxmoxHost} as ${proxmoxUser}...`);
+      const ssh = new NodeSSH();
+      // Assuming password authentication for Proxmox host here, adjust if using SSH Key
+      await ssh.connect({
+        host: proxmoxHost,
+        username: proxmoxUser,
+        password: proxmoxPassword,
+      });
 
-      // Deploy the Azure VM using the Azure CLI command with dynamic parameters
-      console.log(`Deploying Azure VM: ${vmName}`);
-      const nsgName = vmName + 'NSG';
-      const vmCreateCmd = `az vm create --subscription "${subscriptionId}" --resource-group "${resourceGroup}" --name "${vmName}" --location "${location}" --size "${size}" --image "${image}" --admin-username "${adminUsername}" --ssh-key-value "${sshKeyPath}.pub" --os-disk-size-gb "${osDiskSize}" --storage-sku "${storageType}" --security-type "${securityType}" --public-ip-address-dns-name "${dnsLabel}" --public-ip-sku Standard --verbose`;
-      const vmOpenPort80Cmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTP --priority 1010 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80`;
-      const vmOpenPort443Cmd = `az network nsg rule create --resource-group "${resourceGroup}" --nsg-name "${nsgName}" --name Allow-HTTPS --priority 1011 --direction Inbound --access Allow --protocol Tcp --destination-port-range 443`;
-      try {
-        const { stdout: createStdout, stderr: createStderr } = await execAsync(vmCreateCmd);
-        console.log('VM Creation Command Logs:');
-        console.log('stdout:', createStdout);
-        console.log('stderr:', createStderr);
+      // 1. Get next available VMID
+      const { stdout: nextIdStdout } = await ssh.execCommand('pvesh get /cluster/nextid');
+      const newVmId = nextIdStdout.trim();
+      console.log(`Next available VM ID is ${newVmId}`);
 
-        const { stdout: openPort80Stdout, stderr: openPort80Stderr } =
-          await execAsync(vmOpenPort80Cmd);
-        console.log('NSG Rule Creation (Open Port) Command Logs:');
-        console.log('stdout:', openPort80Stdout);
-        console.log('stderr:', openPort80Stderr);
-
-        const { stdout: open443Stdout, stderr: open443Stderr } = await execAsync(vmOpenPort443Cmd);
-        console.log('NSG Rule Creation (Open Port 443) Logs:');
-        console.log('stdout:', open443Stdout);
-        console.log('stderr:', open443Stderr);
-      } catch (error) {
-        console.error('Error executing commands:', error);
+      // 2. Clone the template
+      console.log(
+        `Cloning template ${proxmoxTemplateId} to VM ${newVmId} (${vmName}) on node ${targetNode}`,
+      );
+      const cloneCmd = `qm clone ${proxmoxTemplateId} ${newVmId} --name "${vmName}" --full 1`;
+      const cloneRes = await ssh.execCommand(cloneCmd);
+      if (cloneRes.stderr && !cloneRes.stderr.includes('Formatting')) {
+        console.warn('Clone stderr (might be warning):', cloneRes.stderr);
       }
 
-      // console.log('VM Deployment Complete!');
+      // 3. Inject SSH Key (assuming cloud-init is used on the template)
+      // First copy the key to the proxmox host temporarily
+      const pubKeyContent = fs.readFileSync(`${sshKeyPath}.pub`, 'utf8');
+      await ssh.execCommand(`echo "${pubKeyContent.trim()}" > /tmp/${newVmId}_key.pub`);
+      await ssh.execCommand(`qm set ${newVmId} --sshkeys /tmp/${newVmId}_key.pub`);
 
-      // Retrieve VM details using Azure CLI commands
-      console.log('Fetching VM details...');
-      const { stdout: vmId } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" --query "id" -o tsv`,
-      );
-      const { stdout: vmLocation } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" --query "location" -o tsv`,
-      );
-      const { stdout: privateIP } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" -d --query "privateIps" -o tsv`,
-      );
-      const { stdout: publicIP } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" -d --query "publicIps" -o tsv`,
-      );
-      const { stdout: actualAdminUsername } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" --query "osProfile.adminUsername" -o tsv`,
-      );
+      // 4. Start the VM
+      console.log(`Starting Proxmox VM ${newVmId}...`);
+      await ssh.execCommand(`qm start ${newVmId}`);
 
-      // Retrieve the network interface ID and then the MAC address
-      const { stdout: nicId } = await execAsync(
-        `az vm show --resource-group "${resourceGroup}" --name "${vmName}" --query "networkProfile.networkInterfaces[0].id" -o tsv`,
+      // 5. Fetch assigned IP Address (Waiting for QEMU Guest Agent)
+      console.log(
+        'Waiting for VM to boot and acquire IP (requires QEMU Guest Agent on template)...',
       );
-      const { stdout: macAddress } = await execAsync(
-        `az network nic show --ids ${nicId.trim()} --query "macAddress" -o tsv`,
-      );
-      const { stdout: powerState } = await execAsync(
-        `az vm get-instance-view --resource-group "${resourceGroup}" --name "${vmName}" --query "instanceView.statuses[1].displayStatus" -o tsv`,
-      );
+      let assignedIp = '';
+      for (let i = 0; i < 20; i++) {
+        await new Promise((res) => setTimeout(res, 5000));
+        const ipRes = await ssh.execCommand(`qm guest cmd ${newVmId} network-get-interfaces`);
+        if (!ipRes.stderr && ipRes.stdout) {
+          try {
+            // Basic parsing, assuming QEMU agent returns JSON
+            const data = JSON.parse(ipRes.stdout);
+            // Find first non-loopback ipv4
+            for (const iface of data) {
+              if (iface.name !== 'lo' && iface['ip-addresses']) {
+                const ip4 = iface['ip-addresses'].find(
+                  (ip: any) => ip['ip-address-type'] === 'ipv4',
+                );
+                if (ip4 && ip4['ip-address'] !== '127.0.0.1') {
+                  assignedIp = ip4['ip-address'];
+                  break;
+                }
+              }
+            }
+            if (assignedIp) break;
+          } catch (e) {
+            console.log('IP parse error, retrying...', e);
+          }
+        }
+      }
 
-      const { stdout: fqdn } = await execAsync(
-        `az network public-ip show --resource-group "${resourceGroup}" --name "${vmName}PublicIP" --query "dnsSettings.fqdn" -o tsv`,
-      );
+      if (!assignedIp) {
+        console.warn(
+          `Could not automatically retrieve IP for VM ${newVmId}. Please ensure QEMU Guest Agent is installed and running on the template.`,
+        );
+        assignedIp = 'UNKNOWN';
+      }
 
-      // Build the VM information object
+      ssh.dispose();
+
       const vmInfo = {
-        azureId: vmId.trim(),
-        adminUsername: actualAdminUsername.trim(),
+        proxmoxVmId: newVmId,
+        proxmoxNode: targetNode,
+        adminUsername: 'ubuntu', // Or retrieve from config
         vmName,
-        location: vmLocation.trim(),
-        macAddress: macAddress.trim(),
-        powerState: powerState.trim(),
-        privateIpAddress: privateIP.trim(),
-        publicIpAddress: publicIP.trim(),
-        resourceGroup,
+        macAddress: '',
+        powerState: 'running',
+        privateIpAddress: assignedIp,
+        publicIpAddress: assignedIp, // usually the same in private proxmox setups
         sshKeyName,
-        dnsName: fqdn.trim(),
+        dnsName: vmName,
         userId: user.id,
       };
 
-      // Save the VM details to the database using Prisma.
-      console.log('Saving VM details to the database...');
+      console.log('Saving Proxmox VM details to the database...');
       const savedVm = await this.prisma.vmServer.create({
         data: vmInfo,
       });
 
-      console.log('VM information saved successfully:', savedVm);
+      console.log('Proxmox VM information saved successfully:', savedVm);
       return savedVm;
     } catch (error) {
-      console.error('Error creating Azure VM:', error);
+      console.error('Error creating Proxmox VM:', error);
       throw error;
     }
   }

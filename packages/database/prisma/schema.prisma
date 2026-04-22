@@ -102,15 +102,14 @@ model Node {
 
 model VmServer {
   id               String   @id @default(cuid())
-  azureId          String
+  proxmoxVmId      String?
+  proxmoxNode      String?
   adminUsername    String
   vmName           String
-  location         String
-  macAddress       String
-  powerState       String
-  privateIpAddress String
+  macAddress       String?
+  powerState       String?
+  privateIpAddress String?
   publicIpAddress  String
-  resourceGroup    String
   sshKeyName       String
   dnsName          String?
   createdAt        DateTime @default(now())

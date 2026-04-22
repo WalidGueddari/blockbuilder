@@ -1,6 +1,6 @@
-export type CreateAzureVMParams = {
+export type CreateProxmoxVMParams = {
   userId: string;
   vmName: string;
-  resourceGroup: string;
+  proxmoxNode?: string;
   sshKeyName: string;
 };
