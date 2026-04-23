@@ -171,14 +171,36 @@ export class ServerService {
 
     console.log(`SSH Key Path: ${sshKeyPath}`);
     const ssh = new NodeSSH();
-    try {
-      console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
-      await ssh.connect({
-        host: vm.publicIpAddress,
-        username: vm.adminUsername,
-        privateKey: privateKeyContent,
-      });
 
+    // Retry mechanism to give Cloud-Init time to inject the SSH key
+    let connected = false;
+    for (let i = 0; i < 6; i++) {
+      try {
+        console.log(
+          `Attempt ${i + 1}/6: Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`,
+        );
+        await ssh.connect({
+          host: vm.publicIpAddress,
+          username: vm.adminUsername,
+          privateKey: privateKeyContent,
+        });
+        connected = true;
+        break; // Successfully connected
+      } catch (err) {
+        console.log(
+          `SSH connection failed (Cloud-Init might still be configuring). Retrying in 10 seconds...`,
+        );
+        await new Promise((res) => setTimeout(res, 10000));
+      }
+    }
+
+    if (!connected) {
+      throw new Error(
+        `Failed to establish SSH connection to ${vm.publicIpAddress} after multiple retries.`,
+      );
+    }
+
+    try {
       // Docker, Docker Compose, and Nginx Setup
 
       console.log('Updating package lists...');
@@ -346,14 +368,32 @@ export class ServerService {
     console.log(`SSH Key Path: ${sshKeyPath}`);
     const ssh = new NodeSSH();
 
-    try {
-      console.log(`Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername}...`);
-      await ssh.connect({
-        host: vm.publicIpAddress,
-        username: vm.adminUsername,
-        privateKey: privateKeyContent,
-      });
+    let connected = false;
+    for (let i = 0; i < 6; i++) {
+      try {
+        console.log(
+          `Attempt ${i + 1}/6: Connecting to VM ${vm.publicIpAddress} as ${vm.adminUsername} for directory transfer...`,
+        );
+        await ssh.connect({
+          host: vm.publicIpAddress,
+          username: vm.adminUsername,
+          privateKey: privateKeyContent,
+        });
+        connected = true;
+        break;
+      } catch (err) {
+        console.log(`SSH connection failed. Retrying in 10 seconds...`);
+        await new Promise((res) => setTimeout(res, 10000));
+      }
+    }
 
+    if (!connected) {
+      throw new Error(
+        `Failed to establish SSH connection to ${vm.publicIpAddress} after multiple retries.`,
+      );
+    }
+
+    try {
       // Construct full paths for the local and remote directories.
       const localDir = path.join(baseDir, directoryName);
       const remoteDir = path.join(remoteBaseDir, directoryName);
