@@ -132,14 +132,16 @@ export class ContainerService {
         privateKey: privateKeyContent,
       });
 
-      // Create Docker network
+      // Create Docker network (ignore error if it already exists)
       const createNetwork = await ssh.execCommand(
-        `docker network create --subnet=${subnet} ${payload.networkId}`,
+        `docker network create --subnet=${subnet} ${payload.networkId} || true`,
         { execOptions: { pty: true } },
       );
 
-      if (createNetwork.stderr) {
-        throw new Error(`Failed to create network: ${createNetwork.stderr}`);
+      if (createNetwork.code !== 0) {
+        throw new Error(
+          `Failed to create network: ${createNetwork.stderr || createNetwork.stdout}`,
+        );
       }
 
       console.log('Network created successfully:', createNetwork.stdout);
@@ -170,11 +172,11 @@ export class ContainerService {
           execOptions: { pty: true },
         });
 
-        if (result.stderr) {
-          console.error(`Error starting Node-${i}:`, result.stderr);
-          errors.push(`Node-${i} failed to start: ${result.stderr}`);
+        if (result.code !== 0) {
+          console.error(`Error starting Node-${i}:`, result.stderr || result.stdout);
+          errors.push(`Node-${i} failed to start: ${result.stderr || result.stdout}`);
         } else {
-          console.log(`docker-compose output for Node-${i}:`, result.stdout);
+          console.log(`docker-compose output for Node-${i}:`, result.stdout || result.stderr);
           if (node) {
             await this.nodeService.updateNodeStatus(node.id, Status.ACTIVE);
           }
@@ -190,11 +192,11 @@ export class ContainerService {
         execOptions: { pty: true },
       });
 
-      if (hardhatResult.stderr) {
-        console.error('Error starting Hardhat:', hardhatResult.stderr);
-        errors.push(`Hardhat failed to start: ${hardhatResult.stderr}`);
+      if (hardhatResult.code !== 0) {
+        console.error('Error starting Hardhat:', hardhatResult.stderr || hardhatResult.stdout);
+        errors.push(`Hardhat failed to start: ${hardhatResult.stderr || hardhatResult.stdout}`);
       } else {
-        console.log('Hardhat started successfully:', hardhatResult.stdout);
+        console.log('Hardhat started successfully:', hardhatResult.stdout || hardhatResult.stderr);
         outputs.push('Hardhat started successfully.');
       }
 
