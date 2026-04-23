@@ -141,7 +141,7 @@ export class ServerService {
         privateIpAddress: assignedIp,
         publicIpAddress: assignedIp, // usually the same in private proxmox setups
         sshKeyName,
-        dnsName: vmName,
+        dnsName: assignedIp, // Use IP instead of VM name for private lab access
         userId: user.id,
       };
 

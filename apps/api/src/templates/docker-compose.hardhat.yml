@@ -8,7 +8,7 @@ services:
       - ./contracts:/usr/src/app/contracts
     working_dir: /usr/src/app
     environment:
-      - LOCAL_RPC_URL=https://DNS_PLACEHOLDER
+      - LOCAL_RPC_URL=http://DNS_PLACEHOLDER
       - PRIVATE_KEY=PRIVATE_KEY_PLACEHOLDER
     networks:
       - NET_ID

@@ -74,14 +74,16 @@ export class BlockscoutService {
         privateKey: privateKeyContent,
       });
 
-      // Create Docker network
+      // Create Docker network (ignore error if already exists)
       const createNetwork = await ssh.execCommand(
-        `docker network create --subnet=${subnet} blockscout_network`,
+        `docker network create --subnet=${subnet} blockscout_network || true`,
         { execOptions: { pty: true } },
       );
 
-      if (createNetwork.stderr) {
-        throw new Error(`Failed to create network: ${createNetwork.stderr}`);
+      if (createNetwork.code !== 0) {
+        throw new Error(
+          `Failed to create network: ${createNetwork.stderr || createNetwork.stdout}`,
+        );
       }
 
       console.log('Network created successfully:', createNetwork.stdout);
@@ -98,11 +100,11 @@ export class BlockscoutService {
         // { execOptions: { pty: true } }
       );
 
-      if (result.stderr) {
-        console.error(`Error starting Node-:`, result.stderr);
-        errors.push(`Node- failed to start: ${result.stderr}`);
+      if (result.code !== 0) {
+        console.error(`Error starting Node-:`, result.stderr || result.stdout);
+        errors.push(`Node- failed to start: ${result.stderr || result.stdout}`);
       } else {
-        console.log(`docker-compose output for Node-:`, result.stdout);
+        console.log(`docker-compose output for Node-:`, result.stdout || result.stderr);
         outputs.push(`Node started successfully.`);
       }
 
