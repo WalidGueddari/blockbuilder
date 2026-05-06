@@ -18,12 +18,7 @@ services:
       - ETHEREUM_JSONRPC_HTTP_URL=http://DNS_PLACEHOLDER
       - ETHEREUM_JSONRPC_TRACE_URL=http://DNS_PLACEHOLDER
       - ETHEREUM_JSONRPC_WS_URL=ws://DNS_PLACEHOLDER
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        cd /opt/app/;
-        echo $$MIX_ENV && mix do ecto.create, ecto.migrate; mix phx.server;
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     depends_on:
       - blockscoutpostgres
     links:
