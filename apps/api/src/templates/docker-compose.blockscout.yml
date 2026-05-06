@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
   blockscout:
-    image: blockscout/blockscout:v6.8.0
+    image: ghcr.io/blockscout/blockscout:latest
     container_name: blockscout-NET_ID
     restart: always
     environment:
@@ -18,12 +18,16 @@ services:
       - ETHEREUM_JSONRPC_HTTP_URL=http://DNS_PLACEHOLDER
       - ETHEREUM_JSONRPC_TRACE_URL=http://DNS_PLACEHOLDER
       - ETHEREUM_JSONRPC_WS_URL=ws://DNS_PLACEHOLDER
+      - ACCOUNT_REDIS_URL=redis://redis-db:6379
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     depends_on:
       blockscoutpostgres:
         condition: service_healthy
+      redis-db:
+        condition: service_started
     links:
       - blockscoutpostgres
+      - redis-db
     ports:
       - 26000:4000
     networks:
@@ -50,6 +54,29 @@ services:
     networks:
       blockscout_network:
         ipv4_address: 192.168.1.151
+
+  redis-db:
+    image: redis:alpine
+    container_name: redis-NET_ID
+    restart: always
+    networks:
+      blockscout_network:
+        ipv4_address: 192.168.1.152
+
+  frontend:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: frontend-NET_ID
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_HOST=http://DNS_PLACEHOLDER
+      - NEXT_PUBLIC_API_WEBSOCKETS_URL=ws://DNS_PLACEHOLDER/socket
+    ports:
+      - 3000:3000
+    depends_on:
+      - blockscout
+    networks:
+      blockscout_network:
+        ipv4_address: 192.168.1.153
 
 volumes:
   blockscoutpostgres:
