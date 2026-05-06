@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
   blockscout:
-    image: blockscout/blockscout:latest
+    image: blockscout/blockscout:v6.8.0
     container_name: blockscout-NET_ID
     restart: "no"
     environment:
