@@ -74,7 +74,7 @@ const execAsync = promisify(exec);
 
 export class ContractService {
   prisma: PrismaClient;
-  private readonly CONTAINER_NAME = 'hardhat';
+  private readonly CONTAINER_NAME = 'hardhat-app';
   private readonly ssh: NodeSSH;
   private readonly deployedContractService: DeployedContractService;
   private readonly config = {

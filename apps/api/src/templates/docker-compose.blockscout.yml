@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
   blockscout:
-    image: blockscout/blockscout:v4.1.5-beta
+    image: blockscout/blockscout:latest
     container_name: blockscout-NET_ID
     restart: "no"
     environment:
@@ -15,9 +15,9 @@ services:
       - COIN=ETH
       - ETHEREUM_JSONRPC_VARIANT=besu
       - ETHEREUM_JSONRPC_TRANSPORT=http
-      - ETHEREUM_JSONRPC_HTTP_URL=http://DNS_PLACEHOLDER
-      - ETHEREUM_JSONRPC_TRACE_URL=http://DNS_PLACEHOLDER
-      - ETHEREUM_JSONRPC_WS_URL=ws://DNS_PLACEHOLDER
+      - ETHEREUM_JSONRPC_HTTP_URL=http://DNS_PLACEHOLDER:8545
+      - ETHEREUM_JSONRPC_TRACE_URL=http://DNS_PLACEHOLDER:8545
+      - ETHEREUM_JSONRPC_WS_URL=ws://DNS_PLACEHOLDER:8546
     entrypoint:
       - /bin/sh
       - -c
