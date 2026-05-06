@@ -6,7 +6,7 @@ generate_docker_compose_hardhat() {
     TEMPLATE_FILE="$HARDHAT_TEMPLATE_FILE"
     echo "TEMPLATE_FILE=$TEMPLATE_FILE"
     if [ ! -f "$TEMPLATE_FILE" ]; then
-        echo >&2 "❌ Template not found at $TEMPLATE_FILE"
+        echo >&2 "Template not found at $TEMPLATE_FILE"
         exit 1
     fi
 
