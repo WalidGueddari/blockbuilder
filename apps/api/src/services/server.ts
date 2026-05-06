@@ -204,12 +204,19 @@ export class ServerService {
       // Docker, Docker Compose, and Nginx Setup
 
       console.log('Updating package lists...');
-      let result = await ssh.execCommand('sudo apt-get update');
+      let result = await ssh.execCommand(
+        'while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 1; done; sudo DEBIAN_FRONTEND=noninteractive apt-get update',
+      );
       console.log('apt-get update:', result.stdout, result.stderr);
 
       console.log('Installing Docker, Docker Compose, and Nginx...');
-      result = await ssh.execCommand('sudo apt-get install -y docker.io docker-compose nginx');
+      result = await ssh.execCommand(
+        'while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 1; done; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose nginx',
+      );
       console.log('Installation:', result.stdout, result.stderr);
+      if (result.code !== 0) {
+        throw new Error(`Failed to install required packages: ${result.stderr || result.stdout}`);
+      }
 
       console.log('Enabling Docker service...');
       result = await ssh.execCommand('sudo systemctl enable docker');
