@@ -109,7 +109,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
     wallets: nodes[0]?.network?.allocs || [],
     rpcUrl:
       statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.server?.dnsName
-        ? `https://${statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.server?.dnsName}`
+        ? `http://${statusPayload?.blockscoutServer?.dnsName || nodes[0]?.network?.server?.dnsName}`
         : 'Unknown URL',
   };
 
@@ -253,7 +253,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
               <Button
                 onClick={() => {
                   if (networkData.blockscoutDns) {
-                    window.open(`https://${networkData.blockscoutDns}`, '_blank');
+                    window.open(`http://${networkData.blockscoutDns}`, '_blank');
                   }
                 }}
                 disabled={!networkData.blockscoutDns}
@@ -616,7 +616,7 @@ const NetworkDetails: React.FC<NetworkDetailsProps> = ({ networkId }) => {
                     variant="outline"
                     onClick={() =>
                       window.open(
-                        networkData.blockscoutDns ? `https://${networkData.blockscoutDns}` : '#',
+                        networkData.blockscoutDns ? `http://${networkData.blockscoutDns}` : '#',
                         '_blank',
                       )
                     }
