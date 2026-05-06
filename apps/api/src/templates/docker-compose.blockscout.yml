@@ -4,7 +4,7 @@ services:
   blockscout:
     image: blockscout/blockscout:v6.8.0
     container_name: blockscout-NET_ID
-    restart: "no"
+    restart: always
     environment:
       - PORT=4000
       - ECTO_USE_SSL=false
@@ -20,7 +20,8 @@ services:
       - ETHEREUM_JSONRPC_WS_URL=ws://DNS_PLACEHOLDER
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
     depends_on:
-      - blockscoutpostgres
+      blockscoutpostgres:
+        condition: service_healthy
     links:
       - blockscoutpostgres
     ports:
