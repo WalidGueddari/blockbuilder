@@ -7,12 +7,12 @@ RUN apt-get update && apt-get install -y bash openssl curl && rm -rf /var/lib/ap
 WORKDIR /server
 
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME/bin:$PATH"
 
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
-RUN pnpm add -g turbo
+RUN pnpm dlx turbo prune api --docker
 
 COPY . .
 
@@ -43,7 +43,7 @@ COPY turbo.json turbo.json
 RUN pnpm install
 
 RUN turbo build --filter=@saas-monorepo/database
-RUN turbo build --filter=api
+RUN pnpm dlx turbo build --filter=api
 
 FROM base AS runner
 
