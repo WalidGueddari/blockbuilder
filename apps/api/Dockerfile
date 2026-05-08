@@ -26,7 +26,7 @@ WORKDIR /server
 RUN apt-get update && apt-get install -y openssl curl bash && rm -rf /var/lib/apt/lists/*
 
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME/bin:$PATH"
 
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
