@@ -69,7 +69,9 @@ services:
     restart: always
     environment:
       - NEXT_PUBLIC_API_HOST=http://DNS_PLACEHOLDER
-      - NEXT_PUBLIC_API_WEBSOCKETS_URL=ws://DNS_PLACEHOLDER/socket
+      - NEXT_PUBLIC_APP_HOST=http://DNS_PLACEHOLDER
+      - NEXT_PUBLIC_NETWORK_NAME=BlockBuilder
+      - NEXT_PUBLIC_NETWORK_ID=CHAINID_PlACEHOLDER
     ports:
       - 3000:3000
     depends_on:
