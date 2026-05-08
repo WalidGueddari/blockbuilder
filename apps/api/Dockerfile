@@ -12,11 +12,9 @@ ENV PATH="$PNPM_HOME/bin:$PATH"
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
-RUN pnpm dlx turbo prune api --docker
-
 COPY . .
 
-RUN turbo prune api --docker
+RUN pnpm dlx turbo prune api --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
